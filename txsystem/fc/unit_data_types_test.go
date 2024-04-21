@@ -1,11 +1,11 @@
-package unit
+package fc
 
 import (
 	"crypto"
 	"testing"
 
-	test "github.com/alphabill-org/alphabill/internal/testutils"
-	"github.com/alphabill-org/alphabill/types"
+	"github.com/alphabill-org/alphabill-go-sdk/testutils"
+	"github.com/alphabill-org/alphabill-go-sdk/types"
 
 	"github.com/stretchr/testify/require"
 )

@@ -4,8 +4,8 @@ import (
 	"crypto"
 	"testing"
 
-	abcrypto "github.com/alphabill-org/alphabill/crypto"
-	testsig "github.com/alphabill-org/alphabill/internal/testutils/sig"
+	abcrypto "github.com/alphabill-org/alphabill-go-sdk/crypto"
+	"github.com/alphabill-org/alphabill-go-sdk/testutils/sig"
 	"github.com/stretchr/testify/require"
 )
 

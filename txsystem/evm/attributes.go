@@ -3,10 +3,14 @@ package evm
 import (
 	"math/big"
 
+	"github.com/alphabill-org/alphabill-go-sdk/types"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
+
+const DefaultSystemID types.SystemID = 0x00000001
 
 const PayloadTypeEVMCall = "evm"
 

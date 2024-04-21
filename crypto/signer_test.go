@@ -3,8 +3,8 @@ package crypto
 import (
 	"testing"
 
-	"github.com/alphabill-org/alphabill/crypto/canonicalizer"
-	"github.com/alphabill-org/alphabill/internal/testutils"
+	"github.com/alphabill-org/alphabill-go-sdk/crypto/canonicalizer"
+	"github.com/alphabill-org/alphabill-go-sdk/testutils"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

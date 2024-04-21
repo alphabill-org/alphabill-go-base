@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	abcrypto "github.com/alphabill-org/alphabill/crypto"
-	"github.com/alphabill-org/alphabill/tree/mt"
+	abcrypto "github.com/alphabill-org/alphabill-go-sdk/crypto"
+	"github.com/alphabill-org/alphabill-go-sdk/tree/mt"
 )
 
 var (
