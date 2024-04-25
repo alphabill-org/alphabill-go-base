@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/alphabill-org/alphabill-go-sdk/hash"
+	"github.com/alphabill-org/alphabill-go-sdk/predicates"
 	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
@@ -23,13 +24,6 @@ var (
 )
 
 type (
-	Predicate struct {
-		_      struct{} `cbor:",toarray"`
-		Tag    uint64
-		Code   []byte
-		Params []byte
-	}
-
 	/*
 	   P2pkh256Signature is a signature and public key pair, typically used as
 	   owner proof (ie the public key can be used to verify the signature).
@@ -40,14 +34,6 @@ type (
 		PubKey []byte
 	}
 )
-
-func (p Predicate) AsBytes() (types.PredicateBytes, error) {
-	buf, err := types.Cbor.Marshal(p)
-	if err != nil {
-		return nil, err
-	}
-	return buf, nil
-}
 
 func AlwaysFalseBytes() types.PredicateBytes {
 	return alwaysFalseBytes
@@ -61,12 +47,12 @@ func EmptyArgument() []byte {
 	return cborNull
 }
 
-func NewP2pkh256FromKey(pubKey []byte) Predicate {
+func NewP2pkh256FromKey(pubKey []byte) predicates.Predicate {
 	return NewP2pkh256FromKeyHash(hash.Sum256(pubKey))
 }
 
-func NewP2pkh256FromKeyHash(pubKeyHash []byte) Predicate {
-	return Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID}, Params: pubKeyHash}
+func NewP2pkh256FromKeyHash(pubKeyHash []byte) predicates.Predicate {
+	return predicates.Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID}, Params: pubKeyHash}
 }
 
 func NewP2pkh256BytesFromKey(pubKey []byte) types.PredicateBytes {
@@ -85,7 +71,7 @@ func NewP2pkh256SignatureBytes(sig, pubKey []byte) []byte {
 }
 
 func ExtractPubKeyHashFromP2pkhPredicate(pb []byte) ([]byte, error) {
-	predicate := &Predicate{}
+	predicate := &predicates.Predicate{}
 	if err := types.Cbor.Unmarshal(pb, predicate); err != nil {
 		return nil, fmt.Errorf("extracting predicate: %w", err)
 	}
@@ -98,6 +84,6 @@ func ExtractPubKeyHashFromP2pkhPredicate(pb []byte) ([]byte, error) {
 	return predicate.Params, nil
 }
 
-func IsP2pkhTemplate(predicate *Predicate) bool {
+func IsP2pkhTemplate(predicate *predicates.Predicate) bool {
 	return predicate != nil && predicate.Tag == TemplateStartByte && len(predicate.Code) == 1 && predicate.Code[0] == P2pkh256ID
 }

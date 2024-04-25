@@ -5,8 +5,10 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/alphabill-org/alphabill-go-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/alphabill-org/alphabill-go-sdk/predicates"
+	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
 func Test_templateBytes(t *testing.T) {
@@ -19,21 +21,21 @@ func Test_templateBytes(t *testing.T) {
 	*/
 
 	t.Run("always false", func(t *testing.T) {
-		buf, err := types.Cbor.Marshal(Predicate{Tag: TemplateStartByte, Code: []byte{AlwaysFalseID}})
+		buf, err := types.Cbor.Marshal(predicates.Predicate{Tag: TemplateStartByte, Code: []byte{AlwaysFalseID}})
 		require.NoError(t, err)
 		require.True(t, bytes.Equal(buf, alwaysFalseBytes), `CBOR representation of "always false" predicate template has changed (expected %X, got %X)`, alwaysFalseBytes, buf)
 		require.True(t, bytes.Equal(alwaysFalseBytes, AlwaysFalseBytes()))
-		pred := &Predicate{}
+		pred := &predicates.Predicate{}
 		require.NoError(t, types.Cbor.Unmarshal(buf, pred))
 		require.Equal(t, pred.Code[0], AlwaysFalseID, "always false predicate ID")
 	})
 
 	t.Run("always true", func(t *testing.T) {
-		buf, err := types.Cbor.Marshal(Predicate{Tag: TemplateStartByte, Code: []byte{AlwaysTrueID}})
+		buf, err := types.Cbor.Marshal(predicates.Predicate{Tag: TemplateStartByte, Code: []byte{AlwaysTrueID}})
 		require.NoError(t, err)
 		require.True(t, bytes.Equal(buf, alwaysTrueBytes), `CBOR representation of "always true" predicate template has changed (expected %X, got %X)`, alwaysTrueBytes, buf)
 		require.True(t, bytes.Equal(alwaysTrueBytes, AlwaysTrueBytes()))
-		pred := &Predicate{}
+		pred := &predicates.Predicate{}
 		require.NoError(t, types.Cbor.Unmarshal(buf, pred))
 		require.Equal(t, pred.Code[0], AlwaysTrueID, "always true predicate ID")
 	})
@@ -41,7 +43,7 @@ func Test_templateBytes(t *testing.T) {
 	t.Run("p2pkh", func(t *testing.T) {
 		pubKeyHash, err := hex.DecodeString("F52022BB450407D92F13BF1C53128A676BCF304818E9F41A5EF4EBEAE9C0D6B0")
 		require.NoError(t, err)
-		buf, err := types.Cbor.Marshal(Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID}, Params: pubKeyHash})
+		buf, err := types.Cbor.Marshal(predicates.Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID}, Params: pubKeyHash})
 		require.NoError(t, err)
 
 		fromHex, err := hex.DecodeString("830041025820F52022BB450407D92F13BF1C53128A676BCF304818E9F41A5EF4EBEAE9C0D6B0")
@@ -63,13 +65,13 @@ func Test_IsP2pkhTemplate(t *testing.T) {
 	t.Parallel()
 
 	t.Run("p2pkh template true", func(t *testing.T) {
-		require.True(t, IsP2pkhTemplate(&Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID}}))
+		require.True(t, IsP2pkhTemplate(&predicates.Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID}}))
 	})
 
 	t.Run("p2pkh template false", func(t *testing.T) {
 		require.False(t, IsP2pkhTemplate(nil))
-		require.False(t, IsP2pkhTemplate(&Predicate{}))
-		require.False(t, IsP2pkhTemplate(&Predicate{Tag: 999, Code: []byte{P2pkh256ID}}))
-		require.False(t, IsP2pkhTemplate(&Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID, P2pkh256ID}}))
+		require.False(t, IsP2pkhTemplate(&predicates.Predicate{}))
+		require.False(t, IsP2pkhTemplate(&predicates.Predicate{Tag: 999, Code: []byte{P2pkh256ID}}))
+		require.False(t, IsP2pkhTemplate(&predicates.Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID, P2pkh256ID}}))
 	})
 }
