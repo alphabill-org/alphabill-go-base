@@ -6,7 +6,7 @@ import (
 	"hash"
 	"testing"
 
-	"github.com/alphabill-org/alphabill/util"
+	"github.com/alphabill-org/alphabill-go-sdk/util"
 	"github.com/stretchr/testify/require"
 )
 

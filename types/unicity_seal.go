@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/alphabill-org/alphabill/crypto"
-	"github.com/alphabill-org/alphabill/util"
+	"github.com/alphabill-org/alphabill-go-sdk/crypto"
+	"github.com/alphabill-org/alphabill-go-sdk/util"
 )
 
 // GenesisTime min timestamp Thursday, April 20, 2023 6:11:24 AM GMT+00:00

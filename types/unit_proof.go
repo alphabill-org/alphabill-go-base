@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	hasherUtil "github.com/alphabill-org/alphabill/hash"
-	"github.com/alphabill-org/alphabill/tree/mt"
-	"github.com/alphabill-org/alphabill/util"
+	"github.com/alphabill-org/alphabill-go-sdk/hash"
+	"github.com/alphabill-org/alphabill-go-sdk/tree/mt"
+	"github.com/alphabill-org/alphabill-go-sdk/util"
 )
 
 type (
@@ -103,13 +103,13 @@ func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *St
 func (u *UnitStateProof) CalculateSateTreeOutput(algorithm crypto.Hash) ([]byte, uint64) {
 	var z []byte
 	if u.UnitTreeCert.TransactionRecordHash == nil {
-		z = hasherUtil.Sum(algorithm,
+		z = hash.Sum(algorithm,
 			u.UnitLedgerHash,
 			u.UnitTreeCert.UnitDataHash,
 		)
 	} else {
-		z = hasherUtil.Sum(algorithm,
-			hasherUtil.Sum(algorithm, u.UnitLedgerHash, u.UnitTreeCert.TransactionRecordHash),
+		z = hash.Sum(algorithm,
+			hash.Sum(algorithm, u.UnitLedgerHash, u.UnitTreeCert.TransactionRecordHash),
 			u.UnitTreeCert.UnitDataHash,
 		)
 	}

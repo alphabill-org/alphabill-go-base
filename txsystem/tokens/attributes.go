@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/alphabill-org/alphabill/types"
+	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
+
+const DefaultSystemID types.SystemID = 0x00000002
 
 const (
 	PayloadTypeCreateNFTType           = "createNType"
@@ -151,4 +153,201 @@ func (i *Icon) Copy() *Icon {
 		Type: strings.Clone(i.Type),
 		Data: bytes.Clone(i.Data),
 	}
+}
+
+func (b *BurnFungibleTokenAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude InvariantPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &BurnFungibleTokenAttributes{
+		TypeID:                       b.TypeID,
+		Value:                        b.Value,
+		TargetTokenID:                b.TargetTokenID,
+		TargetTokenCounter:           b.TargetTokenCounter,
+		Counter:                      b.Counter,
+		InvariantPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (b *BurnFungibleTokenAttributes) SetInvariantPredicateSignatures(signatures [][]byte) {
+	b.InvariantPredicateSignatures = signatures
+}
+
+func (c *CreateFungibleTokenTypeAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude SubTypeCreationPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &CreateFungibleTokenTypeAttributes{
+		Symbol:                             c.Symbol,
+		Name:                               c.Name,
+		Icon:                               c.Icon,
+		ParentTypeID:                       c.ParentTypeID,
+		DecimalPlaces:                      c.DecimalPlaces,
+		SubTypeCreationPredicate:           c.SubTypeCreationPredicate,
+		TokenCreationPredicate:             c.TokenCreationPredicate,
+		InvariantPredicate:                 c.InvariantPredicate,
+		SubTypeCreationPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (c *CreateFungibleTokenTypeAttributes) SetSubTypeCreationPredicateSignatures(signatures [][]byte) {
+	c.SubTypeCreationPredicateSignatures = signatures
+}
+
+func (j *JoinFungibleTokenAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude InvariantPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &JoinFungibleTokenAttributes{
+		BurnTransactions:             j.BurnTransactions,
+		Proofs:                       j.Proofs,
+		Counter:                      j.Counter,
+		InvariantPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (j *JoinFungibleTokenAttributes) SetInvariantPredicateSignatures(signatures [][]byte) {
+	j.InvariantPredicateSignatures = signatures
+}
+
+func (m *MintFungibleTokenAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016
+	signatureAttr := &MintFungibleTokenAttributes{
+		Bearer:                           m.Bearer,
+		Value:                            m.Value,
+		Nonce:                            m.Nonce,
+		TokenCreationPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (m *MintFungibleTokenAttributes) SetBearer(bearer []byte) {
+	m.Bearer = bearer
+}
+
+func (m *MintFungibleTokenAttributes) SetTokenCreationPredicateSignatures(signatures [][]byte) {
+	m.TokenCreationPredicateSignatures = signatures
+}
+
+func (s *SplitFungibleTokenAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude InvariantPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &SplitFungibleTokenAttributes{
+		NewBearer:                    s.NewBearer,
+		TargetValue:                  s.TargetValue,
+		Nonce:                        s.Nonce,
+		Counter:                      s.Counter,
+		TypeID:                       s.TypeID,
+		RemainingValue:               s.RemainingValue,
+		InvariantPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (s *SplitFungibleTokenAttributes) SetInvariantPredicateSignatures(signatures [][]byte) {
+	s.InvariantPredicateSignatures = signatures
+}
+
+func (t *TransferFungibleTokenAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude InvariantPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &TransferFungibleTokenAttributes{
+		NewBearer:                    t.NewBearer,
+		Value:                        t.Value,
+		Nonce:                        t.Nonce,
+		Counter:                      t.Counter,
+		TypeID:                       t.TypeID,
+		InvariantPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (t *TransferFungibleTokenAttributes) SetInvariantPredicateSignatures(signatures [][]byte) {
+	t.InvariantPredicateSignatures = signatures
+}
+
+func (l *LockTokenAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude InvariantPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &LockTokenAttributes{
+		LockStatus:                   l.LockStatus,
+		Counter:                      l.Counter,
+		InvariantPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (c *CreateNonFungibleTokenTypeAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude SubTypeCreationPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &CreateNonFungibleTokenTypeAttributes{
+		Symbol:                             c.Symbol,
+		Name:                               c.Name,
+		ParentTypeID:                       c.ParentTypeID,
+		SubTypeCreationPredicate:           c.SubTypeCreationPredicate,
+		TokenCreationPredicate:             c.TokenCreationPredicate,
+		InvariantPredicate:                 c.InvariantPredicate,
+		DataUpdatePredicate:                c.DataUpdatePredicate,
+		Icon:                               c.Icon,
+		SubTypeCreationPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (c *CreateNonFungibleTokenTypeAttributes) SetSubTypeCreationPredicateSignatures(signatures [][]byte) {
+	c.SubTypeCreationPredicateSignatures = signatures
+}
+
+func (m *MintNonFungibleTokenAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude TokenCreationPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &MintNonFungibleTokenAttributes{
+		Bearer:                           m.Bearer,
+		Name:                             m.Name,
+		URI:                              m.URI,
+		Data:                             m.Data,
+		DataUpdatePredicate:              m.DataUpdatePredicate,
+		Nonce:                            m.Nonce,
+		TokenCreationPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (m *MintNonFungibleTokenAttributes) SetBearer(bearer []byte) {
+	m.Bearer = bearer
+}
+
+func (m *MintNonFungibleTokenAttributes) SetTokenCreationPredicateSignatures(signatures [][]byte) {
+	m.TokenCreationPredicateSignatures = signatures
+}
+
+func (t *TransferNonFungibleTokenAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude SubTypeCreationPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &TransferNonFungibleTokenAttributes{
+		NewBearer:                    t.NewBearer,
+		Nonce:                        t.Nonce,
+		Counter:                      t.Counter,
+		NFTTypeID:                    t.NFTTypeID,
+		InvariantPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (t *TransferNonFungibleTokenAttributes) SetInvariantPredicateSignatures(signatures [][]byte) {
+	t.InvariantPredicateSignatures = signatures
+}
+
+func (u *UpdateNonFungibleTokenAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude DataUpdateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &UpdateNonFungibleTokenAttributes{
+		Data:                 u.Data,
+		Counter:              u.Counter,
+		DataUpdateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
+}
+
+func (u *UpdateNonFungibleTokenAttributes) SetDataUpdateSignatures(signatures [][]byte) {
+	u.DataUpdateSignatures = signatures
+}
+
+func (l *UnlockTokenAttributes) SigBytes() ([]byte, error) {
+	// TODO: AB-1016 exclude InvariantPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
+	signatureAttr := &UnlockTokenAttributes{
+		Counter:                      l.Counter,
+		InvariantPredicateSignatures: nil,
+	}
+	return types.Cbor.Marshal(signatureAttr)
 }

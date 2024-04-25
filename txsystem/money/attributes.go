@@ -1,8 +1,10 @@
 package money
 
 import (
-	"github.com/alphabill-org/alphabill/types"
+	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
+
+const DefaultSystemID types.SystemID = 0x00000001
 
 const (
 	PayloadTypeTransfer = "trans"

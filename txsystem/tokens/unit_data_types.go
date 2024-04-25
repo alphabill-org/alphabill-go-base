@@ -6,8 +6,7 @@ import (
 	"hash"
 	"strings"
 
-	"github.com/alphabill-org/alphabill/state"
-	"github.com/alphabill-org/alphabill/types"
+	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
 type NonFungibleTokenTypeData struct {
@@ -56,7 +55,7 @@ type FungibleTokenData struct {
 	Locked    uint64       `json:"locked,string"`     // locked status of the bill, non-zero value means locked
 }
 
-func newFungibleTokenTypeData(attr *CreateFungibleTokenTypeAttributes) state.UnitData {
+func NewFungibleTokenTypeData(attr *CreateFungibleTokenTypeAttributes) types.UnitData {
 	return &FungibleTokenTypeData{
 		Symbol:                   attr.Symbol,
 		Name:                     attr.Name,
@@ -69,7 +68,7 @@ func newFungibleTokenTypeData(attr *CreateFungibleTokenTypeAttributes) state.Uni
 	}
 }
 
-func newNonFungibleTokenTypeData(attr *CreateNonFungibleTokenTypeAttributes) state.UnitData {
+func NewNonFungibleTokenTypeData(attr *CreateNonFungibleTokenTypeAttributes) types.UnitData {
 	return &NonFungibleTokenTypeData{
 		Symbol:                   attr.Symbol,
 		Name:                     attr.Name,
@@ -82,7 +81,7 @@ func newNonFungibleTokenTypeData(attr *CreateNonFungibleTokenTypeAttributes) sta
 	}
 }
 
-func newNonFungibleTokenData(typeID types.UnitID, attr *MintNonFungibleTokenAttributes, blockNumber, counter uint64) state.UnitData {
+func NewNonFungibleTokenData(typeID types.UnitID, attr *MintNonFungibleTokenAttributes, blockNumber, counter uint64) types.UnitData {
 	return &NonFungibleTokenData{
 		NftType:             typeID,
 		Name:                attr.Name,
@@ -95,7 +94,7 @@ func newNonFungibleTokenData(typeID types.UnitID, attr *MintNonFungibleTokenAttr
 	}
 }
 
-func newFungibleTokenData(typeID types.UnitID, value, blockNumber, counter, timeout uint64) state.UnitData {
+func NewFungibleTokenData(typeID types.UnitID, value, blockNumber, counter, timeout uint64) types.UnitData {
 	return &FungibleTokenData{
 		TokenType: typeID,
 		Value:     value,
@@ -119,7 +118,7 @@ func (n *NonFungibleTokenTypeData) SummaryValueInput() uint64 {
 	return 0
 }
 
-func (n *NonFungibleTokenTypeData) Copy() state.UnitData {
+func (n *NonFungibleTokenTypeData) Copy() types.UnitData {
 	if n == nil {
 		return nil
 	}
@@ -148,7 +147,7 @@ func (n *NonFungibleTokenData) SummaryValueInput() uint64 {
 	return 0
 }
 
-func (n *NonFungibleTokenData) Copy() state.UnitData {
+func (n *NonFungibleTokenData) Copy() types.UnitData {
 	if n == nil {
 		return nil
 	}
@@ -185,7 +184,7 @@ func (f *FungibleTokenTypeData) SummaryValueInput() uint64 {
 	return 0
 }
 
-func (f *FungibleTokenTypeData) Copy() state.UnitData {
+func (f *FungibleTokenTypeData) Copy() types.UnitData {
 	if f == nil {
 		return nil
 	}
@@ -214,7 +213,7 @@ func (f *FungibleTokenData) SummaryValueInput() uint64 {
 	return 0
 }
 
-func (f *FungibleTokenData) Copy() state.UnitData {
+func (f *FungibleTokenData) Copy() types.UnitData {
 	if f == nil {
 		return nil
 	}
