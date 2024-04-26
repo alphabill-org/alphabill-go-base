@@ -2,11 +2,11 @@ package types
 
 import (
 	"bytes"
-	gocrypto "crypto"
+	"crypto"
 	"errors"
 	"fmt"
 
-	"github.com/alphabill-org/alphabill/crypto"
+	abcrypto "github.com/alphabill-org/alphabill-go-sdk/crypto"
 )
 
 var ErrUnicityCertificateIsNil = errors.New("unicity certificate is nil")
@@ -18,7 +18,7 @@ type UnicityCertificate struct {
 	UnicitySeal            *UnicitySeal            `json:"unicity_seal,omitempty"`
 }
 
-func (x *UnicityCertificate) IsValid(algorithm gocrypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
+func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
 	if x == nil {
 		return ErrUnicityCertificateIsNil
 	}
@@ -39,7 +39,7 @@ func (x *UnicityCertificate) IsValid(algorithm gocrypto.Hash, systemIdentifier S
 	return nil
 }
 
-func (x *UnicityCertificate) Verify(verifiers map[string]crypto.Verifier, algorithm gocrypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
+func (x *UnicityCertificate) Verify(verifiers map[string]abcrypto.Verifier, algorithm crypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
 	if err := x.IsValid(algorithm, systemIdentifier, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity certificate validation failed: %w", err)
 	}
@@ -49,7 +49,7 @@ func (x *UnicityCertificate) Verify(verifiers map[string]crypto.Verifier, algori
 	return nil
 }
 
-func (x *UnicityCertificate) Hash(hash gocrypto.Hash) []byte {
+func (x *UnicityCertificate) Hash(hash crypto.Hash) []byte {
 	hasher := hash.New()
 	if x.InputRecord != nil {
 		x.InputRecord.AddToHasher(hasher)

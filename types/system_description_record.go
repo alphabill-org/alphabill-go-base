@@ -1,12 +1,12 @@
 package types
 
 import (
-	gocrypto "crypto"
+	"crypto"
 	"errors"
 	"fmt"
 	"hash"
 
-	"github.com/alphabill-org/alphabill/util"
+	"github.com/alphabill-org/alphabill-go-sdk/util"
 )
 
 var (
@@ -46,7 +46,7 @@ func (x *SystemDescriptionRecord) AddToHasher(hasher hash.Hash) {
 	hasher.Write(util.Uint64ToBytes(uint64(x.T2Timeout)))
 }
 
-func (x *SystemDescriptionRecord) Hash(hashAlgorithm gocrypto.Hash) []byte {
+func (x *SystemDescriptionRecord) Hash(hashAlgorithm crypto.Hash) []byte {
 	hasher := hashAlgorithm.New()
 	x.AddToHasher(hasher)
 	return hasher.Sum(nil)

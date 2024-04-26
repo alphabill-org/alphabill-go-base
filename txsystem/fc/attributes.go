@@ -1,7 +1,7 @@
-package transactions
+package fc
 
 import (
-	"github.com/alphabill-org/alphabill/types"
+	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
 const (

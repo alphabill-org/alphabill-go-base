@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"hash"
 
-	"github.com/alphabill-org/alphabill/state"
-	"github.com/alphabill-org/alphabill/types"
+	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
 type BillData struct {
@@ -29,7 +28,7 @@ func (b *BillData) SummaryValueInput() uint64 {
 	return b.V
 }
 
-func (b *BillData) Copy() state.UnitData {
+func (b *BillData) Copy() types.UnitData {
 	return &BillData{
 		V:       b.V,
 		T:       b.T,

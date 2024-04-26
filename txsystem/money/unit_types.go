@@ -3,9 +3,8 @@ package money
 import (
 	"fmt"
 
-	"github.com/alphabill-org/alphabill/state"
-	fc "github.com/alphabill-org/alphabill/txsystem/fc/unit"
-	"github.com/alphabill-org/alphabill/types"
+	"github.com/alphabill-org/alphabill-go-sdk/txsystem/fc"
+	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
 const (
@@ -27,7 +26,7 @@ func NewFeeCreditRecordID(shardPart []byte, unitPart []byte) types.UnitID {
 	return types.NewUnitID(UnitIDLength, shardPart, unitPart, FeeCreditRecordUnitType)
 }
 
-func NewUnitData(unitID types.UnitID) (state.UnitData, error) {
+func NewUnitData(unitID types.UnitID) (types.UnitData, error) {
 	if unitID.HasType(BillUnitType) {
 		return &BillData{}, nil
 	}

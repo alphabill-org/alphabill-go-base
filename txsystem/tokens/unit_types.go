@@ -4,9 +4,8 @@ import (
 	"crypto/rand"
 	"fmt"
 
-	"github.com/alphabill-org/alphabill/state"
-	fc "github.com/alphabill-org/alphabill/txsystem/fc/unit"
-	"github.com/alphabill-org/alphabill/types"
+	"github.com/alphabill-org/alphabill-go-sdk/txsystem/fc"
+	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
 const (
@@ -68,7 +67,7 @@ func newRandomUnitID(shardPart []byte, typePart []byte) (types.UnitID, error) {
 	return types.NewUnitID(UnitIDLength, shardPart, unitPart, typePart), nil
 }
 
-func NewUnitData(unitID types.UnitID) (state.UnitData, error) {
+func NewUnitData(unitID types.UnitID) (types.UnitData, error) {
 	if unitID.HasType(FungibleTokenTypeUnitType) {
 		return &FungibleTokenTypeData{}, nil
 	}

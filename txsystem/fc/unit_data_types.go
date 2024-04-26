@@ -1,13 +1,11 @@
-package unit
+package fc
 
 import (
 	"bytes"
 	"fmt"
 	"hash"
 
-	"github.com/alphabill-org/alphabill/state"
-
-	"github.com/alphabill-org/alphabill/types"
+	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
 // FeeCreditRecord state tree unit data of fee credit records.
@@ -34,7 +32,7 @@ func (b *FeeCreditRecord) SummaryValueInput() uint64 {
 	return 0
 }
 
-func (b *FeeCreditRecord) Copy() state.UnitData {
+func (b *FeeCreditRecord) Copy() types.UnitData {
 	return &FeeCreditRecord{
 		Balance:  b.Balance,
 		Backlink: bytes.Clone(b.Backlink),
