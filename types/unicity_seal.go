@@ -23,7 +23,6 @@ var (
 	ErrInvalidRootRound          = errors.New("invalid root round number")
 	ErrUnicitySealSignatureIsNil = errors.New("no signatures")
 	ErrRootValidatorInfoMissing  = errors.New("root node info is missing")
-	ErrUnknownSigner             = errors.New("unknown signer")
 	errInvalidTimestamp          = errors.New("invalid timestamp")
 )
 
@@ -139,24 +138,16 @@ func (x *UnicitySeal) Sign(id string, signer crypto.Signer) error {
 	return nil
 }
 
-func (x *UnicitySeal) Verify(verifiers map[string]crypto.Verifier) error {
-	if verifiers == nil {
+func (x *UnicitySeal) Verify(tb RootTrustBase) error {
+	if tb == nil {
 		return ErrRootValidatorInfoMissing
 	}
 	if err := x.IsValid(); err != nil {
 		return fmt.Errorf("unicity seal validation error: %w", err)
 	}
-	// Verify all signatures, all must be from known origin and valid
-	for id, sig := range x.Signatures {
-		// Find verifier info
-		ver, f := verifiers[id]
-		if !f {
-			return ErrUnknownSigner
-		}
-		err := ver.VerifyBytes(sig, x.Bytes())
-		if err != nil {
-			return fmt.Errorf("invalid unicity seal signature, %w", err)
-		}
+	err, _ := tb.VerifyQuorumSignatures(x.Bytes(), x.Signatures)
+	if err != nil {
+		return err
 	}
 	return nil
 }
