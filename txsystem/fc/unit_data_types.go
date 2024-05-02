@@ -8,6 +8,8 @@ import (
 	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
+var _ types.UnitData = (*FeeCreditRecord)(nil)
+
 // FeeCreditRecord state tree unit data of fee credit records.
 // Holds fee credit balance for individual users,
 // not to be confused with fee credit bills which contain aggregate fees for a given partition.
@@ -40,6 +42,8 @@ func (b *FeeCreditRecord) Copy() types.UnitData {
 		Locked:   b.Locked,
 	}
 }
+
+func (b *FeeCreditRecord) IncrementCounter() {}
 
 func (b *FeeCreditRecord) GetBacklink() []byte {
 	if b == nil {

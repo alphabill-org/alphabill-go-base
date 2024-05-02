@@ -7,6 +7,8 @@ import (
 	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
+var _ types.UnitData = (*BillData)(nil)
+
 type BillData struct {
 	_       struct{} `cbor:",toarray"`
 	V       uint64   `json:"value,string"`      // The monetary value of this bill
@@ -36,6 +38,7 @@ func (b *BillData) Copy() types.UnitData {
 		Locked:  b.Locked,
 	}
 }
+func (b *BillData) IncrementCounter() { b.Counter++ }
 
 func (b *BillData) IsLocked() bool {
 	return b.Locked != 0

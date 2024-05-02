@@ -7,6 +7,8 @@ import (
 	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
+var _ types.UnitData = (*VarData)(nil)
+
 // VarData Validator Assignment Record Data
 type VarData struct {
 	_           struct{} `cbor:",toarray"`
@@ -31,3 +33,6 @@ func (b *VarData) Copy() types.UnitData {
 		EpochNumber: b.EpochNumber,
 	}
 }
+
+// IncrementCounter - does nothing for VarData as epoch number serves the same purpose
+func (b *VarData) IncrementCounter() {}
