@@ -5,8 +5,6 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
-
-	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 )
 
 var ErrUnicityCertificateIsNil = errors.New("unicity certificate is nil")
@@ -39,11 +37,11 @@ func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier Sys
 	return nil
 }
 
-func (x *UnicityCertificate) Verify(verifiers map[string]abcrypto.Verifier, algorithm crypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
+func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
 	if err := x.IsValid(algorithm, systemIdentifier, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity certificate validation failed: %w", err)
 	}
-	if err := x.UnicitySeal.Verify(verifiers); err != nil {
+	if err := x.UnicitySeal.Verify(tb); err != nil {
 		return fmt.Errorf("unicity seal signature validation failed: %w", err)
 	}
 	return nil

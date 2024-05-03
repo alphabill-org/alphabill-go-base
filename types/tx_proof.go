@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
 )
 
@@ -64,7 +63,7 @@ func NewTxProof(block *Block, txIndex int, algorithm crypto.Hash) (*TxProof, *Tr
 	}, block.Transactions[txIndex], nil
 }
 
-func VerifyTxProof(proof *TxProof, txRecord *TransactionRecord, trustBase map[string]abcrypto.Verifier, hashAlgorithm crypto.Hash) error {
+func VerifyTxProof(proof *TxProof, txRecord *TransactionRecord, tb RootTrustBase, hashAlgorithm crypto.Hash) error {
 	if proof == nil {
 		return errors.New("tx proof is nil")
 	}
@@ -82,8 +81,8 @@ func VerifyTxProof(proof *TxProof, txRecord *TransactionRecord, trustBase map[st
 		}
 	}
 	// TODO ch 2.8.7: Verify Transaction Proof: VerifyTxProof: System description must be an input parameter
-	systemDescriptionHash := proof.GetUnicityTreeSystemDescriptionHash()
-	if err := proof.UnicityCertificate.Verify(trustBase, hashAlgorithm, txRecord.TransactionOrder.SystemID(), systemDescriptionHash); err != nil {
+	sdrHash := proof.GetUnicityTreeSystemDescriptionHash()
+	if err := proof.UnicityCertificate.Verify(tb, hashAlgorithm, txRecord.TransactionOrder.SystemID(), sdrHash); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 	// h ← plain_tree_output(C, H(P))

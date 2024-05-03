@@ -2,11 +2,11 @@ package types
 
 import (
 	gocrypto "crypto"
-	"strings"
 	"testing"
 
-	"github.com/alphabill-org/alphabill-go-base/crypto"
-	"github.com/alphabill-org/alphabill-go-base/testutils/sig"
+	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
+	test "github.com/alphabill-org/alphabill-go-base/testutils"
+	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/util"
 	"github.com/stretchr/testify/require"
 )
@@ -17,8 +17,8 @@ func TestUnicitySeal_IsValid(t *testing.T) {
 	_, verifier := testsig.CreateSignerAndVerifier(t)
 	t.Run("seal is nil", func(t *testing.T) {
 		var seal *UnicitySeal = nil
-		v := map[string]crypto.Verifier{"test": verifier}
-		require.Error(t, seal.Verify(v), ErrUnicitySealIsNil)
+		tb := NewTrustBase(t, verifier)
+		require.Error(t, seal.Verify(tb), ErrUnicitySealIsNil)
 	})
 	t.Run("no root nodes", func(t *testing.T) {
 		seal := UnicitySeal{}
@@ -32,8 +32,8 @@ func TestUnicitySeal_IsValid(t *testing.T) {
 			Hash:                 nil,
 			Signatures:           map[string][]byte{"": zeroHash},
 		}
-		v := map[string]crypto.Verifier{"test": verifier}
-		require.Error(t, seal.Verify(v), ErrUnicitySealHashIsNil)
+		tb := NewTrustBase(t, verifier)
+		require.Error(t, seal.Verify(tb), ErrUnicitySealHashIsNil)
 	})
 	t.Run("root round is invalid", func(t *testing.T) {
 		seal := &UnicitySeal{
@@ -43,8 +43,8 @@ func TestUnicitySeal_IsValid(t *testing.T) {
 			Hash:                 zeroHash,
 			Signatures:           nil,
 		}
-		v := map[string]crypto.Verifier{"test": verifier}
-		require.Error(t, seal.Verify(v), ErrInvalidRootRound)
+		tb := NewTrustBase(t, verifier)
+		require.Error(t, seal.Verify(tb), ErrInvalidRootRound)
 	})
 	t.Run("timestamp is missing", func(t *testing.T) {
 		seal := &UnicitySeal{
@@ -53,8 +53,8 @@ func TestUnicitySeal_IsValid(t *testing.T) {
 			Hash:                 zeroHash,
 			Signatures:           nil,
 		}
-		v := map[string]crypto.Verifier{"test": verifier}
-		require.Error(t, seal.Verify(v), errInvalidTimestamp)
+		tb := NewTrustBase(t, verifier)
+		require.Error(t, seal.Verify(tb), errInvalidTimestamp)
 	})
 }
 
@@ -67,10 +67,10 @@ func TestIsValid_InvalidSignature(t *testing.T) {
 		Hash:                 zeroHash,
 		Signatures:           map[string][]byte{"test": zeroHash},
 	}
-	verifiers := map[string]crypto.Verifier{"test": verifier}
+	tb := NewTrustBase(t, verifier)
 
-	err := seal.Verify(verifiers)
-	require.True(t, strings.Contains(err.Error(), "invalid unicity seal signature"))
+	err := seal.Verify(tb)
+	require.ErrorContains(t, err, "quorum not reached")
 }
 
 func TestSignAndVerify_Ok(t *testing.T) {
@@ -83,10 +83,27 @@ func TestSignAndVerify_Ok(t *testing.T) {
 	}
 	err := seal.Sign("test", signer)
 	require.NoError(t, err)
-	verifiers := map[string]crypto.Verifier{"test": verifier}
-	err = seal.Verify(verifiers)
+	tb := NewTrustBase(t, verifier)
+	err = seal.Verify(tb)
 	require.NoError(t, err)
 }
+
+func TestSignAndVerify_QuorumNotReached(t *testing.T) {
+	signer, verifier := testsig.CreateSignerAndVerifier(t)
+	seal := &UnicitySeal{
+		RootChainRoundNumber: 1,
+		Timestamp:            NewTimestamp(),
+		PreviousHash:         zeroHash,
+		Hash:                 zeroHash,
+	}
+	err := seal.Sign("test", signer)
+	require.NoError(t, err)
+	_, verifier2 := testsig.CreateSignerAndVerifier(t)
+	tb := NewTrustBaseFromVerifiers(t, map[string]abcrypto.Verifier{"test": verifier, "2": verifier2})
+	err = seal.Verify(tb)
+	require.ErrorContains(t, err, "quorum not reached")
+}
+
 func TestVerify_SignatureIsNil(t *testing.T) {
 	_, verifier := testsig.CreateSignerAndVerifier(t)
 	seal := &UnicitySeal{
@@ -95,8 +112,8 @@ func TestVerify_SignatureIsNil(t *testing.T) {
 		PreviousHash:         zeroHash,
 		Hash:                 zeroHash,
 	}
-	verifiers := map[string]crypto.Verifier{"test": verifier}
-	err := seal.Verify(verifiers)
+	tb := NewTrustBase(t, verifier)
+	err := seal.Verify(tb)
 	require.EqualError(t, err, "unicity seal validation error: no signatures")
 }
 
@@ -107,11 +124,11 @@ func TestVerify_SignatureUnknownSigner(t *testing.T) {
 		Timestamp:            NewTimestamp(),
 		PreviousHash:         zeroHash,
 		Hash:                 zeroHash,
-		Signatures:           map[string][]byte{"test": zeroHash},
+		Signatures:           map[string][]byte{"test": test.RandomBytes(64)},
 	}
-	verifiers := map[string]crypto.Verifier{"xxx": verifier}
-	err := seal.Verify(verifiers)
-	require.ErrorIs(t, err, ErrUnknownSigner)
+	tb := NewTrustBase(t, verifier)
+	err := seal.Verify(tb)
+	require.ErrorContains(t, err, "quorum not reached")
 }
 
 func TestSign_SignerIsNil(t *testing.T) {
