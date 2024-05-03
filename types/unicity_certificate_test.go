@@ -5,8 +5,7 @@ import (
 	"crypto/sha256"
 	"testing"
 
-	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
-	"github.com/alphabill-org/alphabill-go-base/testutils/sig"
+	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
 
 	"github.com/stretchr/testify/require"
@@ -213,7 +212,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			},
 			UnicitySeal: seal,
 		}
-		tb := map[string]abcrypto.Verifier{"test": verifier}
+		tb := NewTrustBase(t, verifier)
 		require.NoError(t, uc.Verify(tb, crypto.SHA256, identifier, sdrh))
 	})
 }

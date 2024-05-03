@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
-	"github.com/alphabill-org/alphabill-go-base/testutils/sig"
+	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/stretchr/testify/require"
 )
 
@@ -76,27 +76,29 @@ func TestTxProofFunctions(t *testing.T) {
 		proof, txRecord, err := NewTxProof(block, 0, crypto.SHA256)
 		require.NoError(t, err)
 
-		trustBase := make(map[string]abcrypto.Verifier)
-		trustBase["test"] = verifier
-		require.NoError(t, VerifyTxProof(proof, txRecord, trustBase, crypto.SHA256))
+		tb := NewTrustBase(t, verifier)
+		require.NoError(t, VerifyTxProof(proof, txRecord, tb, crypto.SHA256))
 	})
 
 	t.Run("Test proof is nil", func(t *testing.T) {
-		trustBase := make(map[string]abcrypto.Verifier)
-		require.EqualError(t, VerifyTxProof(nil, nil, trustBase, crypto.SHA256), "tx proof is nil")
+		_, verifier := testsig.CreateSignerAndVerifier(t)
+		tb := NewTrustBase(t, verifier)
+		require.EqualError(t, VerifyTxProof(nil, nil, tb, crypto.SHA256), "tx proof is nil")
 	})
 
 	t.Run("Test tx record is nil", func(t *testing.T) {
-		trustBase := make(map[string]abcrypto.Verifier)
+		_, verifier := testsig.CreateSignerAndVerifier(t)
+		tb := NewTrustBase(t, verifier)
 		proof := &TxProof{}
-		require.EqualError(t, VerifyTxProof(proof, nil, trustBase, crypto.SHA256), "tx record is nil")
+		require.EqualError(t, VerifyTxProof(proof, nil, tb, crypto.SHA256), "tx record is nil")
 	})
 
 	t.Run("Test tx record is nil", func(t *testing.T) {
-		trustBase := make(map[string]abcrypto.Verifier)
+		_, verifier := testsig.CreateSignerAndVerifier(t)
+		tb := NewTrustBase(t, verifier)
 		proof := &TxProof{}
 		txr := &TransactionRecord{}
-		require.EqualError(t, VerifyTxProof(proof, txr, trustBase, crypto.SHA256), "tx order is nil")
+		require.EqualError(t, VerifyTxProof(proof, txr, tb, crypto.SHA256), "tx order is nil")
 	})
 
 	t.Run("Test VerifyTxProof error, invalid system id", func(t *testing.T) {
@@ -105,10 +107,9 @@ func TestTxProofFunctions(t *testing.T) {
 		proof, txRecord, err := NewTxProof(block, 0, crypto.SHA256)
 		require.NoError(t, err)
 
-		trustBase := make(map[string]abcrypto.Verifier)
-		trustBase["test"] = verifier
+		tb := NewTrustBase(t, verifier)
 		proof.UnicityCertificate.UnicityTreeCertificate.SystemIdentifier = SystemID(1)
-		require.EqualError(t, VerifyTxProof(proof, txRecord, trustBase, crypto.SHA256),
+		require.EqualError(t, VerifyTxProof(proof, txRecord, tb, crypto.SHA256),
 			"invalid unicity certificate: unicity certificate validation failed: unicity tree certificate validation failed: invalid system identifier: expected 01000001, got 00000001")
 	})
 
@@ -118,9 +119,8 @@ func TestTxProofFunctions(t *testing.T) {
 		proof, txRecord, err := NewTxProof(block, 0, crypto.SHA256)
 		require.NoError(t, err)
 
-		trustBase := make(map[string]abcrypto.Verifier)
-		trustBase["test"] = verifier
+		tb := NewTrustBase(t, verifier)
 		proof.BlockHeaderHash = make([]byte, 32)
-		require.EqualError(t, VerifyTxProof(proof, txRecord, trustBase, crypto.SHA256), "proof block hash does not match to block hash in unicity certificate")
+		require.EqualError(t, VerifyTxProof(proof, txRecord, tb, crypto.SHA256), "proof block hash does not match to block hash in unicity certificate")
 	})
 }
