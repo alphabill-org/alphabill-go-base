@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/alphabill-org/alphabill-go-sdk/testutils"
+	"github.com/alphabill-org/alphabill-go-base/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

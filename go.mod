@@ -1,6 +1,6 @@
-module github.com/alphabill-org/alphabill-go-sdk
+module github.com/alphabill-org/alphabill-go-base
 
-go 1.21
+go 1.22
 
 require (
 	github.com/ethereum/go-ethereum v1.12.2

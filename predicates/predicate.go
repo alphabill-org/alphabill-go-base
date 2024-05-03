@@ -1,6 +1,6 @@
 package predicates
 
-import "github.com/alphabill-org/alphabill-go-sdk/types"
+import "github.com/alphabill-org/alphabill-go-base/types"
 
 type Predicate struct {
 	_      struct{} `cbor:",toarray"`

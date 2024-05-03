@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	abcrypto "github.com/alphabill-org/alphabill-go-sdk/crypto"
+	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 )
 
 var ErrUnicityCertificateIsNil = errors.New("unicity certificate is nil")

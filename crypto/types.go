@@ -3,7 +3,7 @@ package crypto
 import (
 	"crypto"
 
-	"github.com/alphabill-org/alphabill-go-sdk/crypto/canonicalizer"
+	"github.com/alphabill-org/alphabill-go-base/crypto/canonicalizer"
 )
 
 type (

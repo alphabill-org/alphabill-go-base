@@ -1,7 +1,7 @@
 package money
 
 import (
-	"github.com/alphabill-org/alphabill-go-sdk/types"
+	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
 const DefaultSystemID types.SystemID = 0x00000001
