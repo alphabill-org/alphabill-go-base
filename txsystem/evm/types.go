@@ -3,8 +3,8 @@ package evm
 import (
 	"math/big"
 
+	"github.com/alphabill-org/alphabill-go-base/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/alphabill-org/alphabill-go-sdk/types"
 )
 
 type (

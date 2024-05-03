@@ -1,6 +1,6 @@
 package orchestration
 
-import "github.com/alphabill-org/alphabill-go-sdk/types"
+import "github.com/alphabill-org/alphabill-go-base/types"
 
 const (
 	PayloadTypeAddVAR = "addVar" // add validator assignment record

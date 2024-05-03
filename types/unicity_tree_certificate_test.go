@@ -5,9 +5,9 @@ import (
 	"crypto/sha256"
 	"testing"
 
-	"github.com/alphabill-org/alphabill-go-sdk/crypto"
-	"github.com/alphabill-org/alphabill-go-sdk/testutils"
-	"github.com/alphabill-org/alphabill-go-sdk/tree/imt"
+	"github.com/alphabill-org/alphabill-go-base/crypto"
+	test "github.com/alphabill-org/alphabill-go-base/testutils"
+	"github.com/alphabill-org/alphabill-go-base/tree/imt"
 	"github.com/stretchr/testify/require"
 )
 

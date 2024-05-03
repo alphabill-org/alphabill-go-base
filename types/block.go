@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/alphabill-org/alphabill-go-sdk/tree/mt"
+	"github.com/alphabill-org/alphabill-go-base/tree/mt"
 )
 
 var (

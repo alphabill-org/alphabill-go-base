@@ -1,6 +1,4 @@
-## Alphabill SDK for Go
+## This project provides Alphabill base types, abstractions and utilities for Go.
 
-The Alphabill SDK for Go provides higher level abstractions that
-simplify application integration with the Alphabill blockchain. It
-provides a client to interact with the Alphabill partition node and a
-library to parse and construct transactions.
+The Alphabill Base provides higher level abstractions that
+simplify application integration with the Alphabill blockchain.
