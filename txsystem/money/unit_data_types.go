@@ -38,8 +38,6 @@ func (b *BillData) Copy() types.UnitData {
 		Locked:  b.Locked,
 	}
 }
-func (b *BillData) IncrementCounter() { b.Counter++ }
-
 func (b *BillData) IsLocked() bool {
 	return b.Locked != 0
 }

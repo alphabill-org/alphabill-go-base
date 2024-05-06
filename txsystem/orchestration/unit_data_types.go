@@ -33,6 +33,3 @@ func (b *VarData) Copy() types.UnitData {
 		EpochNumber: b.EpochNumber,
 	}
 }
-
-// IncrementCounter - does nothing for VarData as epoch number serves the same purpose
-func (b *VarData) IncrementCounter() {}

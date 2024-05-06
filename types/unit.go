@@ -10,6 +10,5 @@ type (
 		Write(hasher hash.Hash) error
 		SummaryValueInput() uint64
 		Copy() UnitData
-		IncrementCounter()
 	}
 )

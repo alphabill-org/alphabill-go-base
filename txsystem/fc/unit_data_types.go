@@ -43,8 +43,6 @@ func (b *FeeCreditRecord) Copy() types.UnitData {
 	}
 }
 
-func (b *FeeCreditRecord) IncrementCounter() {}
-
 func (b *FeeCreditRecord) GetBacklink() []byte {
 	if b == nil {
 		return nil

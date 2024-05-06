@@ -139,8 +139,6 @@ func (n *NonFungibleTokenTypeData) Copy() types.UnitData {
 	}
 }
 
-func (n *NonFungibleTokenTypeData) IncrementCounter() {}
-
 func (n *NonFungibleTokenData) Write(hasher hash.Hash) error {
 	res, err := types.Cbor.Marshal(n)
 	if err != nil {
@@ -169,8 +167,6 @@ func (n *NonFungibleTokenData) Copy() types.UnitData {
 		Locked:              n.Locked,
 	}
 }
-
-func (n *NonFungibleTokenData) IncrementCounter() { n.Counter++ }
 
 func (n *NonFungibleTokenData) GetCounter() uint64 {
 	return n.Counter
@@ -209,8 +205,6 @@ func (f *FungibleTokenTypeData) Copy() types.UnitData {
 	}
 }
 
-func (f *FungibleTokenTypeData) IncrementCounter() {}
-
 func (f *FungibleTokenData) Write(hasher hash.Hash) error {
 	res, err := types.Cbor.Marshal(f)
 	if err != nil {
@@ -237,8 +231,6 @@ func (f *FungibleTokenData) Copy() types.UnitData {
 		Locked:    f.Locked,
 	}
 }
-
-func (f *FungibleTokenData) IncrementCounter() { f.Counter++ }
 
 func (f *FungibleTokenData) GetCounter() uint64 {
 	return f.Counter
