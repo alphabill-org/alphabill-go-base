@@ -8,6 +8,8 @@ import (
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
+var _ types.UnitData = (*FeeCreditRecord)(nil)
+
 // FeeCreditRecord state tree unit data of fee credit records.
 // Holds fee credit balance for individual users,
 // not to be confused with fee credit bills which contain aggregate fees for a given partition.

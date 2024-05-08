@@ -7,6 +7,8 @@ import (
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
+var _ types.UnitData = (*VarData)(nil)
+
 // VarData Validator Assignment Record Data
 type VarData struct {
 	_           struct{} `cbor:",toarray"`
