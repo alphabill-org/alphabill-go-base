@@ -30,6 +30,12 @@ type (
 		SuccessIndicator  TxStatus
 		ProcessingDetails RawCBOR
 	}
+
+	TxRecordProof struct {
+		_        struct{} `cbor:",toarray"`
+		TxRecord *TransactionRecord
+		TxProof  *TxProof
+	}
 )
 
 func (t *TransactionRecord) Hash(algorithm crypto.Hash) []byte {
