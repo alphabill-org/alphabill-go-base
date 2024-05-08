@@ -47,15 +47,15 @@ var (
 	//      18 2a                               #     unsigned(42)
 	//      18 45                               #     unsigned(69)
 	//      44                                  #     bytes(4)
-    //         20202020                         #       "    "
-    //      43                                  #     bytes(3)
-    //         524546                           #       "REF"
+	//         20202020                         #       "    "
+	//      43                                  #     bytes(3)
+	//         524546                           #       "REF"
 	payloadInHEX = "86" +
 		"1A01000001" + // SystemID
 		"687472616E73666572" + // Type
 		"58200000000000000000000000000000000000000000000000000000000000000000" + // UnitID
 		"8344010203041864187b" + // Attributes
-        "f6" + // State lock
+		"f6" + // State lock
 		"84182a1845442020202043524546" // Client metadata
 )
 
@@ -133,6 +133,17 @@ func TestUnmarshalAttributes(t *testing.T) {
 	require.Equal(t, feeCreditRecordID, txOrder.GetClientFeeCreditRecordID())
 	require.Equal(t, maxFee, txOrder.GetClientMaxTxFee())
 	require.NotNil(t, txOrder.Hash(crypto.SHA256))
+}
+
+func TestHasStateLock(t *testing.T) {
+	var payload *Payload = nil
+	require.False(t, payload.HasStateLock())
+	payload = &Payload{}
+	require.False(t, payload.HasStateLock())
+	payload.StateLock = &StateLock{}
+	require.False(t, payload.HasStateLock())
+	payload.StateLock = &StateLock{ExecutionPredicate: []byte{1, 2, 4}}
+	require.True(t, payload.HasStateLock())
 }
 
 func Test_TransactionOrder_SetOwnerProof(t *testing.T) {

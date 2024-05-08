@@ -9,6 +9,11 @@ import (
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
+var _ types.UnitData = (*NonFungibleTokenTypeData)(nil)
+var _ types.UnitData = (*FungibleTokenTypeData)(nil)
+var _ types.UnitData = (*NonFungibleTokenData)(nil)
+var _ types.UnitData = (*FungibleTokenData)(nil)
+
 type NonFungibleTokenTypeData struct {
 	_                        struct{}     `cbor:",toarray"`
 	Symbol                   string       `json:"symbol"`
