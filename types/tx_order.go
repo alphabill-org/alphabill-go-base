@@ -153,7 +153,7 @@ func (p *Payload) UnmarshalAttributes(v any) error {
 	return Cbor.Unmarshal(p.Attributes, v)
 }
 
-func (p *Payload) IsStateLock() bool {
+func (p *Payload) HasStateLock() bool {
 	return p != nil && p.StateLock != nil && len(p.StateLock.ExecutionPredicate) != 0
 }
 
