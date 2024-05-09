@@ -52,10 +52,10 @@ type (
 )
 
 func (s StateLock) IsValid() error {
-	if s.ExecutionPredicate == nil {
+	if len(s.ExecutionPredicate) == 0 {
 		return errors.New("missing execution predicate")
 	}
-	if s.RollbackPredicate == nil {
+	if len(s.RollbackPredicate) == 0 {
 		return errors.New("missing rollback predicate")
 	}
 	return nil
