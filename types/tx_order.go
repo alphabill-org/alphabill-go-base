@@ -51,6 +51,16 @@ type (
 	}
 )
 
+func (s StateLock) IsValid() error {
+	if s.ExecutionPredicate == nil {
+		return errors.New("missing execution predicate")
+	}
+	if s.RollbackPredicate == nil {
+		return errors.New("missing rollback predicate")
+	}
+	return nil
+}
+
 func (t *TransactionOrder) PayloadBytes() ([]byte, error) {
 	return t.Payload.Bytes()
 }
@@ -154,7 +164,7 @@ func (p *Payload) UnmarshalAttributes(v any) error {
 }
 
 func (p *Payload) HasStateLock() bool {
-	return p != nil && p.StateLock != nil && len(p.StateLock.ExecutionPredicate) != 0
+	return p != nil && p.StateLock != nil
 }
 
 func (p *Payload) Bytes() ([]byte, error) {

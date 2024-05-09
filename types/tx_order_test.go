@@ -141,8 +141,6 @@ func TestHasStateLock(t *testing.T) {
 	payload = &Payload{}
 	require.False(t, payload.HasStateLock())
 	payload.StateLock = &StateLock{}
-	require.False(t, payload.HasStateLock())
-	payload.StateLock = &StateLock{ExecutionPredicate: []byte{1, 2, 4}}
 	require.True(t, payload.HasStateLock())
 }
 
@@ -200,4 +198,26 @@ func hexDecode(t *testing.T, s string) []byte {
 		require.NoError(t, err)
 	}
 	return data
+}
+
+func TestStateLock_IsValid(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		s := StateLock{
+			ExecutionPredicate: []byte{1, 2, 3},
+			RollbackPredicate:  []byte{2, 3, 5},
+		}
+		require.NoError(t, s.IsValid())
+	})
+	t.Run("err - execute is nil", func(t *testing.T) {
+		s := StateLock{
+			RollbackPredicate: []byte{2, 3, 5},
+		}
+		require.EqualError(t, s.IsValid(), "missing execution predicate")
+	})
+	t.Run("err - execute is nil", func(t *testing.T) {
+		s := StateLock{
+			ExecutionPredicate: []byte{2, 3, 5},
+		}
+		require.EqualError(t, s.IsValid(), "missing rollback predicate")
+	})
 }
