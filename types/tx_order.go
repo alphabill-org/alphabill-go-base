@@ -51,7 +51,7 @@ type (
 	}
 )
 
-func (s *StateLock) IsValid() error {
+func (s StateLock) IsValid() error {
 	if len(s.ExecutionPredicate) == 0 {
 		return errors.New("missing execution predicate")
 	}
