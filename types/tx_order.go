@@ -30,8 +30,8 @@ type (
 
 	StateLock struct {
 		_                  struct{} `cbor:",toarray"`
-		ExecutionPredicate []byte   // this predicate has to be either nil or evaluate to true in order to execute the transaction
-		RollbackPredicate  []byte   // if this predicate evaluates to true, the lock is released and the "on hold" transaction is discarded
+		ExecutionPredicate []byte   // predicate for executing state locked Tx
+		RollbackPredicate  []byte   // predicate for discarding state locked Tx
 	}
 
 	ClientMetadata struct {
@@ -51,7 +51,7 @@ type (
 	}
 )
 
-func (s StateLock) IsValid() error {
+func (s *StateLock) IsValid() error {
 	if len(s.ExecutionPredicate) == 0 {
 		return errors.New("missing execution predicate")
 	}
