@@ -30,8 +30,8 @@ type (
 
 	StateLock struct {
 		_                  struct{} `cbor:",toarray"`
-		ExecutionPredicate []byte   // this predicate has to be either nil or evaluate to true in order to execute the transaction
-		RollbackPredicate  []byte   // if this predicate evaluates to true, the lock is released and the "on hold" transaction is discarded
+		ExecutionPredicate []byte   // predicate for executing state locked Tx
+		RollbackPredicate  []byte   // predicate for discarding state locked Tx
 	}
 
 	ClientMetadata struct {
@@ -50,6 +50,16 @@ type (
 		SigBytes() ([]byte, error)
 	}
 )
+
+func (s StateLock) IsValid() error {
+	if len(s.ExecutionPredicate) == 0 {
+		return errors.New("missing execution predicate")
+	}
+	if len(s.RollbackPredicate) == 0 {
+		return errors.New("missing rollback predicate")
+	}
+	return nil
+}
 
 func (t *TransactionOrder) PayloadBytes() ([]byte, error) {
 	return t.Payload.Bytes()
@@ -154,7 +164,7 @@ func (p *Payload) UnmarshalAttributes(v any) error {
 }
 
 func (p *Payload) HasStateLock() bool {
-	return p != nil && p.StateLock != nil && len(p.StateLock.ExecutionPredicate) != 0
+	return p != nil && p.StateLock != nil
 }
 
 func (p *Payload) Bytes() ([]byte, error) {
