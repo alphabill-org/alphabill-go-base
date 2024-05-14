@@ -1,7 +1,6 @@
 package fc
 
 import (
-	"bytes"
 	"fmt"
 	"hash"
 
@@ -14,11 +13,11 @@ var _ types.UnitData = (*FeeCreditRecord)(nil)
 // Holds fee credit balance for individual users,
 // not to be confused with fee credit bills which contain aggregate fees for a given partition.
 type FeeCreditRecord struct {
-	_        struct{} `cbor:",toarray"`
-	Balance  uint64   // current balance
-	Backlink []byte   // hash of the last “addFC”, "closeFC", "lockFC" or "unlockFC" transaction
-	Timeout  uint64   // the earliest round number when this record may be “garbage collected” if the balance goes to zero
-	Locked   uint64   // locked status of the fee credit record, non-zero value means locked
+	_       struct{} `cbor:",toarray"`
+	Balance uint64   `json:"balance,string"` // current balance
+	Counter uint64   `json:"counter,string"` // transaction counter; incremented with reach “addFC”, "closeFC", "lockFC" or "unlockFC" transaction; spending fee credit does not change this value
+	Timeout uint64   `json:"timeout,string"` // the earliest round number when this record may be “garbage collected” if the balance goes to zero
+	Locked  uint64   `json:"locked,string"`  // lock status of the fee credit record, non-zero value means locked; locked free credit does not prevent spending the fee credit
 }
 
 func (b *FeeCreditRecord) Write(hasher hash.Hash) error {
@@ -36,18 +35,18 @@ func (b *FeeCreditRecord) SummaryValueInput() uint64 {
 
 func (b *FeeCreditRecord) Copy() types.UnitData {
 	return &FeeCreditRecord{
-		Balance:  b.Balance,
-		Backlink: bytes.Clone(b.Backlink),
-		Timeout:  b.Timeout,
-		Locked:   b.Locked,
+		Balance: b.Balance,
+		Counter: b.Counter,
+		Timeout: b.Timeout,
+		Locked:  b.Locked,
 	}
 }
 
-func (b *FeeCreditRecord) GetBacklink() []byte {
+func (b *FeeCreditRecord) GetCounter() uint64 {
 	if b == nil {
-		return nil
+		return 0
 	}
-	return b.Backlink
+	return b.Counter
 }
 
 func (b *FeeCreditRecord) IsLocked() bool {

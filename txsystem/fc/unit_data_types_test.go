@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"testing"
 
-	"github.com/alphabill-org/alphabill-go-base/testutils"
 	"github.com/alphabill-org/alphabill-go-base/types"
 
 	"github.com/stretchr/testify/require"
@@ -12,10 +11,10 @@ import (
 
 func TestFCR_HashIsCalculatedCorrectly(t *testing.T) {
 	fcr := &FeeCreditRecord{
-		Balance:  1,
-		Backlink: test.RandomBytes(32),
-		Timeout:  2,
-		Locked:   3,
+		Balance: 1,
+		Counter: 10,
+		Timeout: 2,
+		Locked:  3,
 	}
 	// calculate actual hash
 	hasher := crypto.SHA256.New()
@@ -37,9 +36,9 @@ func TestFCR_HashIsCalculatedCorrectly(t *testing.T) {
 
 func TestFCR_SummaryValueIsZero(t *testing.T) {
 	fcr := &FeeCreditRecord{
-		Balance:  1,
-		Backlink: test.RandomBytes(32),
-		Timeout:  2,
+		Balance: 1,
+		Counter: 10,
+		Timeout: 2,
 	}
 	require.Equal(t, uint64(0), fcr.SummaryValueInput())
 }
