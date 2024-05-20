@@ -19,7 +19,7 @@ type NonFungibleTokenTypeData struct {
 	Symbol                   string       `json:"symbol"`
 	Name                     string       `json:"name"`
 	Icon                     *Icon        `json:"icon"`
-	ParentTypeId             types.UnitID `json:"parentTypeId"`             // identifies the parent type that this type derives from; 0 indicates there is no parent type;
+	ParentTypeID             types.UnitID `json:"parentTypeId"`             // identifies the parent type that this type derives from; 0 indicates there is no parent type;
 	SubTypeCreationPredicate []byte       `json:"subTypeCreationPredicate"` // the predicate clause that controls defining new subtypes of this type;
 	TokenCreationPredicate   []byte       `json:"tokenCreationPredicate"`   // the predicate clause that controls creating new tokens of this type
 	InvariantPredicate       []byte       `json:"invariantPredicate"`       // the invariant predicate clause that all tokens of this type (and of subtypes of this type) inherit into their bearer predicates;
@@ -31,7 +31,7 @@ type FungibleTokenTypeData struct {
 	Symbol                   string       `json:"symbol"`
 	Name                     string       `json:"name"`
 	Icon                     *Icon        `json:"icon"`
-	ParentTypeId             types.UnitID `json:"parentTypeId"`             // identifies the parent type that this type derives from; 0 indicates there is no parent type;
+	ParentTypeID             types.UnitID `json:"parentTypeId"`             // identifies the parent type that this type derives from; 0 indicates there is no parent type;
 	DecimalPlaces            uint32       `json:"decimalPlaces"`            // is the number of decimal places to display for values of tokens of this type;
 	SubTypeCreationPredicate []byte       `json:"subTypeCreationPredicate"` // the predicate clause that controls defining new subtypes of this type;
 	TokenCreationPredicate   []byte       `json:"tokenCreationPredicate"`   // the predicate clause that controls creating new tokens of this type
@@ -40,7 +40,7 @@ type FungibleTokenTypeData struct {
 
 type NonFungibleTokenData struct {
 	_                   struct{}     `cbor:",toarray"`
-	NftType             types.UnitID `json:"nftType"`
+	TypeID              types.UnitID `json:"typeID"`              // the type of the token
 	Name                string       `json:"name"`                // the optional long name of the token
 	URI                 string       `json:"uri"`                 // uri is the optional URI of an external resource associated with the token
 	Data                []byte       `json:"data"`                // data is the optional data associated with the token.
@@ -65,7 +65,7 @@ func NewFungibleTokenTypeData(attr *CreateFungibleTokenTypeAttributes) types.Uni
 		Symbol:                   attr.Symbol,
 		Name:                     attr.Name,
 		Icon:                     attr.Icon,
-		ParentTypeId:             attr.ParentTypeID,
+		ParentTypeID:             attr.ParentTypeID,
 		DecimalPlaces:            attr.DecimalPlaces,
 		SubTypeCreationPredicate: attr.SubTypeCreationPredicate,
 		TokenCreationPredicate:   attr.TokenCreationPredicate,
@@ -78,7 +78,7 @@ func NewNonFungibleTokenTypeData(attr *CreateNonFungibleTokenTypeAttributes) typ
 		Symbol:                   attr.Symbol,
 		Name:                     attr.Name,
 		Icon:                     attr.Icon,
-		ParentTypeId:             attr.ParentTypeID,
+		ParentTypeID:             attr.ParentTypeID,
 		SubTypeCreationPredicate: attr.SubTypeCreationPredicate,
 		TokenCreationPredicate:   attr.TokenCreationPredicate,
 		InvariantPredicate:       attr.InvariantPredicate,
@@ -88,7 +88,7 @@ func NewNonFungibleTokenTypeData(attr *CreateNonFungibleTokenTypeAttributes) typ
 
 func NewNonFungibleTokenData(typeID types.UnitID, attr *MintNonFungibleTokenAttributes, blockNumber, counter uint64) types.UnitData {
 	return &NonFungibleTokenData{
-		NftType:             typeID,
+		TypeID:              typeID,
 		Name:                attr.Name,
 		URI:                 attr.URI,
 		Data:                attr.Data,
@@ -131,7 +131,7 @@ func (n *NonFungibleTokenTypeData) Copy() types.UnitData {
 		Symbol:                   strings.Clone(n.Symbol),
 		Name:                     strings.Clone(n.Name),
 		Icon:                     n.Icon.Copy(),
-		ParentTypeId:             bytes.Clone(n.ParentTypeId),
+		ParentTypeID:             bytes.Clone(n.ParentTypeID),
 		SubTypeCreationPredicate: bytes.Clone(n.SubTypeCreationPredicate),
 		TokenCreationPredicate:   bytes.Clone(n.TokenCreationPredicate),
 		InvariantPredicate:       bytes.Clone(n.InvariantPredicate),
@@ -157,7 +157,7 @@ func (n *NonFungibleTokenData) Copy() types.UnitData {
 		return nil
 	}
 	return &NonFungibleTokenData{
-		NftType:             bytes.Clone(n.NftType),
+		TypeID:              bytes.Clone(n.TypeID),
 		Name:                strings.Clone(n.Name),
 		URI:                 strings.Clone(n.URI),
 		Data:                bytes.Clone(n.Data),
@@ -197,7 +197,7 @@ func (f *FungibleTokenTypeData) Copy() types.UnitData {
 		Symbol:                   strings.Clone(f.Symbol),
 		Name:                     strings.Clone(f.Name),
 		Icon:                     f.Icon.Copy(),
-		ParentTypeId:             bytes.Clone(f.ParentTypeId),
+		ParentTypeID:             bytes.Clone(f.ParentTypeID),
 		DecimalPlaces:            f.DecimalPlaces,
 		SubTypeCreationPredicate: bytes.Clone(f.SubTypeCreationPredicate),
 		TokenCreationPredicate:   bytes.Clone(f.TokenCreationPredicate),

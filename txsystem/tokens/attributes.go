@@ -39,14 +39,15 @@ type (
 	}
 
 	MintNonFungibleTokenAttributes struct {
-		_                                struct{} `cbor:",toarray"`
-		Bearer                           []byte   // the initial bearer predicate of the new token
-		Name                             string   // the name of the new token
-		URI                              string   // the optional URI of an external resource associated with the new token
-		Data                             []byte   // the optional data associated with the new token
-		DataUpdatePredicate              []byte   // the data update predicate of the new token;
-		Nonce                            uint64   // optional nonce
-		TokenCreationPredicateSignatures [][]byte // inputs to satisfy the token creation predicates of all parent types.
+		_                                struct{}     `cbor:",toarray"`
+		Bearer                           []byte       // the initial bearer predicate of the new token
+		TypeID                           types.UnitID // the type of the new token
+		Name                             string       // the name of the new token
+		URI                              string       // the optional URI of an external resource associated with the new token
+		Data                             []byte       // the optional data associated with the new token
+		DataUpdatePredicate              []byte       // the data update predicate of the new token;
+		Nonce                            uint64       // optional nonce
+		TokenCreationPredicateSignatures [][]byte     // inputs to satisfy the token creation predicates of all parent types.
 	}
 
 	TransferNonFungibleTokenAttributes struct {
@@ -54,7 +55,7 @@ type (
 		NewBearer                    []byte       // the new bearer predicate of the token
 		Nonce                        []byte       // optional nonce
 		Counter                      uint64       // the transaction counter of this token
-		NFTTypeID                    types.UnitID // identifies the type of the token;
+		TypeID                       types.UnitID // identifies the type of the token;
 		InvariantPredicateSignatures [][]byte     // inputs to satisfy the token type invariant predicates down the inheritance chain
 	}
 
@@ -85,11 +86,12 @@ type (
 	}
 
 	MintFungibleTokenAttributes struct {
-		_                                struct{} `cbor:",toarray"`
-		Bearer                           []byte   // the initial bearer predicate of the new token
-		Value                            uint64   // the value of the new token;
-		Nonce                            uint64   // optional nonce
-		TokenCreationPredicateSignatures [][]byte // inputs to satisfy the token creation predicates of all parent types.
+		_                                struct{}     `cbor:",toarray"`
+		Bearer                           []byte       // the initial bearer predicate of the new token
+		TypeID                           types.UnitID // the type of the new token
+		Value                            uint64       // the value of the new token
+		Nonce                            uint64       // optional nonce
+		TokenCreationPredicateSignatures [][]byte     // inputs to satisfy the token creation predicates of all parent types.
 	}
 
 	TransferFungibleTokenAttributes struct {
@@ -211,6 +213,7 @@ func (m *MintFungibleTokenAttributes) SigBytes() ([]byte, error) {
 	// TODO: AB-1016
 	signatureAttr := &MintFungibleTokenAttributes{
 		Bearer:                           m.Bearer,
+		TypeID:                           m.TypeID,
 		Value:                            m.Value,
 		Nonce:                            m.Nonce,
 		TokenCreationPredicateSignatures: nil,
@@ -224,6 +227,14 @@ func (m *MintFungibleTokenAttributes) SetBearer(bearer []byte) {
 
 func (m *MintFungibleTokenAttributes) SetTokenCreationPredicateSignatures(signatures [][]byte) {
 	m.TokenCreationPredicateSignatures = signatures
+}
+
+func (m *MintFungibleTokenAttributes) GetTypeID() types.UnitID {
+	return m.TypeID
+}
+
+func (m *MintFungibleTokenAttributes) SetTypeID(typeID types.UnitID) {
+	m.TypeID = typeID
 }
 
 func (s *SplitFungibleTokenAttributes) SigBytes() ([]byte, error) {
@@ -295,6 +306,7 @@ func (m *MintNonFungibleTokenAttributes) SigBytes() ([]byte, error) {
 	// TODO: AB-1016 exclude TokenCreationPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
 	signatureAttr := &MintNonFungibleTokenAttributes{
 		Bearer:                           m.Bearer,
+		TypeID:                           m.TypeID,
 		Name:                             m.Name,
 		URI:                              m.URI,
 		Data:                             m.Data,
@@ -313,13 +325,21 @@ func (m *MintNonFungibleTokenAttributes) SetTokenCreationPredicateSignatures(sig
 	m.TokenCreationPredicateSignatures = signatures
 }
 
+func (m *MintNonFungibleTokenAttributes) GetTypeID() types.UnitID {
+	return m.TypeID
+}
+
+func (m *MintNonFungibleTokenAttributes) SetTypeID(typeID types.UnitID) {
+	m.TypeID = typeID
+}
+
 func (t *TransferNonFungibleTokenAttributes) SigBytes() ([]byte, error) {
 	// TODO: AB-1016 exclude SubTypeCreationPredicateSignatures from the payload hash because otherwise we have "chicken and egg" problem.
 	signatureAttr := &TransferNonFungibleTokenAttributes{
 		NewBearer:                    t.NewBearer,
 		Nonce:                        t.Nonce,
 		Counter:                      t.Counter,
-		NFTTypeID:                    t.NFTTypeID,
+		TypeID:                       t.TypeID,
 		InvariantPredicateSignatures: nil,
 	}
 	return types.Cbor.Marshal(signatureAttr)
