@@ -26,7 +26,6 @@ type (
 		Amount                 uint64         // amount to transfer
 		TargetSystemIdentifier types.SystemID // system_identifier of the target partition
 		TargetRecordID         []byte         // unit id of the corresponding “add fee credit” transaction
-		EarliestAdditionTime   uint64         // earliest round when the corresponding “add fee credit” transaction can be executed in the target system
 		LatestAdditionTime     uint64         // latest round when the corresponding “add fee credit” transaction can be executed in the target system
 		TargetUnitCounter      *uint64        // the transaction counter of the target unit, or nil if the record does not exist yet
 		Counter                uint64         // the transaction counter of this unit
