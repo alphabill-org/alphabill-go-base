@@ -141,6 +141,18 @@ func (t *TransactionOrder) SetOwnerProof(proofer ProofGenerator) error {
 	return nil
 }
 
+// HashForNewUnitID generates hash for new unit identifier calculation.
+func (t *TransactionOrder) HashForNewUnitID(hashFunc crypto.Hash, extra ...[]byte) []byte {
+	hasher := hashFunc.New()
+	hasher.Write(t.UnitID())
+	hasher.Write(t.Payload.Attributes)
+	t.Payload.ClientMetadata.AddToHasher(hasher)
+	for _, e := range extra {
+		hasher.Write(e)
+	}
+	return hasher.Sum(nil)
+}
+
 /*
 SetAttributes serializes "attr" and assigns the result to payload's Attributes field.
 The "attr" is expected to be one of the transaction attribute structs but there is
