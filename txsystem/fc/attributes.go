@@ -37,6 +37,7 @@ type (
 		Amount            uint64 // current balance of the fee credit record
 		TargetUnitID      []byte // target unit id in money partition
 		TargetUnitCounter uint64 // the current transaction counter of the target unit in money partition
+		Counter           uint64 // the transaction counter of this fee credit record
 	}
 
 	ReclaimFeeCreditAttributes struct {
