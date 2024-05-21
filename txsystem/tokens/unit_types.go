@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/predicates/templates"
 	"github.com/alphabill-org/alphabill-go-base/txsystem/fc"
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
@@ -83,6 +84,20 @@ func NewUnitData(unitID types.UnitID) (types.UnitData, error) {
 	if unitID.HasType(FeeCreditRecordUnitType) {
 		return &fc.FeeCreditRecord{}, nil
 	}
-
 	return nil, fmt.Errorf("unknown unit type in UnitID %s", unitID)
+}
+
+func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, timeout uint64) types.UnitID {
+	ownerPredicate := templates.NewP2pkh256BytesFromKey(pubKey)
+	return NewFeeCreditRecordIDFormOwnerPredicate(shardPart, ownerPredicate, timeout)
+}
+
+func NewFeeCreditRecordIDFormPublicKeyHash(shardPart, pubKeyHash []byte, timeout uint64) types.UnitID {
+	ownerPredicate := templates.NewP2pkh256BytesFromKeyHash(pubKeyHash)
+	return NewFeeCreditRecordIDFormOwnerPredicate(shardPart, ownerPredicate, timeout)
+}
+
+func NewFeeCreditRecordIDFormOwnerPredicate(shardPart []byte, ownerPredicate []byte, timeout uint64) types.UnitID {
+	unitPart := fc.NewFeeCreditRecordUnitPart(ownerPredicate, timeout)
+	return NewFeeCreditRecordID(shardPart, unitPart)
 }
