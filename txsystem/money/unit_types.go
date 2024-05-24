@@ -25,17 +25,17 @@ func NewFeeCreditRecordID(shardPart []byte, unitPart []byte) types.UnitID {
 	return types.NewUnitID(UnitIDLength, shardPart, unitPart, FeeCreditRecordUnitType)
 }
 
-func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, timeout uint64) types.UnitID {
+func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, latestAdditionTime uint64) types.UnitID {
 	ownerPredicate := templates.NewP2pkh256BytesFromKey(pubKey)
-	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, timeout)
+	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 
-func NewFeeCreditRecordIDFromPublicKeyHash(shardPart, pubKeyHash []byte, timeout uint64) types.UnitID {
+func NewFeeCreditRecordIDFromPublicKeyHash(shardPart, pubKeyHash []byte, latestAdditionTime uint64) types.UnitID {
 	ownerPredicate := templates.NewP2pkh256BytesFromKeyHash(pubKeyHash)
-	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, timeout)
+	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 
-func NewFeeCreditRecordIDFromOwnerPredicate(shardPart []byte, ownerPredicate []byte, timeout uint64) types.UnitID {
-	unitPart := fc.NewFeeCreditRecordUnitPart(ownerPredicate, timeout)
+func NewFeeCreditRecordIDFromOwnerPredicate(shardPart []byte, ownerPredicate []byte, latestAdditionTime uint64) types.UnitID {
+	unitPart := fc.NewFeeCreditRecordUnitPart(ownerPredicate, latestAdditionTime)
 	return NewFeeCreditRecordID(shardPart, unitPart)
 }

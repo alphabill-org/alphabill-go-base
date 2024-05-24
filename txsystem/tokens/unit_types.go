@@ -87,17 +87,17 @@ func NewUnitData(unitID types.UnitID) (types.UnitData, error) {
 	return nil, fmt.Errorf("unknown unit type in UnitID %s", unitID)
 }
 
-func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, timeout uint64) types.UnitID {
+func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, latestAdditionTime uint64) types.UnitID {
 	ownerPredicate := templates.NewP2pkh256BytesFromKey(pubKey)
-	return NewFeeCreditRecordIDFormOwnerPredicate(shardPart, ownerPredicate, timeout)
+	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 
-func NewFeeCreditRecordIDFormPublicKeyHash(shardPart, pubKeyHash []byte, timeout uint64) types.UnitID {
+func NewFeeCreditRecordIDFromPublicKeyHash(shardPart, pubKeyHash []byte, latestAdditionTime uint64) types.UnitID {
 	ownerPredicate := templates.NewP2pkh256BytesFromKeyHash(pubKeyHash)
-	return NewFeeCreditRecordIDFormOwnerPredicate(shardPart, ownerPredicate, timeout)
+	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 
-func NewFeeCreditRecordIDFormOwnerPredicate(shardPart []byte, ownerPredicate []byte, timeout uint64) types.UnitID {
-	unitPart := fc.NewFeeCreditRecordUnitPart(ownerPredicate, timeout)
+func NewFeeCreditRecordIDFromOwnerPredicate(shardPart []byte, ownerPredicate []byte, latestAdditionTime uint64) types.UnitID {
+	unitPart := fc.NewFeeCreditRecordUnitPart(ownerPredicate, latestAdditionTime)
 	return NewFeeCreditRecordID(shardPart, unitPart)
 }
