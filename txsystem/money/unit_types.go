@@ -1,8 +1,7 @@
 package money
 
 import (
-	"fmt"
-
+	"github.com/alphabill-org/alphabill-go-base/predicates/templates"
 	"github.com/alphabill-org/alphabill-go-base/txsystem/fc"
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
@@ -26,13 +25,17 @@ func NewFeeCreditRecordID(shardPart []byte, unitPart []byte) types.UnitID {
 	return types.NewUnitID(UnitIDLength, shardPart, unitPart, FeeCreditRecordUnitType)
 }
 
-func NewUnitData(unitID types.UnitID) (types.UnitData, error) {
-	if unitID.HasType(BillUnitType) {
-		return &BillData{}, nil
-	}
-	if unitID.HasType(FeeCreditRecordUnitType) {
-		return &fc.FeeCreditRecord{}, nil
-	}
+func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, latestAdditionTime uint64) types.UnitID {
+	ownerPredicate := templates.NewP2pkh256BytesFromKey(pubKey)
+	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
+}
 
-	return nil, fmt.Errorf("unknown unit type in UnitID %s", unitID)
+func NewFeeCreditRecordIDFromPublicKeyHash(shardPart, pubKeyHash []byte, latestAdditionTime uint64) types.UnitID {
+	ownerPredicate := templates.NewP2pkh256BytesFromKeyHash(pubKeyHash)
+	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
+}
+
+func NewFeeCreditRecordIDFromOwnerPredicate(shardPart []byte, ownerPredicate []byte, latestAdditionTime uint64) types.UnitID {
+	unitPart := fc.NewFeeCreditRecordUnitPart(ownerPredicate, latestAdditionTime)
+	return NewFeeCreditRecordID(shardPart, unitPart)
 }
