@@ -10,6 +10,8 @@ const (
 	TxStatusFailed TxStatus = 0
 	// TxStatusSuccessful is the status code of a transaction if execution succeeded.
 	TxStatusSuccessful TxStatus = 1
+	// TxErrOutOfGas tx execution run out of gas, try with bigger 'MaxTransactionFee'
+	TxErrOutOfGas TxStatus = 2
 )
 
 type (
@@ -29,6 +31,7 @@ type (
 		TargetUnits       []UnitID
 		SuccessIndicator  TxStatus
 		ProcessingDetails RawCBOR
+		errDetail         error
 	}
 
 	TxRecordProof struct {
@@ -79,4 +82,12 @@ func (sm *ServerMetadata) UnmarshalDetails(v any) error {
 		return errors.New("server metadata is nil")
 	}
 	return Cbor.Unmarshal(sm.ProcessingDetails, v)
+}
+
+func (sm *ServerMetadata) SetErrorDetail(e error) {
+	sm.errDetail = e
+}
+
+func (sm *ServerMetadata) ErrDetail() error {
+	return sm.errDetail
 }
