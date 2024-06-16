@@ -5,6 +5,8 @@ import (
 	"errors"
 )
 
+var ErrOutOfGas = errors.New("out of gas")
+
 const (
 	// TxStatusFailed is the status code of a transaction if execution failed.
 	TxStatusFailed TxStatus = 0
@@ -84,7 +86,14 @@ func (sm *ServerMetadata) UnmarshalDetails(v any) error {
 	return Cbor.Unmarshal(sm.ProcessingDetails, v)
 }
 
-func (sm *ServerMetadata) SetErrorDetail(e error) {
+func (sm *ServerMetadata) SetError(e error) {
+	// on error clear changed units
+	if errors.Is(e, ErrOutOfGas) {
+		sm.SuccessIndicator = TxErrOutOfGas
+	} else {
+		sm.SuccessIndicator = TxStatusFailed
+	}
+	sm.TargetUnits = []UnitID{}
 	sm.errDetail = e
 }
 
