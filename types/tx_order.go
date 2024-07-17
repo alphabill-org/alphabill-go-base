@@ -141,6 +141,22 @@ func (t *TransactionOrder) SetOwnerProof(proofer ProofGenerator) error {
 	return nil
 }
 
+/*
+SetFeeProof assigns the bytes returned by the function provided as argument to
+the FeeProof field unless the function (or reading data to be signed by that
+function) returned error.
+*/
+func (t *TransactionOrder) SetFeeProof(proofer ProofGenerator) error {
+	data, err := t.PayloadBytes()
+	if err != nil {
+		return fmt.Errorf("reading payload bytes to sign: %w", err)
+	}
+	if t.FeeProof, err = proofer(data); err != nil {
+		return fmt.Errorf("generating fee proof: %w", err)
+	}
+	return nil
+}
+
 // HashForNewUnitID generates hash for new unit identifier calculation.
 func (t *TransactionOrder) HashForNewUnitID(hashFunc crypto.Hash, extra ...[]byte) []byte {
 	hasher := hashFunc.New()
