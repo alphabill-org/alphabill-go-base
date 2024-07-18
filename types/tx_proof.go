@@ -70,6 +70,9 @@ func VerifyTxProof(proof *TxProof, txRecord *TransactionRecord, tb RootTrustBase
 	if txRecord == nil {
 		return errors.New("tx record is nil")
 	}
+	if !txRecord.IsSuccessful() {
+		return errors.New("transaction failed")
+	}
 	if txRecord.TransactionOrder == nil {
 		return errors.New("tx order is nil")
 	}

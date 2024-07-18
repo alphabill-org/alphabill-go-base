@@ -93,11 +93,27 @@ func TestTxProofFunctions(t *testing.T) {
 		require.EqualError(t, VerifyTxProof(proof, nil, tb, crypto.SHA256), "tx record is nil")
 	})
 
-	t.Run("Test tx record is nil", func(t *testing.T) {
+	t.Run("Test tx has failed", func(t *testing.T) {
 		_, verifier := testsig.CreateSignerAndVerifier(t)
 		tb := NewTrustBase(t, verifier)
 		proof := &TxProof{}
-		txr := &TransactionRecord{}
+		txr := &TransactionRecord{ServerMetadata: &ServerMetadata{SuccessIndicator: TxStatusFailed}}
+		require.EqualError(t, VerifyTxProof(proof, txr, tb, crypto.SHA256), "transaction failed")
+	})
+
+	t.Run("Test tx out of gas", func(t *testing.T) {
+		_, verifier := testsig.CreateSignerAndVerifier(t)
+		tb := NewTrustBase(t, verifier)
+		proof := &TxProof{}
+		txr := &TransactionRecord{ServerMetadata: &ServerMetadata{SuccessIndicator: TxErrOutOfGas}}
+		require.EqualError(t, VerifyTxProof(proof, txr, tb, crypto.SHA256), "transaction failed")
+	})
+
+	t.Run("Test tx order is nil", func(t *testing.T) {
+		_, verifier := testsig.CreateSignerAndVerifier(t)
+		tb := NewTrustBase(t, verifier)
+		proof := &TxProof{}
+		txr := &TransactionRecord{ServerMetadata: &ServerMetadata{SuccessIndicator: TxStatusSuccessful}}
 		require.EqualError(t, VerifyTxProof(proof, txr, tb, crypto.SHA256), "tx order is nil")
 	})
 
