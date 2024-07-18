@@ -72,6 +72,13 @@ func (t *TransactionRecord) GetActualFee() uint64 {
 	return t.ServerMetadata.GetActualFee()
 }
 
+func (t *TransactionRecord) IsSuccessful() bool {
+	if t == nil || t.ServerMetadata == nil {
+		return false
+	}
+	return t.ServerMetadata.SuccessIndicator == TxStatusSuccessful
+}
+
 func (sm *ServerMetadata) GetActualFee() uint64 {
 	if sm == nil {
 		return 0
