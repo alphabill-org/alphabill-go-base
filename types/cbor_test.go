@@ -289,6 +289,7 @@ func Test_RawCBOR(t *testing.T) {
 
 func TestCborSequence(t *testing.T) {
 	type MyStruct struct {
+		_    struct{} `cbor:",toarray"`
 		Name string
 		Data []byte
 	}
@@ -296,6 +297,7 @@ func TestCborSequence(t *testing.T) {
 
 	t.Run("VersionWithStringTag", func(t *testing.T) {
 		type TaggedVersion struct {
+			_       struct{} `cbor:",toarray"`
 			Version uint
 			Tag     string
 		}
@@ -320,12 +322,12 @@ func TestCborSequence(t *testing.T) {
 
 	t.Run("VersionWithIntTag", func(t *testing.T) {
 		type TaggedVersion struct {
+			_       struct{} `cbor:",toarray"`
 			Version uint
 			Tag     uint
 		}
 
 		ver := &TaggedVersion{Version: 1, Tag: 0xFF}
-		data := &MyStruct{Name: "Neo", Data: []byte{1, 2, 3}}
 		buf := &bytes.Buffer{}
 		enc := cbor.NewEncoder(buf)
 		require.NoError(t, enc.Encode(ver))
@@ -345,7 +347,6 @@ func TestCborSequence(t *testing.T) {
 
 	t.Run("SimpleVersion", func(t *testing.T) {
 		var ver uint = 1
-		data := &MyStruct{Name: "Neo", Data: []byte{1, 2, 3}}
 		buf := &bytes.Buffer{}
 		enc := cbor.NewEncoder(buf)
 		require.NoError(t, enc.Encode(ver))
