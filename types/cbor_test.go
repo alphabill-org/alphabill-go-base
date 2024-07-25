@@ -288,6 +288,8 @@ func Test_RawCBOR(t *testing.T) {
 }
 
 func TestCborSequence(t *testing.T) {
+	t.Parallel()
+
 	type MyStruct struct {
 		_    struct{} `cbor:",toarray"`
 		Name string
@@ -362,5 +364,54 @@ func TestCborSequence(t *testing.T) {
 		err = cbor.Unmarshal(rest, &data2)
 		require.NoError(t, err)
 		require.Equal(t, data, data2)
+	})
+}
+
+func TestVersionedCbor(t *testing.T) {
+	t.Parallel()
+
+	type MyStruct struct {
+		_    struct{} `cbor:",toarray"`
+		Name string
+		Data []byte
+	}
+
+	type MyStructV2 struct {
+		_    struct{} `cbor:",toarray"`
+		Name string
+		Data []byte
+		Tag  string
+	}
+
+	data := &MyStruct{Name: "Neo", Data: []byte{1, 2, 3}}
+	dataV2 := &MyStructV2{Name: "Neo2", Data: []byte{1, 2, 3}, Tag: "Hello"}
+
+	t.Run("Nil version", func(t *testing.T) {
+		_, err := Cbor.MarshalVersioned(0, data)
+		require.Error(t, err)
+	})
+
+	t.Run("VersionedCbor V1", func(t *testing.T) {
+		buf, err := Cbor.MarshalVersioned(1, data)
+		require.NoError(t, err)
+		fmt.Printf("CBOR: %X\n", buf)
+
+		var data2 MyStruct
+		ver, err := Cbor.UnmarshalVersioned(buf, &data2)
+		require.NoError(t, err)
+		require.EqualValues(t, uint(1), ver)
+		require.Equal(t, data, &data2)
+	})
+
+	t.Run("VersionedCbor V2", func(t *testing.T) {
+		buf, err := Cbor.MarshalVersioned(2, dataV2)
+		require.NoError(t, err)
+		fmt.Printf("CBOR: %X\n", buf)
+
+		var data2 MyStructV2
+		ver, err := Cbor.UnmarshalVersioned(buf, &data2)
+		require.NoError(t, err)
+		require.EqualValues(t, uint(2), ver)
+		require.Equal(t, dataV2, &data2)
 	})
 }
