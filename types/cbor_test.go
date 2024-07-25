@@ -2,8 +2,10 @@ package types
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -282,5 +284,82 @@ func Test_RawCBOR(t *testing.T) {
 		var d RawCBOR
 		require.NoError(t, d.UnmarshalCBOR(buf))
 		require.Equal(t, data, d)
+	})
+}
+
+func TestCborSequence(t *testing.T) {
+	type MyStruct struct {
+		Name string
+		Data []byte
+	}
+	data := &MyStruct{Name: "Neo", Data: []byte{1, 2, 3}}
+
+	t.Run("VersionWithStringTag", func(t *testing.T) {
+		type TaggedVersion struct {
+			Version uint
+			Tag     string
+		}
+
+		ver := &TaggedVersion{Version: 1, Tag: "MyStruct"}
+		buf := &bytes.Buffer{}
+		enc := cbor.NewEncoder(buf)
+		require.NoError(t, enc.Encode(ver))
+		require.NoError(t, enc.Encode(data))
+		b := buf.Bytes()
+		fmt.Printf("CBOR: %X\n", b)
+
+		var ver2 TaggedVersion
+		rest, err := cbor.UnmarshalFirst(b, &ver2)
+		require.NoError(t, err)
+		require.Equal(t, ver, &ver2)
+		data2 := &MyStruct{}
+		err = cbor.Unmarshal(rest, &data2)
+		require.NoError(t, err)
+		require.Equal(t, data, data2)
+	})
+
+	t.Run("VersionWithIntTag", func(t *testing.T) {
+		type TaggedVersion struct {
+			Version uint
+			Tag     uint
+		}
+
+		ver := &TaggedVersion{Version: 1, Tag: 0xFF}
+		data := &MyStruct{Name: "Neo", Data: []byte{1, 2, 3}}
+		buf := &bytes.Buffer{}
+		enc := cbor.NewEncoder(buf)
+		require.NoError(t, enc.Encode(ver))
+		require.NoError(t, enc.Encode(data))
+		b := buf.Bytes()
+		fmt.Printf("CBOR: %X\n", b)
+
+		var ver2 TaggedVersion
+		rest, err := cbor.UnmarshalFirst(b, &ver2)
+		require.NoError(t, err)
+		require.Equal(t, ver, &ver2)
+		data2 := &MyStruct{}
+		err = cbor.Unmarshal(rest, &data2)
+		require.NoError(t, err)
+		require.Equal(t, data, data2)
+	})
+
+	t.Run("SimpleVersion", func(t *testing.T) {
+		var ver uint = 1
+		data := &MyStruct{Name: "Neo", Data: []byte{1, 2, 3}}
+		buf := &bytes.Buffer{}
+		enc := cbor.NewEncoder(buf)
+		require.NoError(t, enc.Encode(ver))
+		require.NoError(t, enc.Encode(data))
+		b := buf.Bytes()
+		fmt.Printf("CBOR: %X\n", b)
+
+		var ver2 uint
+		rest, err := cbor.UnmarshalFirst(b, &ver2)
+		require.NoError(t, err)
+		require.Equal(t, ver, ver2)
+		data2 := &MyStruct{}
+		err = cbor.Unmarshal(rest, &data2)
+		require.NoError(t, err)
+		require.Equal(t, data, data2)
 	})
 }
