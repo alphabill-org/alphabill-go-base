@@ -397,9 +397,10 @@ func TestVersionedCbor(t *testing.T) {
 		fmt.Printf("CBOR: %X\n", buf)
 
 		var data2 MyStruct
-		ver, err := Cbor.UnmarshalVersioned(buf, &data2)
+		ver, rest, err := Cbor.UnmarshalVersion(buf)
 		require.NoError(t, err)
 		require.EqualValues(t, uint(1), ver)
+		require.NoError(t, Cbor.Unmarshal(rest, &data2))
 		require.Equal(t, data, &data2)
 	})
 
@@ -409,9 +410,10 @@ func TestVersionedCbor(t *testing.T) {
 		fmt.Printf("CBOR: %X\n", buf)
 
 		var data2 MyStructV2
-		ver, err := Cbor.UnmarshalVersioned(buf, &data2)
+		ver, rest, err := Cbor.UnmarshalVersion(buf)
 		require.NoError(t, err)
 		require.EqualValues(t, uint(2), ver)
+		require.NoError(t, Cbor.Unmarshal(rest, &data2))
 		require.Equal(t, dataV2, &data2)
 	})
 }

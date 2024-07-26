@@ -79,13 +79,13 @@ func (c cborHandler) Unmarshal(data []byte, v any) error {
 	return cbor.Unmarshal(data, v)
 }
 
-func (c cborHandler) UnmarshalVersioned(data []byte, v any) (Version, error) {
-	dec := c.GetDecoder(bytes.NewReader(data))
+func (c cborHandler) UnmarshalVersion(data []byte) (Version, []byte, error) {
 	var ver Version
-	if err := dec.Decode(&ver); err != nil {
-		return NilVersion, fmt.Errorf("failed to decode version: %w", err)
+	rest, err := cbor.UnmarshalFirst(data, &ver)
+	if err != nil {
+		return NilVersion, nil, fmt.Errorf("failed to decode version: %w", err)
 	}
-	return ver, dec.Decode(v)
+	return ver, rest, nil
 }
 
 func (c cborHandler) GetEncoder(w io.Writer) (*cbor.Encoder, error) {
