@@ -14,15 +14,22 @@ const DefaultSystemID types.SystemID = 0x00000003
 
 const PayloadTypeEVMCall = "evm"
 
-type TxAttributes struct {
-	_     struct{} `cbor:",toarray"`
-	From  []byte
-	To    []byte
-	Data  []byte
-	Value *big.Int
-	Gas   uint64
-	Nonce uint64
-}
+type (
+	TxAttributes struct {
+		_     struct{} `cbor:",toarray"`
+		From  []byte
+		To    []byte
+		Data  []byte
+		Value *big.Int
+		Gas   uint64
+		Nonce uint64
+	}
+
+	// TxAuthProof is not used in EVM partition, however, is required by framework level
+	TxAuthProof struct {
+		_ struct{} `cbor:",toarray"`
+	}
+)
 
 // FromAddr - returns From as Address, if nil empty address is returned
 // From is mandatory field and must not be nil in a valid TxAttributes
