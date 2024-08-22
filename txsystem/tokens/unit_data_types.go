@@ -21,7 +21,7 @@ type NonFungibleTokenTypeData struct {
 	Icon                     *Icon        `json:"icon"`
 	ParentTypeID             types.UnitID `json:"parentTypeId"`             // identifies the parent type that this type derives from; nil indicates there is no parent type
 	SubTypeCreationPredicate []byte       `json:"subTypeCreationPredicate"` // the predicate clause that controls defining new subtypes of this type
-	TokenCreationPredicate   []byte       `json:"tokenCreationPredicate"`   // the predicate clause that controls minting new tokens of this type
+	TokenMintingPredicate    []byte       `json:"tokenMintingPredicate"`    // the predicate clause that controls minting new tokens of this type
 	TokenTypeOwnerPredicate  []byte       `json:"tokenTypeOwnerPredicate"`  // the predicate clause that all tokens of this type (and of subtypes of this type) inherit into their owner predicates
 	DataUpdatePredicate      []byte       `json:"dataUpdatePredicate"`      // the predicate clause that all tokens of this type (and of subtypes of this type) inherit into their data update predicates
 }
@@ -34,7 +34,7 @@ type FungibleTokenTypeData struct {
 	ParentTypeID             types.UnitID `json:"parentTypeId"`             // identifies the parent type that this type derives from; nil indicates there is no parent type
 	DecimalPlaces            uint32       `json:"decimalPlaces"`            // is the number of decimal places to display for values of tokens of this type
 	SubTypeCreationPredicate []byte       `json:"subTypeCreationPredicate"` // the predicate clause that controls defining new subtypes of this type
-	TokenCreationPredicate   []byte       `json:"tokenCreationPredicate"`   // the predicate clause that controls minting new tokens of this type
+	TokenMintingPredicate    []byte       `json:"tokenMintingPredicate"`    // the predicate clause that controls minting new tokens of this type
 	TokenTypeOwnerPredicate  []byte       `json:"tokenTypeOwnerPredicate"`  // the predicate clause that all tokens of this type (and of subtypes of this type) inherit into their owner predicates
 }
 
@@ -68,7 +68,7 @@ func NewFungibleTokenTypeData(attr *DefineFungibleTokenAttributes) types.UnitDat
 		ParentTypeID:             attr.ParentTypeID,
 		DecimalPlaces:            attr.DecimalPlaces,
 		SubTypeCreationPredicate: attr.SubTypeCreationPredicate,
-		TokenCreationPredicate:   attr.TokenCreationPredicate,
+		TokenMintingPredicate:    attr.TokenMintingPredicate,
 		TokenTypeOwnerPredicate:  attr.TokenTypeOwnerPredicate,
 	}
 }
@@ -80,7 +80,7 @@ func NewNonFungibleTokenTypeData(attr *DefineNonFungibleTokenAttributes) types.U
 		Icon:                     attr.Icon,
 		ParentTypeID:             attr.ParentTypeID,
 		SubTypeCreationPredicate: attr.SubTypeCreationPredicate,
-		TokenCreationPredicate:   attr.TokenCreationPredicate,
+		TokenMintingPredicate:    attr.TokenMintingPredicate,
 		TokenTypeOwnerPredicate:  attr.TokenTypeOwnerPredicate,
 		DataUpdatePredicate:      attr.DataUpdatePredicate,
 	}
@@ -133,7 +133,7 @@ func (n *NonFungibleTokenTypeData) Copy() types.UnitData {
 		Icon:                     n.Icon.Copy(),
 		ParentTypeID:             bytes.Clone(n.ParentTypeID),
 		SubTypeCreationPredicate: bytes.Clone(n.SubTypeCreationPredicate),
-		TokenCreationPredicate:   bytes.Clone(n.TokenCreationPredicate),
+		TokenMintingPredicate:    bytes.Clone(n.TokenMintingPredicate),
 		TokenTypeOwnerPredicate:  bytes.Clone(n.TokenTypeOwnerPredicate),
 		DataUpdatePredicate:      bytes.Clone(n.DataUpdatePredicate),
 	}
@@ -200,7 +200,7 @@ func (f *FungibleTokenTypeData) Copy() types.UnitData {
 		ParentTypeID:             bytes.Clone(f.ParentTypeID),
 		DecimalPlaces:            f.DecimalPlaces,
 		SubTypeCreationPredicate: bytes.Clone(f.SubTypeCreationPredicate),
-		TokenCreationPredicate:   bytes.Clone(f.TokenCreationPredicate),
+		TokenMintingPredicate:    bytes.Clone(f.TokenMintingPredicate),
 		TokenTypeOwnerPredicate:  bytes.Clone(f.TokenTypeOwnerPredicate),
 	}
 }

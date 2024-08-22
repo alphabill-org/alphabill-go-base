@@ -7,8 +7,8 @@ type (
 	}
 
 	MintNonFungibleTokenAuthProof struct {
-		_                               struct{} `cbor:",toarray"`
-		TokenCreationPredicateSignature []byte   // the input to satisfy the token minting predicate of the type
+		_                              struct{} `cbor:",toarray"`
+		TokenMintingPredicateSignature []byte   // the input to satisfy the token minting predicate of the type
 	}
 
 	TransferNonFungibleTokenAuthProof struct {
@@ -29,8 +29,8 @@ type (
 	}
 
 	MintFungibleTokenAuthProof struct {
-		_                               struct{} `cbor:",toarray"`
-		TokenCreationPredicateSignature []byte   // input to satisfy the token minting predicate of the type
+		_                              struct{} `cbor:",toarray"`
+		TokenMintingPredicateSignature []byte   // input to satisfy the token minting predicate of the type
 	}
 
 	TransferFungibleTokenAuthProof struct {

@@ -24,11 +24,6 @@ type (
 		Gas   uint64
 		Nonce uint64
 	}
-
-	// TxAuthProof is not used in EVM partition, however, is required by framework level
-	TxAuthProof struct {
-		_ struct{} `cbor:",toarray"`
-	}
 )
 
 // FromAddr - returns From as Address, if nil empty address is returned

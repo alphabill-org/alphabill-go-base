@@ -43,8 +43,6 @@ type (
 	}
 
 	PredicateBytes = Bytes
-
-	ProofGenerator func(bytesToSign []byte) (proof []byte, err error)
 )
 
 func (s StateLock) IsValid() error {

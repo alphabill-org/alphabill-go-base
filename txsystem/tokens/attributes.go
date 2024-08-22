@@ -34,7 +34,7 @@ type (
 		Icon                     *Icon        // the optional icon of this token type
 		ParentTypeID             types.UnitID // identifies the parent type that this type derives from; nil indicates there is no parent type
 		SubTypeCreationPredicate []byte       // the predicate clause that controls defining new subtypes of this type
-		TokenCreationPredicate   []byte       // the predicate clause that controls creating new tokens of this type
+		TokenMintingPredicate    []byte       // the predicate clause that controls minting new tokens of this type
 		TokenTypeOwnerPredicate  []byte       // the predicate clause that all tokens of the new type (and of subtypes of it) inherit into their owner predicates
 		DataUpdatePredicate      []byte       // the clause that all tokens of this type (and of subtypes of this type) inherit into their data update predicates
 	}
@@ -72,7 +72,7 @@ type (
 		ParentTypeID             types.UnitID // identifies the parent type that this type derives from; nil indicates there is no parent type
 		DecimalPlaces            uint32       // the number of decimal places to display for values of tokens of the new type
 		SubTypeCreationPredicate []byte       // the predicate clause that controls defining new subtypes of this type
-		TokenCreationPredicate   []byte       // the predicate clause that controls creating new tokens of this type
+		TokenMintingPredicate    []byte       // the predicate clause that controls minting new tokens of this type
 		TokenTypeOwnerPredicate  []byte       // the predicate clause that all tokens of this type (and of subtypes of this type) inherit into their owner predicates
 	}
 
