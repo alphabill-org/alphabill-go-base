@@ -17,10 +17,10 @@ const (
 
 type (
 	TransferAttributes struct {
-		_           struct{} `cbor:",toarray"`
-		NewBearer   []byte
-		TargetValue uint64
-		Counter     uint64
+		_                 struct{} `cbor:",toarray"`
+		NewOwnerPredicate []byte
+		TargetValue       uint64
+		Counter           uint64
 	}
 
 	TransferDCAttributes struct {
@@ -41,12 +41,12 @@ type (
 	TargetUnit struct {
 		_              struct{} `cbor:",toarray"`
 		Amount         uint64
-		OwnerCondition []byte
+		OwnerPredicate []byte
 	}
 
 	SwapDCAttributes struct {
 		_                struct{} `cbor:",toarray"`
-		OwnerCondition   []byte
+		OwnerCondition   []byte   // TODO remove unused
 		DcTransfers      []*types.TransactionRecord
 		DcTransferProofs []*types.TxProof
 		TargetValue      uint64 // value added to target bill

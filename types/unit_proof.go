@@ -48,8 +48,8 @@ type (
 	}
 
 	StateUnitData struct {
-		Data   RawCBOR
-		Bearer PredicateBytes
+		Data           RawCBOR
+		OwnerPredicate PredicateBytes
 	}
 
 	UnitDataAndProof struct {
@@ -147,7 +147,7 @@ func (sd *StateUnitData) UnmarshalData(v any) error {
 
 func (sd *StateUnitData) Hash(hashAlgo crypto.Hash) []byte {
 	hasher := hashAlgo.New()
-	hasher.Write(sd.Bearer)
+	hasher.Write(sd.OwnerPredicate)
 	hasher.Write(sd.Data)
 	return hasher.Sum(nil)
 }

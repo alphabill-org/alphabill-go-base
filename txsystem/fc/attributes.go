@@ -16,7 +16,7 @@ const (
 type (
 	AddFeeCreditAttributes struct {
 		_                       struct{}                 `cbor:",toarray"`
-		FeeCreditOwnerCondition []byte                   // target fee credit record owner condition
+		FeeCreditOwnerPredicate []byte                   // target fee credit record owner predicate
 		FeeCreditTransfer       *types.TransactionRecord // bill transfer record of type "transfer fee credit"
 		FeeCreditTransferProof  *types.TxProof           // transaction proof of "transfer fee credit" transaction
 	}
