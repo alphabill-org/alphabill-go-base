@@ -14,7 +14,13 @@ type (
 	CreateFeeCreditAttributes struct {
 		_ struct{} `cbor:",toarray"`
 
-		FeeCreditOwnerCondition []byte // the fee credit record owner condition to be created
+		FeeCreditOwnerPredicate []byte // the fee credit record owner predicate to be created
+	}
+
+	CreateFeeCreditAuthProof struct {
+		_ struct{} `cbor:",toarray"`
+
+		OwnerProof []byte // the owner proof signed by admin key
 	}
 
 	// DeleteFeeCreditAttributes is transaction of type "deleteFCR".
@@ -22,6 +28,12 @@ type (
 	// The transaction must be signed by the admin key.
 	DeleteFeeCreditAttributes struct {
 		_ struct{} `cbor:",toarray"`
+	}
+
+	DeleteFeeCreditAuthProof struct {
+		_ struct{} `cbor:",toarray"`
+
+		OwnerProof []byte // the owner proof signed by admin key
 	}
 )
 

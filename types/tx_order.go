@@ -13,7 +13,7 @@ type (
 	TransactionOrder struct {
 		_           struct{} `cbor:",toarray"`
 		Payload     *Payload
-		OwnerProof  []byte
+		AuthProof   RawCBOR // transaction specific signatures/authorisation proofs
 		FeeProof    []byte
 		StateUnlock []byte // two CBOR data items: [0|1]+[<state lock/rollback predicate input>]
 	}
@@ -23,7 +23,7 @@ type (
 		SystemID       SystemID
 		Type           string
 		UnitID         UnitID
-		Attributes     RawCBOR
+		Attributes     RawCBOR // transaction attributes without signatures/authorisation proofs
 		StateLock      *StateLock
 		ClientMetadata *ClientMetadata
 	}
@@ -43,12 +43,6 @@ type (
 	}
 
 	PredicateBytes = Bytes
-
-	ProofGenerator func(bytesToSign []byte) (proof []byte, err error)
-
-	SigBytesProvider interface {
-		SigBytes() ([]byte, error)
-	}
 )
 
 func (s StateLock) IsValid() error {
@@ -65,11 +59,30 @@ func (t *TransactionOrder) PayloadBytes() ([]byte, error) {
 	return t.Payload.Bytes()
 }
 
+// FeeProofSigBytes returns concatenated PayloadBytes and AuthProof fields, used for calculating FeeProof.
+func (t *TransactionOrder) FeeProofSigBytes() ([]byte, error) {
+	var sigBytes []byte
+	payloadBytes, err := t.Payload.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	sigBytes = append(sigBytes, payloadBytes...)
+	sigBytes = append(sigBytes, t.AuthProof...)
+	return sigBytes, nil
+}
+
 func (t *TransactionOrder) UnmarshalAttributes(v any) error {
 	if t == nil {
 		return errors.New("transaction order is nil")
 	}
 	return t.Payload.UnmarshalAttributes(v)
+}
+
+func (t *TransactionOrder) UnmarshalAuthProof(v any) error {
+	if t == nil {
+		return errors.New("transaction order is nil")
+	}
+	return Cbor.Unmarshal(t.AuthProof, v)
 }
 
 func (t *TransactionOrder) UnitID() UnitID {
@@ -125,19 +138,13 @@ func (t *TransactionOrder) Hash(algorithm crypto.Hash) []byte {
 	return hasher.Sum(nil)
 }
 
-/*
-SetOwnerProof assigns the bytes returned by the function provided as argument to
-the OwnerProof field unless the function (or reading data to be signed by that
-function) returned error.
-*/
-func (t *TransactionOrder) SetOwnerProof(proofer ProofGenerator) error {
-	data, err := t.PayloadBytes()
+// SetAuthProof converts provided authProof struct to CBOR and sets the AuthProof field.
+func (t *TransactionOrder) SetAuthProof(authProof any) error {
+	authProofCbor, err := Cbor.Marshal(authProof)
 	if err != nil {
-		return fmt.Errorf("reading payload bytes to sign: %w", err)
+		return fmt.Errorf("marshaling auth proof: %w", err)
 	}
-	if t.OwnerProof, err = proofer(data); err != nil {
-		return fmt.Errorf("generating owner proof: %w", err)
-	}
+	t.AuthProof = authProofCbor
 	return nil
 }
 
@@ -181,22 +188,6 @@ func (p *Payload) HasStateLock() bool {
 
 func (p *Payload) Bytes() ([]byte, error) {
 	return Cbor.Marshal(p)
-}
-
-// BytesWithAttributeSigBytes TODO: AB-1016 remove this hack
-func (p *Payload) BytesWithAttributeSigBytes(attrs SigBytesProvider) ([]byte, error) {
-	attrBytes, err := attrs.SigBytes()
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal attributes: %w", err)
-	}
-	payload := &Payload{
-		SystemID:       p.SystemID,
-		Type:           p.Type,
-		UnitID:         p.UnitID,
-		Attributes:     attrBytes,
-		ClientMetadata: p.ClientMetadata,
-	}
-	return payload.Bytes()
 }
 
 func (c *ClientMetadata) AddToHasher(hasher hash.Hash) {

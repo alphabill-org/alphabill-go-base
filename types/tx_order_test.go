@@ -3,7 +3,6 @@ package types
 import (
 	"crypto"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"testing"
 
@@ -11,10 +10,10 @@ import (
 )
 
 type Attributes struct {
-	_           struct{} `cbor:",toarray"`
-	NewBearer   []byte
-	TargetValue uint64
-	Counter     uint64
+	_                 struct{} `cbor:",toarray"`
+	NewOwnerPredicate []byte
+	TargetValue       uint64
+	Counter           uint64
 }
 
 var (
@@ -24,7 +23,7 @@ var (
 	timeout               uint64   = 42
 	maxFee                uint64   = 69
 	feeCreditRecordID              = []byte{32, 32, 32, 32}
-	newBearer                      = []byte{1, 2, 3, 4}
+	newOwnerPredicate              = []byte{1, 2, 3, 4}
 	targetValue           uint64   = 100
 	counter               uint64   = 123
 
@@ -67,8 +66,8 @@ func TestMarshalPayload(t *testing.T) {
 }
 
 func TestMarshalNilPayload(t *testing.T) {
-	order := &TransactionOrder{Payload: nil, OwnerProof: make([]byte, 32)}
-	payloadBytes, err := order.PayloadBytes()
+	txo := &TransactionOrder{Payload: nil}
+	payloadBytes, err := txo.PayloadBytes()
 	require.NoError(t, err)
 	require.Equal(t, cborNil, payloadBytes)
 }
@@ -80,7 +79,7 @@ func TestMarshalNilValuesInPayload(t *testing.T) {
 		UnitID:         nil,
 		Attributes:     nil,
 		ClientMetadata: nil,
-	}, OwnerProof: make([]byte, 32)}
+	}}
 	payloadBytes, err := order.PayloadBytes()
 	require.NoError(t, err)
 	// 86    # array(6)
@@ -108,7 +107,7 @@ func TestUnmarshalPayload(t *testing.T) {
 
 	attributes := &Attributes{}
 	require.NoError(t, payload.UnmarshalAttributes(attributes))
-	require.Equal(t, newBearer, attributes.NewBearer)
+	require.Equal(t, newOwnerPredicate, attributes.NewOwnerPredicate)
 	require.Equal(t, targetValue, attributes.TargetValue)
 	require.Equal(t, counter, attributes.Counter)
 
@@ -123,7 +122,7 @@ func TestUnmarshalAttributes(t *testing.T) {
 	txOrder := createTxOrder(t)
 	attributes := &Attributes{}
 	require.NoError(t, txOrder.UnmarshalAttributes(attributes))
-	require.Equal(t, newBearer, attributes.NewBearer)
+	require.Equal(t, newOwnerPredicate, attributes.NewOwnerPredicate)
 	require.Equal(t, targetValue, attributes.TargetValue)
 	require.Equal(t, counter, attributes.Counter)
 	require.Equal(t, UnitID(unitID), txOrder.UnitID())
@@ -144,25 +143,8 @@ func TestHasStateLock(t *testing.T) {
 	require.True(t, payload.HasStateLock())
 }
 
-func Test_TransactionOrder_SetOwnerProof(t *testing.T) {
-	t.Run("proofer returns error", func(t *testing.T) {
-		expErr := errors.New("proofing failed")
-		txo := TransactionOrder{}
-		err := txo.SetOwnerProof(func(bytesToSign []byte) ([]byte, error) { return nil, expErr })
-		require.ErrorIs(t, err, expErr)
-	})
-
-	t.Run("success", func(t *testing.T) {
-		proof := []byte{1, 2, 3, 4, 5, 6}
-		txo := TransactionOrder{}
-		err := txo.SetOwnerProof(func(bytesToSign []byte) ([]byte, error) { return proof, nil })
-		require.NoError(t, err)
-		require.Equal(t, proof, txo.OwnerProof)
-	})
-}
-
 func Test_Payload_SetAttributes(t *testing.T) {
-	attributes := &Attributes{NewBearer: []byte{9, 3, 5, 2, 6}, TargetValue: 59, Counter: 123}
+	attributes := &Attributes{NewOwnerPredicate: []byte{9, 3, 5, 2, 6}, TargetValue: 59, Counter: 123}
 	pl := Payload{}
 	require.NoError(t, pl.SetAttributes(attributes))
 
@@ -172,7 +154,7 @@ func Test_Payload_SetAttributes(t *testing.T) {
 }
 
 func createTxOrder(t *testing.T) *TransactionOrder {
-	attributes := &Attributes{NewBearer: newBearer, TargetValue: targetValue, Counter: counter}
+	attributes := &Attributes{NewOwnerPredicate: newOwnerPredicate, TargetValue: targetValue, Counter: counter}
 
 	attr, err := Cbor.Marshal(attributes)
 	require.NoError(t, err)
