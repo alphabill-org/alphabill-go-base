@@ -12,6 +12,7 @@ const (
 	AlwaysFalseID byte = iota
 	AlwaysTrueID
 	P2pkh256ID
+	FeeP2pkh256ID
 
 	TemplateStartByte = 0x00
 )
@@ -65,6 +66,24 @@ func NewP2pkh256BytesFromKeyHash(pubKeyHash []byte) types.PredicateBytes {
 	return pb
 }
 
+func NewFeeP2pkh256FromKey(pubKey []byte) predicates.Predicate {
+	return NewFeeP2pkh256FromKeyHash(hash.Sum256(pubKey))
+}
+
+func NewFeeP2pkh256FromKeyHash(pubKeyHash []byte) predicates.Predicate {
+	return predicates.Predicate{Tag: TemplateStartByte, Code: []byte{FeeP2pkh256ID}, Params: pubKeyHash}
+}
+
+func NewFeeP2pkh256BytesFromKey(pubKey []byte) types.PredicateBytes {
+	pb, _ := types.Cbor.Marshal(NewFeeP2pkh256FromKey(pubKey))
+	return pb
+}
+
+func NewFeeP2pkh256BytesFromKeyHash(pubKeyHash []byte) types.PredicateBytes {
+	pb, _ := types.Cbor.Marshal(NewFeeP2pkh256FromKeyHash(pubKeyHash))
+	return pb
+}
+
 func NewP2pkh256SignatureBytes(sig, pubKey []byte) []byte {
 	sb, _ := types.Cbor.Marshal(P2pkh256Signature{Sig: sig, PubKey: pubKey})
 	return sb
@@ -78,12 +97,15 @@ func ExtractPubKeyHashFromP2pkhPredicate(pb []byte) ([]byte, error) {
 	if predicate.Tag != TemplateStartByte {
 		return nil, fmt.Errorf("not a predicate template (tag %d)", predicate.Tag)
 	}
-	if len(predicate.Code) != 1 && predicate.Code[0] != P2pkh256ID {
+	if len(predicate.Code) != 1 || !(predicate.Code[0] == P2pkh256ID  || predicate.Code[0] == FeeP2pkh256ID) {
 		return nil, fmt.Errorf("not a p2pkh predicate (id %X)", predicate.Code)
 	}
 	return predicate.Params, nil
 }
 
 func IsP2pkhTemplate(predicate *predicates.Predicate) bool {
-	return predicate != nil && predicate.Tag == TemplateStartByte && len(predicate.Code) == 1 && predicate.Code[0] == P2pkh256ID
+	return predicate != nil &&
+		predicate.Tag == TemplateStartByte &&
+		len(predicate.Code) == 1 &&
+		(predicate.Code[0] == P2pkh256ID || predicate.Code[0] == FeeP2pkh256ID)
 }
