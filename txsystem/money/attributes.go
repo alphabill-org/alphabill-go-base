@@ -32,10 +32,9 @@ type (
 	}
 
 	SplitAttributes struct {
-		_              struct{} `cbor:",toarray"`
-		TargetUnits    []*TargetUnit
-		RemainingValue uint64
-		Counter        uint64
+		_           struct{} `cbor:",toarray"`
+		TargetUnits []*TargetUnit
+		Counter     uint64
 	}
 
 	TargetUnit struct {
@@ -46,7 +45,6 @@ type (
 
 	SwapDCAttributes struct {
 		_                struct{} `cbor:",toarray"`
-		OwnerCondition   []byte   // TODO remove unused
 		DcTransfers      []*types.TransactionRecord
 		DcTransferProofs []*types.TxProof
 		TargetValue      uint64 // value added to target bill
