@@ -53,7 +53,6 @@ type (
 	TransferNonFungibleTokenAttributes struct {
 		_                 struct{}     `cbor:",toarray"`
 		NewOwnerPredicate []byte       // the new owner predicate of the token
-		Nonce             []byte       // optional nonce
 		Counter           uint64       // the transaction counter of this token
 		TypeID            types.UnitID // identifies the type of the token
 	}
@@ -94,7 +93,6 @@ type (
 		_                 struct{}     `cbor:",toarray"`
 		NewOwnerPredicate []byte       // the initial owner predicate of the new token
 		Value             uint64       // the value to transfer
-		Nonce             []byte       // optional nonce
 		Counter           uint64       // the transaction counter of this token
 		TypeID            types.UnitID // identifies the type of the token
 	}
@@ -103,10 +101,8 @@ type (
 		_                 struct{}     `cbor:",toarray"`
 		NewOwnerPredicate []byte       // the owner predicate of the new token
 		TargetValue       uint64       // the value of the new token
-		Nonce             []byte       // optional nonce
 		Counter           uint64       // the transaction counter of this token
 		TypeID            types.UnitID // identifies the type of the token
-		RemainingValue    uint64       // new value of the source token
 	}
 
 	BurnFungibleTokenAttributes struct {
