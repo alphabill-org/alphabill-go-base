@@ -26,12 +26,12 @@ func NewFeeCreditRecordID(shardPart []byte, unitPart []byte) types.UnitID {
 }
 
 func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, latestAdditionTime uint64) types.UnitID {
-	ownerPredicate := templates.NewP2pkh256BytesFromKey(pubKey)
+	ownerPredicate := templates.NewP2pkh256FeeAuthBytesFromKey(pubKey)
 	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 
 func NewFeeCreditRecordIDFromPublicKeyHash(shardPart, pubKeyHash []byte, latestAdditionTime uint64) types.UnitID {
-	ownerPredicate := templates.NewP2pkh256BytesFromKeyHash(pubKeyHash)
+	ownerPredicate := templates.NewP2pkh256FeeAuthBytesFromKeyHash(pubKeyHash)
 	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 
