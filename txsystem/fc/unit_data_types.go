@@ -15,7 +15,7 @@ var _ types.UnitData = (*FeeCreditRecord)(nil)
 type FeeCreditRecord struct {
 	_       struct{} `cbor:",toarray"`
 	Balance uint64   `json:"balance,string"` // current balance
-	Counter uint64   `json:"counter,string"` // transaction counter; incremented with reach “addFC”, "closeFC", "lockFC" or "unlockFC" transaction; spending fee credit does not change this value
+	Counter uint64   `json:"counter,string"` // transaction counter; incremented with each “addFC”, "closeFC", "lockFC" or "unlockFC" transaction; spending fee credit does not change this value
 	Timeout uint64   `json:"timeout,string"` // the earliest round number when this record may be “garbage collected” if the balance goes to zero
 	Locked  uint64   `json:"locked,string"`  // lock status of the fee credit record, non-zero value means locked; locked free credit does not prevent spending the fee credit
 }
