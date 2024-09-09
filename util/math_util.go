@@ -25,3 +25,19 @@ func AddUint64(ns ...uint64) (sum uint64, overflow bool, err error) {
 
 	return
 }
+
+// SafeAdd returns a+b and checks for overflow
+func SafeAdd(a, b uint64) (uint64, bool) {
+	if a > math.MaxUint64-b {
+		return 0, false
+	}
+	return a + b, true
+}
+
+// SafeSub returns a-b and checks for underflow
+func SafeSub(a, b uint64) (uint64, bool) {
+	if a < b {
+		return 0, false
+	}
+	return a - b, true
+}

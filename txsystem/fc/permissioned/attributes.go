@@ -3,42 +3,34 @@ package permissioned
 import "github.com/alphabill-org/alphabill-go-base/types"
 
 const (
-	PayloadTypeCreateFCR = "createFCR"
-	PayloadTypeDeleteFCR = "deleteFCR"
+	PayloadTypeSetFeeCredit    = "setFC"
+	PayloadTypeDeleteFeeCredit = "delFC"
 )
 
 type (
-	// CreateFeeCreditAttributes is transaction of type "createFCR".
-	// The transaction is used to create fee credit records for users.
+	// SetFeeCreditAttributes is transaction of type "setFC".
+	// The transaction is used to add fee credit records for users.
 	// The transaction must be signed by the admin key.
-	CreateFeeCreditAttributes struct {
+	SetFeeCreditAttributes struct {
 		_ struct{} `cbor:",toarray"`
 
-		FeeCreditOwnerPredicate []byte // the fee credit record owner predicate to be created
+		OwnerPredicate []byte  // the owner predicate to be set to the fee credit record
+		Amount         uint64  // the fee credit amount to be added
+		Counter        *uint64 // the transaction counter of the target fee credit record, or nil if the record does not exist yet
 	}
 
-	CreateFeeCreditAuthProof struct {
-		_ struct{} `cbor:",toarray"`
-
-		OwnerProof []byte // the owner proof signed by admin key
-	}
-
-	// DeleteFeeCreditAttributes is transaction of type "deleteFCR".
-	// The transaction is used to delete fee credit records created by "createFCR" transactions.
+	// DeleteFeeCreditAttributes is transaction of type "delFC".
+	// The transaction is used to delete fee credit records created by "setFC" transactions.
 	// The transaction must be signed by the admin key.
 	DeleteFeeCreditAttributes struct {
 		_ struct{} `cbor:",toarray"`
-	}
 
-	DeleteFeeCreditAuthProof struct {
-		_ struct{} `cbor:",toarray"`
-
-		OwnerProof []byte // the owner proof signed by admin key
+		Counter uint64 // the transaction counter of the target fee credit record
 	}
 )
 
 func IsFeeCreditTx(tx *types.TransactionOrder) bool {
 	typeUrl := tx.PayloadType()
-	return typeUrl == PayloadTypeCreateFCR ||
-		typeUrl == PayloadTypeDeleteFCR
+	return typeUrl == PayloadTypeSetFeeCredit ||
+		typeUrl == PayloadTypeDeleteFeeCredit
 }
