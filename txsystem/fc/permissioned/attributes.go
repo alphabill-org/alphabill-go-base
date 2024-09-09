@@ -14,9 +14,9 @@ type (
 	SetFeeCreditAttributes struct {
 		_ struct{} `cbor:",toarray"`
 
-		TargetOwnerPredicate []byte  // the target fee credit record owner predicate
-		Amount               uint64  // the fee credit amount to be added
-		Counter              *uint64 // the transaction counter of the target fee credit record, or nil if the record does not exist yet
+		OwnerPredicate []byte  // the owner predicate to be set to the fee credit record
+		Amount         uint64  // the fee credit amount to be added
+		Counter        *uint64 // the transaction counter of the target fee credit record, or nil if the record does not exist yet
 	}
 
 	// DeleteFeeCreditAttributes is transaction of type "delFC".
