@@ -331,7 +331,7 @@ func TestCborSequence(t *testing.T) {
 
 		ver := &TaggedVersion{Version: 1, Tag: 0xFF}
 		buf := &bytes.Buffer{}
-		enc := cbor.NewEncoder(buf)
+		enc := getCborEncoder(t).NewEncoder(buf)
 		require.NoError(t, enc.Encode(ver))
 		require.NoError(t, enc.Encode(data))
 		b := buf.Bytes()
@@ -348,9 +348,9 @@ func TestCborSequence(t *testing.T) {
 	})
 
 	t.Run("SimpleVersion", func(t *testing.T) {
-		var ver uint = 1
+		var ver uint = 24
 		buf := &bytes.Buffer{}
-		enc := cbor.NewEncoder(buf)
+		enc := getCborEncoder(t).NewEncoder(buf)
 		require.NoError(t, enc.Encode(ver))
 		require.NoError(t, enc.Encode(data))
 		b := buf.Bytes()
@@ -416,4 +416,10 @@ func TestVersionedCbor(t *testing.T) {
 		require.NoError(t, Cbor.Unmarshal(rest, &data2))
 		require.Equal(t, dataV2, &data2)
 	})
+}
+
+func getCborEncoder(t *testing.T) cbor.EncMode {
+	enc, err := cbor.CoreDetEncOptions().EncMode()
+	require.NoError(t, err)
+	return enc
 }
