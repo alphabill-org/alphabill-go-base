@@ -10,7 +10,8 @@ import (
 )
 
 type (
-	RawCBOR []byte
+	RawCBOR         []byte
+	RawCBORSequence []byte
 
 	cborHandler struct {
 		encMode cbor.EncMode
