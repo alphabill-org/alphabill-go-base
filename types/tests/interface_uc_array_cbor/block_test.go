@@ -30,7 +30,7 @@ type (
 		UC UnicityCertificate
 	}
 
-	VersionedUC struct {
+	VersionedData struct {
 		_       struct{} `cbor:",toarray"`
 		Version types.Version
 		Data    interface{}
@@ -38,16 +38,16 @@ type (
 )
 
 func (b *Block) MarshalCBOR() ([]byte, error) {
-	var versionedUC VersionedUC
+	var versionedUC VersionedData
 
 	switch uc := b.UC.(type) {
 	case UnicityCertificateV1:
-		versionedUC = VersionedUC{
+		versionedUC = VersionedData{
 			Version: 1,
 			Data:    uc,
 		}
 	case UnicityCertificateV2:
-		versionedUC = VersionedUC{
+		versionedUC = VersionedData{
 			Version: 2,
 			Data:    uc,
 		}
@@ -58,7 +58,7 @@ func (b *Block) MarshalCBOR() ([]byte, error) {
 	type Alias Block
 	return cbor.Marshal(&struct {
 		_  struct{} `cbor:",toarray"`
-		UC VersionedUC
+		UC VersionedData
 		*Alias
 	}{
 		UC:    versionedUC,
@@ -70,7 +70,7 @@ func (b *Block) UnmarshalCBOR(data []byte) error {
 	type Alias Block
 	aux := &struct {
 		_  struct{} `cbor:",toarray"`
-		UC VersionedUC
+		UC VersionedData
 		*Alias
 	}{
 		Alias: (*Alias)(b),
