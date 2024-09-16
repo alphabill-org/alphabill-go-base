@@ -3,9 +3,11 @@ package types
 import (
 	"crypto"
 	"testing"
+	"time"
 
-	"github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/stretchr/testify/require"
+
+	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 )
 
 func TestBlock_GetBlockFees(t *testing.T) {
@@ -134,9 +136,9 @@ func TestBlock_IsValid(t *testing.T) {
 	})
 	t.Run("valid block", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
-		sdrs := &SystemDescriptionRecord{
+		sdrs := &PartitionDescriptionRecord{
 			SystemIdentifier: systemID,
-			T2Timeout:        2500,
+			T2Timeout:        2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
 			PreviousHash:    []byte{0, 0, 1},
@@ -167,9 +169,9 @@ func TestBlock_IsValid(t *testing.T) {
 	})
 	t.Run("invalid block hash", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
-		sdrs := &SystemDescriptionRecord{
+		sdrs := &PartitionDescriptionRecord{
 			SystemIdentifier: systemID,
-			T2Timeout:        2500,
+			T2Timeout:        2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
 			PreviousHash:    []byte{0, 0, 1},
@@ -315,22 +317,30 @@ func TestHeader_IsValid(t *testing.T) {
 }
 
 func TestHeader_Hash(t *testing.T) {
-	h := &Header{
+	hdr := Header{
 		SystemID:          SystemID(2),
-		ShardID:           []byte{1, 1, 1},
+		ShardID:           ShardID{bits: []byte{0b1110_0000}, length: 3},
 		ProposerID:        "test",
 		PreviousBlockHash: []byte{2, 2, 2},
 	}
-	headerHash := h.Hash(crypto.SHA256)
-	serilized := []byte{
-		0, 0, 0, 2,
-		1, 1, 1,
-		2, 2, 2,
-		't', 'e', 's', 't',
-	}
-	hasher := crypto.SHA256.New()
-	hasher.Write(serilized)
-	require.Equal(t, headerHash, hasher.Sum(nil))
+	headerHash := hdr.Hash(crypto.SHA256)
+
+	// each call must return the same value
+	require.EqualValues(t, headerHash, hdr.Hash(crypto.SHA256))
+	// different hash algorithm should return different value
+	require.NotEqualValues(t, headerHash, hdr.Hash(crypto.SHA512))
+
+	// make a copy of the struct - must get the same value as original
+	hdr2 := hdr // note that "hdr" is not a pointer!
+	require.EqualValues(t, headerHash, hdr2.Hash(crypto.SHA256))
+
+	// change field value in the copy - hash must change
+	hdr2.ProposerID = "foo"
+	require.NotEqualValues(t, headerHash, hdr2.Hash(crypto.SHA256))
+
+	hdr2.ProposerID = hdr.ProposerID // restore original value
+	hdr2.ShardID, _ = hdr.ShardID.Split()
+	require.NotEqualValues(t, headerHash, hdr2.Hash(crypto.SHA256))
 }
 
 func TestBlock_InputRecord(t *testing.T) {

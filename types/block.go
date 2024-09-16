@@ -29,7 +29,7 @@ type (
 	Header struct {
 		_                 struct{} `cbor:",toarray"`
 		SystemID          SystemID
-		ShardID           []byte
+		ShardID           ShardID
 		ProposerID        string
 		PreviousBlockHash []byte
 	}
@@ -147,7 +147,7 @@ func (h *Header) Hash(algorithm crypto.Hash) []byte {
 	}
 	hasher := algorithm.New()
 	hasher.Write(h.SystemID.Bytes())
-	hasher.Write(h.ShardID)
+	h.ShardID.AddToHasher(hasher)
 	hasher.Write(h.PreviousBlockHash)
 	hasher.Write([]byte(h.ProposerID))
 	return hasher.Sum(nil)

@@ -33,7 +33,7 @@ func (p *TxProof) GetUnicityTreeSystemDescriptionHash() []byte {
 	if p == nil || p.UnicityCertificate == nil || p.UnicityCertificate.UnicityTreeCertificate == nil {
 		return nil
 	}
-	return p.UnicityCertificate.UnicityTreeCertificate.SystemDescriptionHash
+	return p.UnicityCertificate.UnicityTreeCertificate.PartitionDescriptionHash
 }
 
 func NewTxProof(block *Block, txIndex int, algorithm crypto.Hash) (*TxProof, *TransactionRecord, error) {

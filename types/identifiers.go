@@ -9,6 +9,10 @@ import (
 const SystemIdentifierLength = 4
 
 type SystemID uint32
+
+/*
+UnitID is the extended identifier, combining the type and the unit identifiers.
+*/
 type UnitID []byte
 
 // NewUnitID creates a new UnitID consisting of a shardPart, unitPart and typePart.

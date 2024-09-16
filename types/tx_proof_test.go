@@ -3,6 +3,7 @@ package types
 import (
 	"crypto"
 	"testing"
+	"time"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
@@ -10,9 +11,9 @@ import (
 )
 
 func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
-	sdrs := &SystemDescriptionRecord{
+	sdrs := &PartitionDescriptionRecord{
 		SystemIdentifier: systemID,
-		T2Timeout:        2500,
+		T2Timeout:        2500 * time.Millisecond,
 	}
 	inputRecord := &InputRecord{
 		PreviousHash:    []byte{0, 0, 1},
@@ -43,7 +44,6 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 }
 
 func TestTxProofFunctions(t *testing.T) {
-
 	t.Run("Test NewTxProof OK", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		block := createBlock(t, "test", signer)

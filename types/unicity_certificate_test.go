@@ -51,9 +51,9 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			SumOfEarnedFees: 20,
 		}
 		leaf := UnicityTreeData{
-			SystemIdentifier:            identifier,
-			InputRecord:                 inputRecord,
-			SystemDescriptionRecordHash: sdrh,
+			SystemIdentifier:         identifier,
+			InputRecord:              inputRecord,
+			PartitionDescriptionHash: sdrh,
 		}
 		leaf.AddToHasher(hasher)
 		dataHash := hasher.Sum(nil)
@@ -61,9 +61,9 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		uc := &UnicityCertificate{
 			InputRecord: inputRecord,
 			UnicityTreeCertificate: &UnicityTreeCertificate{
-				SystemIdentifier:      identifier,
-				SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: dataHash}},
-				SystemDescriptionHash: zeroHash,
+				SystemIdentifier:         identifier,
+				SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: dataHash}},
+				PartitionDescriptionHash: zeroHash,
 			},
 		}
 		require.ErrorIs(t, uc.IsValid(crypto.SHA256, identifier, sdrh), ErrUnicitySealIsNil)
@@ -87,9 +87,9 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 				SumOfEarnedFees: 20,
 			},
 			UnicityTreeCertificate: &UnicityTreeCertificate{
-				SystemIdentifier:      identifier,
-				SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
-				SystemDescriptionHash: zeroHash,
+				SystemIdentifier:         identifier,
+				SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
+				PartitionDescriptionHash: zeroHash,
 			},
 			UnicitySeal: seal,
 		}
@@ -108,9 +108,9 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		}
 		hasher := crypto.SHA256.New()
 		leaf := UnicityTreeData{
-			SystemIdentifier:            identifier,
-			InputRecord:                 inputRecord,
-			SystemDescriptionRecordHash: sdrh,
+			SystemIdentifier:         identifier,
+			InputRecord:              inputRecord,
+			PartitionDescriptionHash: sdrh,
 		}
 		leaf.AddToHasher(hasher)
 		dataHash := hasher.Sum(nil)
@@ -124,9 +124,9 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		uc := &UnicityCertificate{
 			InputRecord: inputRecord,
 			UnicityTreeCertificate: &UnicityTreeCertificate{
-				SystemIdentifier:      identifier,
-				SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: dataHash}},
-				SystemDescriptionHash: zeroHash,
+				SystemIdentifier:         identifier,
+				SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: dataHash}},
+				PartitionDescriptionHash: zeroHash,
 			},
 			UnicitySeal: seal,
 		}
@@ -153,9 +153,9 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		}
 		hasher := crypto.SHA256.New()
 		leaf := UnicityTreeData{
-			SystemIdentifier:            identifier,
-			InputRecord:                 inputRecord,
-			SystemDescriptionRecordHash: sdrh,
+			SystemIdentifier:         identifier,
+			InputRecord:              inputRecord,
+			PartitionDescriptionHash: sdrh,
 		}
 		leaf.AddToHasher(hasher)
 		dataHash := hasher.Sum(nil)
@@ -169,9 +169,9 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := &UnicityCertificate{
 			InputRecord: inputRecord,
 			UnicityTreeCertificate: &UnicityTreeCertificate{
-				SystemIdentifier:      identifier,
-				SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: dataHash}},
-				SystemDescriptionHash: zeroHash,
+				SystemIdentifier:         identifier,
+				SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: dataHash}},
+				PartitionDescriptionHash: zeroHash,
 			},
 			UnicitySeal: seal,
 		}
@@ -190,9 +190,9 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		}
 		hasher := crypto.SHA256.New()
 		leaf := UnicityTreeData{
-			SystemIdentifier:            identifier,
-			InputRecord:                 inputRecord,
-			SystemDescriptionRecordHash: sdrh,
+			SystemIdentifier:         identifier,
+			InputRecord:              inputRecord,
+			PartitionDescriptionHash: sdrh,
 		}
 		leaf.AddToHasher(hasher)
 		dataHash := hasher.Sum(nil)
@@ -206,9 +206,9 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := &UnicityCertificate{
 			InputRecord: inputRecord,
 			UnicityTreeCertificate: &UnicityTreeCertificate{
-				SystemIdentifier:      identifier,
-				SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: dataHash}},
-				SystemDescriptionHash: zeroHash,
+				SystemIdentifier:         identifier,
+				SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: dataHash}},
+				PartitionDescriptionHash: zeroHash,
 			},
 			UnicitySeal: seal,
 		}
@@ -692,9 +692,9 @@ func TestUCHash(t *testing.T) {
 			SumOfEarnedFees: 20,
 		},
 		UnicityTreeCertificate: &UnicityTreeCertificate{
-			SystemIdentifier:      identifier,
-			SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
-			SystemDescriptionHash: []byte{1, 2, 3, 4},
+			SystemIdentifier:         identifier,
+			SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
+			PartitionDescriptionHash: []byte{1, 2, 3, 4},
 		},
 		UnicitySeal: &UnicitySeal{
 			RootChainRoundNumber: 1,
