@@ -2,7 +2,7 @@ package types
 
 import (
 	"bytes"
-	gocrypto "crypto"
+	"crypto"
 	"errors"
 	"fmt"
 	"hash"
@@ -15,36 +15,36 @@ var errUCIsNil = errors.New("new UC is nil")
 var errLastUCIsNil = errors.New("last UC is nil")
 
 type UnicityTreeCertificate struct {
-	_                     struct{}        `cbor:",toarray"`
-	SystemIdentifier      SystemID        `json:"system_identifier,omitempty"`
-	SiblingHashes         []*imt.PathItem `json:"sibling_hashes,omitempty"`
-	SystemDescriptionHash []byte          `json:"system_description_hash,omitempty"`
+	_                        struct{}        `cbor:",toarray"`
+	SystemIdentifier         SystemID        `json:"system_identifier,omitempty"`
+	SiblingHashes            []*imt.PathItem `json:"sibling_hashes,omitempty"`
+	PartitionDescriptionHash []byte          `json:"partition_description_hash,omitempty"`
 }
 
 type UnicityTreeData struct {
-	SystemIdentifier            SystemID
-	InputRecord                 *InputRecord
-	SystemDescriptionRecordHash []byte
+	SystemIdentifier         SystemID
+	InputRecord              *InputRecord
+	PartitionDescriptionHash []byte
 }
 
 func (t *UnicityTreeData) AddToHasher(hasher hash.Hash) {
 	t.InputRecord.AddToHasher(hasher)
-	hasher.Write(t.SystemDescriptionRecordHash)
+	hasher.Write(t.PartitionDescriptionHash)
 }
 
 func (t *UnicityTreeData) Key() []byte {
 	return t.SystemIdentifier.Bytes()
 }
 
-func (x *UnicityTreeCertificate) IsValid(ir *InputRecord, systemIdentifier SystemID, systemDescriptionHash []byte, hashAlgorithm gocrypto.Hash) error {
+func (x *UnicityTreeCertificate) IsValid(ir *InputRecord, systemIdentifier SystemID, systemDescriptionHash []byte, hashAlgorithm crypto.Hash) error {
 	if x == nil {
 		return ErrUnicityTreeCertificateIsNil
 	}
 	if x.SystemIdentifier != systemIdentifier {
 		return fmt.Errorf("invalid system identifier: expected %s, got %s", systemIdentifier, x.SystemIdentifier)
 	}
-	if !bytes.Equal(systemDescriptionHash, x.SystemDescriptionHash) {
-		return fmt.Errorf("invalid system description hash: expected %X, got %X", systemDescriptionHash, x.SystemDescriptionHash)
+	if !bytes.Equal(systemDescriptionHash, x.PartitionDescriptionHash) {
+		return fmt.Errorf("invalid system description hash: expected %X, got %X", systemDescriptionHash, x.PartitionDescriptionHash)
 	}
 	if len(x.SiblingHashes) == 0 {
 		return fmt.Errorf("error sibling hash chain is empty")
@@ -53,9 +53,9 @@ func (x *UnicityTreeCertificate) IsValid(ir *InputRecord, systemIdentifier Syste
 		return fmt.Errorf("error invalid leaf key: expected %X got %X", x.SystemIdentifier.Bytes(), x.SiblingHashes[0].Key)
 	}
 	leaf := UnicityTreeData{
-		SystemIdentifier:            x.SystemIdentifier,
-		InputRecord:                 ir,
-		SystemDescriptionRecordHash: x.SystemDescriptionHash,
+		SystemIdentifier:         x.SystemIdentifier,
+		InputRecord:              ir,
+		PartitionDescriptionHash: x.PartitionDescriptionHash,
 	}
 	hasher := hashAlgorithm.New()
 	leaf.AddToHasher(hasher)
@@ -66,7 +66,7 @@ func (x *UnicityTreeCertificate) IsValid(ir *InputRecord, systemIdentifier Syste
 	return nil
 }
 
-func (x *UnicityTreeCertificate) EvalAuthPath(hashAlgorithm gocrypto.Hash) []byte {
+func (x *UnicityTreeCertificate) EvalAuthPath(hashAlgorithm crypto.Hash) []byte {
 	// calculate root hash from the merkle path
 	return imt.IndexTreeOutput(x.SiblingHashes, x.SystemIdentifier.Bytes(), hashAlgorithm)
 }
@@ -77,5 +77,5 @@ func (x *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
 		hasher.Write(siblingHash.Key)
 		hasher.Write(siblingHash.Hash)
 	}
-	hasher.Write(x.SystemDescriptionHash)
+	hasher.Write(x.PartitionDescriptionHash)
 }

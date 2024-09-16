@@ -20,36 +20,36 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 	})
 	t.Run("invalid system identifier", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
-			SystemIdentifier:      0x01010101,
-			SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
-			SystemDescriptionHash: zeroHash,
+			SystemIdentifier:         identifier,
+			SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
+			PartitionDescriptionHash: zeroHash,
 		}
 		require.EqualError(t, uct.IsValid(nil, 0x01010100, test.RandomBytes(32), gocrypto.SHA256),
 			"invalid system identifier: expected 01010100, got 01010101")
 	})
 	t.Run("invalid system description hash", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
-			SystemIdentifier:      identifier,
-			SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
-			SystemDescriptionHash: []byte{1, 1, 1, 1},
+			SystemIdentifier:         identifier,
+			SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
+			PartitionDescriptionHash: []byte{1, 1, 1, 1},
 		}
 		require.EqualError(t, uct.IsValid(nil, identifier, []byte{1, 1, 1, 2}, gocrypto.SHA256),
 			"invalid system description hash: expected 01010102, got 01010101")
 	})
 	t.Run("invalid path", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
-			SystemIdentifier:      identifier,
-			SiblingHashes:         []*imt.PathItem{},
-			SystemDescriptionHash: []byte{1, 1, 1, 1},
+			SystemIdentifier:         identifier,
+			SiblingHashes:            []*imt.PathItem{},
+			PartitionDescriptionHash: []byte{1, 1, 1, 1},
 		}
 		require.EqualError(t, uct.IsValid(nil, identifier, []byte{1, 1, 1, 1}, gocrypto.SHA256),
 			"error sibling hash chain is empty")
 	})
 	t.Run("invalid leaf key", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
-			SystemIdentifier:      identifier,
-			SiblingHashes:         []*imt.PathItem{{Key: []byte{0, 0, 0, 0}, Hash: test.RandomBytes(32)}},
-			SystemDescriptionHash: []byte{1, 1, 1, 1},
+			SystemIdentifier:         identifier,
+			SiblingHashes:            []*imt.PathItem{{Key: []byte{0, 0, 0, 0}, Hash: test.RandomBytes(32)}},
+			PartitionDescriptionHash: []byte{1, 1, 1, 1},
 		}
 		require.EqualError(t, uct.IsValid(nil, identifier, []byte{1, 1, 1, 1}, gocrypto.SHA256),
 			"error invalid leaf key: expected 01010101 got 00000000")
@@ -65,16 +65,16 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		}
 		sdrh := []byte{1, 2, 3, 4}
 		leaf := UnicityTreeData{
-			SystemIdentifier:            identifier,
-			InputRecord:                 ir,
-			SystemDescriptionRecordHash: sdrh,
+			SystemIdentifier:         identifier,
+			InputRecord:              ir,
+			PartitionDescriptionHash: sdrh,
 		}
 		hasher := gocrypto.SHA256.New()
 		leaf.AddToHasher(hasher)
 		var uct = &UnicityTreeCertificate{
-			SystemIdentifier:      identifier,
-			SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: hasher.Sum(nil)}},
-			SystemDescriptionHash: sdrh,
+			SystemIdentifier:         identifier,
+			SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: hasher.Sum(nil)}},
+			PartitionDescriptionHash: sdrh,
 		}
 		// modify input record
 		ir.RoundNumber = 6
@@ -92,17 +92,17 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		}
 		sdrh := []byte{1, 2, 3, 4}
 		leaf := UnicityTreeData{
-			SystemIdentifier:            identifier,
-			InputRecord:                 ir,
-			SystemDescriptionRecordHash: sdrh,
+			SystemIdentifier:         identifier,
+			InputRecord:              ir,
+			PartitionDescriptionHash: sdrh,
 		}
 		hasher := gocrypto.SHA256.New()
 		leaf.AddToHasher(hasher)
 		require.Equal(t, identifier.Bytes(), leaf.Key())
 		var uct = &UnicityTreeCertificate{
-			SystemIdentifier:      identifier,
-			SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: hasher.Sum(nil)}},
-			SystemDescriptionHash: sdrh,
+			SystemIdentifier:         identifier,
+			SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: hasher.Sum(nil)}},
+			PartitionDescriptionHash: sdrh,
 		}
 		require.NoError(t, uct.IsValid(ir, identifier, sdrh, gocrypto.SHA256))
 	})
@@ -110,9 +110,9 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 
 func TestUnicityTreeCertificate_Serialize(t *testing.T) {
 	ut := &UnicityTreeCertificate{
-		SystemIdentifier:      identifier,
-		SiblingHashes:         []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
-		SystemDescriptionHash: []byte{1, 2, 3, 4},
+		SystemIdentifier:         identifier,
+		SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
+		PartitionDescriptionHash: []byte{1, 2, 3, 4},
 	}
 	expectedBytes := []byte{
 		1, 1, 1, 1, //identifier
@@ -131,14 +131,13 @@ func createUnicityCertificate(
 	rootID string,
 	signer crypto.Signer,
 	ir *InputRecord,
-	systemDescription *SystemDescriptionRecord,
+	pdr *PartitionDescriptionRecord,
 ) *UnicityCertificate {
 	t.Helper()
-	sdrsh := systemDescription.Hash(gocrypto.SHA256)
 	leaf := &UnicityTreeData{
-		SystemIdentifier:            systemDescription.SystemIdentifier,
-		InputRecord:                 ir,
-		SystemDescriptionRecordHash: sdrsh,
+		SystemIdentifier:         pdr.SystemIdentifier,
+		InputRecord:              ir,
+		PartitionDescriptionHash: pdr.Hash(gocrypto.SHA256),
 	}
 	tree, err := imt.New(gocrypto.SHA256, []imt.LeafData{leaf})
 	require.NoError(t, err)
@@ -151,17 +150,13 @@ func createUnicityCertificate(
 	require.NoError(t, unicitySeal.Sign(rootID, signer))
 	hasher := gocrypto.SHA256.New()
 	leaf.AddToHasher(hasher)
-	cert := &UnicityTreeCertificate{
-		SystemIdentifier:      systemDescription.SystemIdentifier,
-		SiblingHashes:         []*imt.PathItem{{Key: systemDescription.SystemIdentifier.Bytes(), Hash: hasher.Sum(nil)}},
-		SystemDescriptionHash: sdrsh,
-	}
+
 	return &UnicityCertificate{
 		InputRecord: ir,
 		UnicityTreeCertificate: &UnicityTreeCertificate{
-			SystemIdentifier:      cert.SystemIdentifier,
-			SiblingHashes:         cert.SiblingHashes,
-			SystemDescriptionHash: systemDescription.Hash(gocrypto.SHA256),
+			SystemIdentifier:         pdr.SystemIdentifier,
+			SiblingHashes:            []*imt.PathItem{{Key: pdr.SystemIdentifier.Bytes(), Hash: hasher.Sum(nil)}},
+			PartitionDescriptionHash: leaf.PartitionDescriptionHash,
 		},
 		UnicitySeal: unicitySeal,
 	}

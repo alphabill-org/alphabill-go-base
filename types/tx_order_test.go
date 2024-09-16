@@ -3,7 +3,6 @@ package types
 import (
 	"crypto"
 	"encoding/hex"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -60,7 +59,6 @@ var (
 
 func TestMarshalPayload(t *testing.T) {
 	payloadBytes, err := createTxOrder(t).PayloadBytes()
-	fmt.Printf("payloadBytes: %x\n", payloadBytes)
 	require.NoError(t, err)
 	require.Equal(t, hexDecode(t, payloadInHEX), payloadBytes)
 }

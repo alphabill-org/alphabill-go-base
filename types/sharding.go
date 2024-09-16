@@ -1,0 +1,132 @@
+package types
+
+import (
+	"bytes"
+	"encoding/binary"
+	"fmt"
+	"hash"
+	"slices"
+)
+
+type ShardID struct {
+	bits []byte
+	// length is shard ID length in bits.
+	length uint
+}
+
+// Length returns shard ID length in bits.
+func (id ShardID) Length() uint { return id.length }
+
+func (id ShardID) AddToHasher(h hash.Hash) {
+	h.Write(binary.BigEndian.AppendUint32(nil, uint32(id.length)))
+	h.Write(id.bits)
+}
+
+func (id ShardID) String() (s string) {
+	byteCnt := id.length / 8
+	for i := 0; i < int(byteCnt); i++ {
+		s += fmt.Sprintf("%08b", id.bits[i])
+	}
+	if b := id.length % 8; b > 0 {
+		s += fmt.Sprintf("%08b", id.bits[byteCnt])[:b]
+	}
+	return s
+}
+
+/*
+Split increases shard ID length by one bit and returns the two new IDs.
+The original shard ID is not altered.
+*/
+func (id ShardID) Split() (ShardID, ShardID) {
+	bitCnt := id.length + 1
+	if id.length%8 == 0 {
+		return ShardID{bits: append(slices.Clone(id.bits), 0), length: bitCnt},
+			ShardID{bits: append(slices.Clone(id.bits), 128), length: bitCnt}
+	}
+
+	b1 := slices.Clone(id.bits)
+	b1[len(b1)-1] |= 1 << (7 - id.length%8)
+	return ShardID{bits: slices.Clone(id.bits), length: bitCnt},
+		ShardID{bits: b1, length: bitCnt}
+}
+
+func (id ShardID) Equal(v ShardID) bool {
+	return id.length == v.length && bytes.Equal(id.bits, v.bits)
+}
+
+/*
+Comparator returns function which checks does the byte slice argument
+have the prefix which matches the shard ID.
+NB! It is callers responsibility to not pass shorter slice than the shard id!
+*/
+func (id ShardID) Comparator() func([]byte) bool {
+	switch {
+	case id.length == 0:
+		return func(b []byte) bool { return true }
+	case id.length <= 8:
+		mask := byte(0xFF << (8 - id.length))
+		return func(b []byte) bool { return b[0]&mask == id.bits[0] }
+	case id.length <= 16:
+		sid := uint16(id.bits[0])<<8 | uint16(id.bits[1])
+		mask := uint16(0xFFFF << (16 - id.length))
+		return func(b []byte) bool {
+			_ = b[1]
+			v := uint16(b[0])<<8 | uint16(b[1])
+			return v&mask == sid
+		}
+	default:
+		byteCnt, bitCnt := id.length/8, id.length%8
+		mask := byte(0xFF << (8 - bitCnt))
+		return func(b []byte) bool {
+			return bytes.HasPrefix(b, id.bits[:byteCnt]) && (bitCnt == 0 || b[byteCnt]&mask == id.bits[byteCnt])
+		}
+	}
+}
+
+func (id ShardID) MarshalText() ([]byte, error) {
+	return toHex(encodeBitstring(id.bits, id.length)), nil
+}
+
+func (id *ShardID) UnmarshalText(src []byte) error {
+	res, err := fromHex(src)
+	if err != nil {
+		return fmt.Errorf("decoding from hex: %w", err)
+	}
+	if id.bits, id.length, err = decodeBitstring(res); err != nil {
+		return fmt.Errorf("decoding bitstring: %w", err)
+	}
+	return nil
+}
+
+func (id ShardID) MarshalCBOR() ([]byte, error) {
+	return Cbor.Marshal(encodeBitstring(id.bits, id.length))
+}
+
+func (id *ShardID) UnmarshalCBOR(data []byte) (err error) {
+	var b []byte
+	if err := Cbor.Unmarshal(data, &b); err != nil {
+		return fmt.Errorf("decoding bitstring bytes from CBOR: %w", err)
+	}
+	if id.bits, id.length, err = decodeBitstring(b); err != nil {
+		return fmt.Errorf("decoding bitstring: %w", err)
+	}
+	// some tests use "deep equal" comparison and it will break if we
+	// use empty slice instead of nil (as the ShardID zero value does, but
+	// decodeBitstring returns empty non nil slice for zero length bit string)
+	if id.length == 0 && id.bits != nil {
+		id.bits = nil
+	}
+	return nil
+}
+
+type ShardingScheme []ShardID
+
+func (sh ShardingScheme) AddToHasher(h hash.Hash) {
+	h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(sh))))
+
+	// todo: id-s must be sorted? lexically or topologically?
+	// or do we assume that the list is kept sorted?
+	for _, v := range sh {
+		v.AddToHasher(h)
+	}
+}
