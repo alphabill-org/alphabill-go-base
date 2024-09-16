@@ -33,7 +33,7 @@ func NewVerifierSecp256k1(compressedPubKey []byte) (Verifier, error) {
 	}
 	x, y := secp256k1.DecompressPubkey(compressedPubKey)
 	if x == nil && y == nil {
-		return nil, fmt.Errorf("public key decompress faield")
+		return nil, fmt.Errorf("public key decompress failed")
 	}
 	pubkey := secp256k1.S256().Marshal(x, y)
 	return &verifierSecp256k1{pubkey}, nil
