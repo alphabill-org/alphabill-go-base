@@ -8,9 +8,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type ABTag uint64
+
+const (
+	UC1Tag ABTag = 1001
+	UC2Tag ABTag = 1002
+
+	Block1Tag ABTag = 2001
+)
+
 type (
 	UnicityCertificate interface {
 		Validate() error
+		GetVersion() ABTag
 	}
 
 	UnicityCertificateV1 struct {
@@ -33,29 +43,23 @@ type (
 func (b *Block) MarshalCBOR() ([]byte, error) {
 	var taggedUC cbor.Tag
 
-	switch uc := b.UC.(type) {
-	case UnicityCertificateV1:
-		taggedUC = cbor.Tag{
-			Number:  1001,
-			Content: uc,
-		}
-	case UnicityCertificateV2:
-		taggedUC = cbor.Tag{
-			Number:  1002,
-			Content: uc,
-		}
-	default:
-		return nil, fmt.Errorf("unknown UnicityCertificate type")
+	taggedUC = cbor.Tag{
+		Number:  uint64(b.UC.GetVersion()),
+		Content: b.UC,
 	}
 
+	// encode Block with self-describing Tag
 	type Alias Block
-	return cbor.Marshal(&struct {
-		_  struct{} `cbor:",toarray"`
-		UC cbor.Tag
-		*Alias
-	}{
-		UC:    taggedUC,
-		Alias: (*Alias)(b),
+	return cbor.Marshal(cbor.Tag{
+		Number: uint64(Block1Tag),
+		Content: &struct {
+			_  struct{} `cbor:",toarray"`
+			UC cbor.Tag
+			*Alias
+		}{
+			UC:    taggedUC,
+			Alias: (*Alias)(b),
+		},
 	})
 }
 
@@ -73,15 +77,15 @@ func (b *Block) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 
-	switch aux.UC.Number {
-	case 1:
+	switch ABTag(aux.UC.Number) {
+	case UC1Tag:
 		var uc UnicityCertificateV1
 		encodedData, _ := cbor.Marshal(aux.UC.Content)
 		if err := cbor.Unmarshal(encodedData, &uc); err != nil {
 			return err
 		}
 		b.UC = uc
-	case 2:
+	case UC2Tag:
 		var uc UnicityCertificateV2
 		encodedData, _ := cbor.Marshal(aux.UC.Content)
 		if err := cbor.Unmarshal(encodedData, &uc); err != nil {
@@ -103,6 +107,14 @@ func (uc UnicityCertificateV2) Validate() error {
 	return nil
 }
 
+func (uc UnicityCertificateV1) GetVersion() ABTag {
+	return UC1Tag
+}
+
+func (uc UnicityCertificateV2) GetVersion() ABTag {
+	return UC2Tag
+}
+
 func TestCborArray_uc1(t *testing.T) {
 	block := &Block{
 		ID: "block-1",
@@ -117,11 +129,14 @@ func TestCborArray_uc1(t *testing.T) {
 
 	fmt.Printf("Serialized CBOR: %X\n", cborData)
 
+	var taggedBlock cbor.Tag
+	err = cbor.Unmarshal(cborData, &taggedBlock)
+	require.NoError(t, err)
+	require.EqualValues(t, Block1Tag, taggedBlock.Number)
+
 	var newBlock Block
-	if err := cbor.Unmarshal(cborData, &newBlock); err != nil {
-		fmt.Println("Error deserializing block:", err)
-		return
-	}
+	err = cbor.Unmarshal(cborData, &newBlock)
+	require.NoError(t, err)
 
 	fmt.Printf("Deserialized Block: %+v\n", newBlock)
 
