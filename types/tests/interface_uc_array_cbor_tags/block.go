@@ -3,6 +3,7 @@ package interface_uc_named_cbor
 import (
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/types"
 	"github.com/fxamacker/cbor/v2"
 )
 
@@ -10,65 +11,53 @@ type (
 	Block struct {
 		_  struct{} `cbor:",toarray"`
 		ID string
+		H  *Header
 		UC UnicityCertificate
+	}
+
+	Header struct {
+		_ struct{} `cbor:",toarray"`
+		S string
 	}
 )
 
 func (b *Block) MarshalCBOR() ([]byte, error) {
-	var taggedUC cbor.Tag
-
-	taggedUC = cbor.Tag{
-		Number:  uint64(b.UC.GetVersion()),
-		Content: b.UC,
-	}
-
 	// encode Block with self-describing Tag
-	type Alias Block
-	return cbor.Marshal(cbor.Tag{
+	ucBytes, err := types.Cbor.Marshal(b.UC)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("UC bytes: %X\n", ucBytes)
+	type alias Block
+	return types.Cbor.Marshal(cbor.Tag{
 		Number: uint64(Block1Tag),
 		Content: &struct {
-			_  struct{} `cbor:",toarray"`
-			UC cbor.Tag
-			*Alias
+			_ struct{} `cbor:",toarray"`
+			*alias
+			UC []byte
 		}{
-			UC:    taggedUC,
-			Alias: (*Alias)(b),
+			alias: (*alias)(b),
+			UC:    ucBytes,
 		},
 	})
 }
 
 func (b *Block) UnmarshalCBOR(data []byte) error {
-	type Alias Block
+	type alias Block
 	aux := &struct {
-		_  struct{} `cbor:",toarray"`
-		UC cbor.Tag
-		*Alias
+		_ struct{} `cbor:",toarray"`
+		*alias
+		UC []byte
 	}{
-		Alias: (*Alias)(b),
+		alias: (*alias)(b),
 	}
 
-	if err := cbor.Unmarshal(data, aux); err != nil {
+	if err := types.Cbor.Unmarshal(data, aux); err != nil {
 		return err
 	}
 
-	switch ABTag(aux.UC.Number) {
-	case UC1Tag:
-		var uc UnicityCertificateV1
-		encodedData, _ := cbor.Marshal(aux.UC.Content)
-		if err := cbor.Unmarshal(encodedData, &uc); err != nil {
-			return err
-		}
-		b.UC = uc
-	case UC2Tag:
-		var uc UnicityCertificateV2
-		encodedData, _ := cbor.Marshal(aux.UC.Content)
-		if err := cbor.Unmarshal(encodedData, &uc); err != nil {
-			return err
-		}
-		b.UC = uc
-	default:
-		return fmt.Errorf("unknown UnicityCertificate version: %d", aux.UC.Number)
-	}
+	var err error
+	b.UC, err = decodeUnicityCertificate(aux.UC)
 
-	return nil
+	return err
 }

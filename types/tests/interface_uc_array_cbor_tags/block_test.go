@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/alphabill-org/alphabill-go-base/types"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/require"
 )
@@ -11,10 +12,10 @@ import (
 func TestCborArray_uc1(t *testing.T) {
 	block := &Block{
 		ID: "block-1",
-		UC: UnicityCertificateV1{FieldA: "test-fieldA"},
+		UC: &UnicityCertificateV1{FieldA: "test-fieldA"},
 	}
 
-	cborData, err := cbor.Marshal(block)
+	cborData, err := types.Cbor.Marshal(block)
 	if err != nil {
 		fmt.Println("Error serializing block:", err)
 		return
@@ -23,12 +24,12 @@ func TestCborArray_uc1(t *testing.T) {
 	fmt.Printf("Serialized CBOR: %X\n", cborData)
 
 	var taggedBlock cbor.Tag
-	err = cbor.Unmarshal(cborData, &taggedBlock)
+	err = types.Cbor.Unmarshal(cborData, &taggedBlock)
 	require.NoError(t, err)
 	require.EqualValues(t, Block1Tag, taggedBlock.Number)
 
 	var newBlock Block
-	err = cbor.Unmarshal(cborData, &newBlock)
+	err = types.Cbor.Unmarshal(cborData, &newBlock)
 	require.NoError(t, err)
 
 	fmt.Printf("Deserialized Block: %+v\n", newBlock)
@@ -39,10 +40,11 @@ func TestCborArray_uc1(t *testing.T) {
 func TestCborArray_uc2(t *testing.T) {
 	block := &Block{
 		ID: "block-2",
-		UC: UnicityCertificateV2{FieldB: 42},
+		H:  &Header{S: "header-2"},
+		UC: &UnicityCertificateV2{FieldB: 42},
 	}
 
-	cborData, err := cbor.Marshal(block)
+	cborData, err := types.Cbor.Marshal(block)
 	if err != nil {
 		fmt.Println("Error serializing block:", err)
 		return
@@ -51,7 +53,7 @@ func TestCborArray_uc2(t *testing.T) {
 	fmt.Printf("Serialized CBOR: %X\n", cborData)
 
 	var newBlock Block
-	if err := cbor.Unmarshal(cborData, &newBlock); err != nil {
+	if err := types.Cbor.Unmarshal(cborData, &newBlock); err != nil {
 		fmt.Println("Error deserializing block:", err)
 		return
 	}
