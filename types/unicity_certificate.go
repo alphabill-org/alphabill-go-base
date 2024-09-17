@@ -5,6 +5,8 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
+
+	"github.com/alphabill-org/alphabill-go-base/tree/imt"
 )
 
 var ErrUnicityCertificateIsNil = errors.New("unicity certificate is nil")
@@ -23,18 +25,36 @@ func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier Sys
 	if err := x.InputRecord.IsValid(); err != nil {
 		return fmt.Errorf("input record error: %w", err)
 	}
-	if err := x.UnicityTreeCertificate.IsValid(x.InputRecord, systemIdentifier, systemDescriptionHash, algorithm); err != nil {
+	if err := x.UnicityTreeCertificate.IsValid(systemIdentifier, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity tree certificate validation failed: %w", err)
 	}
 	if err := x.UnicitySeal.IsValid(); err != nil {
 		return fmt.Errorf("unicity seal error: %w", err)
 	}
-	treeRoot := x.UnicityTreeCertificate.EvalAuthPath(algorithm)
+	firstHashStep := x.FirstHashStep(algorithm)
+	treeRoot := x.UnicityTreeCertificate.EvalAuthPath(firstHashStep, algorithm)
 	rootHash := x.UnicitySeal.Hash
 	if !bytes.Equal(treeRoot, rootHash) {
 		return fmt.Errorf("unicity seal hash %X does not match with the root hash of the unicity tree %X", rootHash, treeRoot)
 	}
 	return nil
+}
+
+// FirstHashStep restores the first unicity tree merkle path hash step that was left out as an optimization
+func (x *UnicityCertificate) FirstHashStep(algorithm crypto.Hash) *imt.PathItem {
+	leaf := UnicityTreeData{
+		SystemIdentifier:         x.UnicityTreeCertificate.SystemIdentifier,
+		InputRecord:              x.InputRecord,
+		PartitionDescriptionHash: x.UnicityTreeCertificate.PartitionDescriptionHash,
+	}
+	hasher := algorithm.New()
+	leaf.AddToHasher(hasher)
+	leafHash := hasher.Sum(nil)
+
+	return &imt.PathItem{
+		Key:  x.UnicityTreeCertificate.SystemIdentifier.Bytes(),
+		Hash: leafHash,
+	}
 }
 
 func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
@@ -108,10 +128,10 @@ func (x *UnicityCertificate) GetSummaryValue() []byte {
 // The algorithm is based on Yellowpaper: "Algorithm 6 Checking two UC-s for equivocation"
 func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 	if newUC == nil {
-		return errUCIsNil
+		return ErrUCIsNil
 	}
 	if prevUC == nil {
-		return errLastUCIsNil
+		return ErrLastUCIsNil
 	}
 	// verify order, check both partition round and root round
 	if newUC.GetRootRoundNumber() < prevUC.GetRootRoundNumber() {
