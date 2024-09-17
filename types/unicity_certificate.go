@@ -5,8 +5,6 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
-
-	"github.com/alphabill-org/alphabill-go-base/tree/imt"
 )
 
 var ErrUnicityCertificateIsNil = errors.New("unicity certificate is nil")
@@ -31,30 +29,12 @@ func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier Sys
 	if err := x.UnicitySeal.IsValid(); err != nil {
 		return fmt.Errorf("unicity seal error: %w", err)
 	}
-	firstHashStep := x.FirstHashStep(algorithm)
-	treeRoot := x.UnicityTreeCertificate.EvalAuthPath(firstHashStep, algorithm)
+	treeRoot := x.UnicityTreeCertificate.EvalAuthPath(x.InputRecord, algorithm)
 	rootHash := x.UnicitySeal.Hash
 	if !bytes.Equal(treeRoot, rootHash) {
 		return fmt.Errorf("unicity seal hash %X does not match with the root hash of the unicity tree %X", rootHash, treeRoot)
 	}
 	return nil
-}
-
-// FirstHashStep restores the first unicity tree merkle path hash step that was left out as an optimization
-func (x *UnicityCertificate) FirstHashStep(algorithm crypto.Hash) *imt.PathItem {
-	leaf := UnicityTreeData{
-		SystemIdentifier:         x.UnicityTreeCertificate.SystemIdentifier,
-		InputRecord:              x.InputRecord,
-		PartitionDescriptionHash: x.UnicityTreeCertificate.PartitionDescriptionHash,
-	}
-	hasher := algorithm.New()
-	leaf.AddToHasher(hasher)
-	leafHash := hasher.Sum(nil)
-
-	return &imt.PathItem{
-		Key:  x.UnicityTreeCertificate.SystemIdentifier.Bytes(),
-		Hash: leafHash,
-	}
 }
 
 func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {

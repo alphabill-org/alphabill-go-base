@@ -51,10 +51,10 @@ func (x *UnicityTreeCertificate) IsValid(systemIdentifier SystemID, systemDescri
 	return nil
 }
 
-func (x *UnicityTreeCertificate) EvalAuthPath(firstStep *imt.PathItem, hashAlgorithm crypto.Hash) []byte {
+func (x *UnicityTreeCertificate) EvalAuthPath(inputRecord *InputRecord, hashAlgorithm crypto.Hash) []byte {
 	// restore the merkle path with the first hash step
 	var hashSteps []*imt.PathItem
-	hashSteps = append(hashSteps, firstStep)
+	hashSteps = append(hashSteps, x.FirstHashStep(inputRecord, hashAlgorithm))
 	hashSteps = append(hashSteps, x.HashSteps...)
 
 	// calculate root hash from the merkle path
@@ -68,4 +68,21 @@ func (x *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
 		hasher.Write(hashStep.Hash)
 	}
 	hasher.Write(x.PartitionDescriptionHash)
+}
+
+// FirstHashStep restores the first hash step that was left out as an optimization
+func (x *UnicityTreeCertificate) FirstHashStep(inputRecord *InputRecord, hashAlgorithm crypto.Hash) *imt.PathItem {
+	leaf := UnicityTreeData{
+		SystemIdentifier:         x.SystemIdentifier,
+		InputRecord:              inputRecord,
+		PartitionDescriptionHash: x.PartitionDescriptionHash,
+	}
+	hasher := hashAlgorithm.New()
+	leaf.AddToHasher(hasher)
+	leafHash := hasher.Sum(nil)
+
+	return &imt.PathItem{
+		Key:  x.SystemIdentifier.Bytes(),
+		Hash: leafHash,
+	}
 }
