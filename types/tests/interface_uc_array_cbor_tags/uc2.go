@@ -1,4 +1,4 @@
-package interface_uc_named_cbor
+package interface_uc_array_cbor_tags
 
 import (
 	"github.com/alphabill-org/alphabill-go-base/types"
