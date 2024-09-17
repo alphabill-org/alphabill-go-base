@@ -23,7 +23,7 @@ var (
 	ErrInvalidRootRound          = errors.New("invalid root round number")
 	ErrUnicitySealSignatureIsNil = errors.New("no signatures")
 	ErrRootValidatorInfoMissing  = errors.New("root node info is missing")
-	errInvalidTimestamp          = errors.New("invalid timestamp")
+	ErrInvalidTimestamp          = errors.New("invalid timestamp")
 )
 
 type SignatureMap map[string][]byte
@@ -104,7 +104,7 @@ func (x *UnicitySeal) IsValid() error {
 		return ErrInvalidRootRound
 	}
 	if x.Timestamp < GenesisTime {
-		return errInvalidTimestamp
+		return ErrInvalidTimestamp
 	}
 	if len(x.Signatures) == 0 {
 		return ErrUnicitySealSignatureIsNil

@@ -92,7 +92,7 @@ func (b *Block) InputRecord() (*InputRecord, error) {
 		return nil, errBlockIsNil
 	}
 	if b.UnicityCertificate == nil {
-		return nil, errUCIsNil
+		return nil, ErrUCIsNil
 	}
 	if b.UnicityCertificate.InputRecord == nil {
 		return nil, ErrInputRecordIsNil

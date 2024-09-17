@@ -353,7 +353,7 @@ func TestBlock_InputRecord(t *testing.T) {
 	t.Run("err: UC is nil", func(t *testing.T) {
 		b := &Block{}
 		got, err := b.InputRecord()
-		require.ErrorIs(t, err, errUCIsNil)
+		require.ErrorIs(t, err, ErrUCIsNil)
 		require.Nil(t, got)
 	})
 	t.Run("err: IR is nil", func(t *testing.T) {

@@ -23,13 +23,13 @@ func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier Sys
 	if err := x.InputRecord.IsValid(); err != nil {
 		return fmt.Errorf("input record error: %w", err)
 	}
-	if err := x.UnicityTreeCertificate.IsValid(x.InputRecord, systemIdentifier, systemDescriptionHash, algorithm); err != nil {
+	if err := x.UnicityTreeCertificate.IsValid(systemIdentifier, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity tree certificate validation failed: %w", err)
 	}
 	if err := x.UnicitySeal.IsValid(); err != nil {
 		return fmt.Errorf("unicity seal error: %w", err)
 	}
-	treeRoot := x.UnicityTreeCertificate.EvalAuthPath(algorithm)
+	treeRoot := x.UnicityTreeCertificate.EvalAuthPath(x.InputRecord, algorithm)
 	rootHash := x.UnicitySeal.Hash
 	if !bytes.Equal(treeRoot, rootHash) {
 		return fmt.Errorf("unicity seal hash %X does not match with the root hash of the unicity tree %X", rootHash, treeRoot)
@@ -108,10 +108,10 @@ func (x *UnicityCertificate) GetSummaryValue() []byte {
 // The algorithm is based on Yellowpaper: "Algorithm 6 Checking two UC-s for equivocation"
 func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 	if newUC == nil {
-		return errUCIsNil
+		return ErrUCIsNil
 	}
 	if prevUC == nil {
-		return errLastUCIsNil
+		return ErrLastUCIsNil
 	}
 	// verify order, check both partition round and root round
 	if newUC.GetRootRoundNumber() < prevUC.GetRootRoundNumber() {
