@@ -16,70 +16,25 @@ const identifier SystemID = 0x01010101
 func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 	t.Run("unicity tree certificate is nil", func(t *testing.T) {
 		var uct *UnicityTreeCertificate = nil
-		require.ErrorIs(t, uct.IsValid(nil, SystemID(2), test.RandomBytes(32), gocrypto.SHA256), ErrUnicityTreeCertificateIsNil)
+		require.ErrorIs(t, uct.IsValid(SystemID(2), test.RandomBytes(32)), ErrUnicityTreeCertificateIsNil)
 	})
 	t.Run("invalid system identifier", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
 			SystemIdentifier:         identifier,
-			SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
+			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
 			PartitionDescriptionHash: zeroHash,
 		}
-		require.EqualError(t, uct.IsValid(nil, 0x01010100, test.RandomBytes(32), gocrypto.SHA256),
+		require.EqualError(t, uct.IsValid(0x01010100, test.RandomBytes(32)),
 			"invalid system identifier: expected 01010100, got 01010101")
 	})
 	t.Run("invalid system description hash", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
 			SystemIdentifier:         identifier,
-			SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
+			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
 			PartitionDescriptionHash: []byte{1, 1, 1, 1},
 		}
-		require.EqualError(t, uct.IsValid(nil, identifier, []byte{1, 1, 1, 2}, gocrypto.SHA256),
+		require.EqualError(t, uct.IsValid(identifier, []byte{1, 1, 1, 2}),
 			"invalid system description hash: expected 01010102, got 01010101")
-	})
-	t.Run("invalid path", func(t *testing.T) {
-		uct := &UnicityTreeCertificate{
-			SystemIdentifier:         identifier,
-			SiblingHashes:            []*imt.PathItem{},
-			PartitionDescriptionHash: []byte{1, 1, 1, 1},
-		}
-		require.EqualError(t, uct.IsValid(nil, identifier, []byte{1, 1, 1, 1}, gocrypto.SHA256),
-			"error sibling hash chain is empty")
-	})
-	t.Run("invalid leaf key", func(t *testing.T) {
-		uct := &UnicityTreeCertificate{
-			SystemIdentifier:         identifier,
-			SiblingHashes:            []*imt.PathItem{{Key: []byte{0, 0, 0, 0}, Hash: test.RandomBytes(32)}},
-			PartitionDescriptionHash: []byte{1, 1, 1, 1},
-		}
-		require.EqualError(t, uct.IsValid(nil, identifier, []byte{1, 1, 1, 1}, gocrypto.SHA256),
-			"error invalid leaf key: expected 01010101 got 00000000")
-	})
-	t.Run("invalid data hash", func(t *testing.T) {
-		ir := &InputRecord{
-			PreviousHash:    []byte{0, 0, 0, 0},
-			Hash:            []byte{0, 0, 0, 2},
-			BlockHash:       []byte{0, 0, 0, 3},
-			SummaryValue:    []byte{0, 0, 0, 4},
-			RoundNumber:     5,
-			SumOfEarnedFees: 10,
-		}
-		sdrh := []byte{1, 2, 3, 4}
-		leaf := UnicityTreeData{
-			SystemIdentifier:         identifier,
-			InputRecord:              ir,
-			PartitionDescriptionHash: sdrh,
-		}
-		hasher := gocrypto.SHA256.New()
-		leaf.AddToHasher(hasher)
-		var uct = &UnicityTreeCertificate{
-			SystemIdentifier:         identifier,
-			SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: hasher.Sum(nil)}},
-			PartitionDescriptionHash: sdrh,
-		}
-		// modify input record
-		ir.RoundNumber = 6
-		require.EqualError(t, uct.IsValid(ir, identifier, sdrh, gocrypto.SHA256),
-			"error invalid data hash: expected 43DA31FD087023D810C98779642CB6B3445E2EB5B435D16B5372B4322FC3AD0A got E6723532032472549C80FA9E148C60038F179C2B086611C24C48D3E80516A002")
 	})
 	t.Run("ok", func(t *testing.T) {
 		ir := &InputRecord{
@@ -101,17 +56,17 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		require.Equal(t, identifier.Bytes(), leaf.Key())
 		var uct = &UnicityTreeCertificate{
 			SystemIdentifier:         identifier,
-			SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: hasher.Sum(nil)}},
+			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: hasher.Sum(nil)}},
 			PartitionDescriptionHash: sdrh,
 		}
-		require.NoError(t, uct.IsValid(ir, identifier, sdrh, gocrypto.SHA256))
+		require.NoError(t, uct.IsValid(identifier, sdrh))
 	})
 }
 
 func TestUnicityTreeCertificate_Serialize(t *testing.T) {
 	ut := &UnicityTreeCertificate{
 		SystemIdentifier:         identifier,
-		SiblingHashes:            []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
+		HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
 		PartitionDescriptionHash: []byte{1, 2, 3, 4},
 	}
 	expectedBytes := []byte{
@@ -148,14 +103,10 @@ func createUnicityCertificate(
 		Hash:                 tree.GetRootHash(),
 	}
 	require.NoError(t, unicitySeal.Sign(rootID, signer))
-	hasher := gocrypto.SHA256.New()
-	leaf.AddToHasher(hasher)
-
 	return &UnicityCertificate{
 		InputRecord: ir,
 		UnicityTreeCertificate: &UnicityTreeCertificate{
 			SystemIdentifier:         pdr.SystemIdentifier,
-			SiblingHashes:            []*imt.PathItem{{Key: pdr.SystemIdentifier.Bytes(), Hash: hasher.Sum(nil)}},
 			PartitionDescriptionHash: leaf.PartitionDescriptionHash,
 		},
 		UnicitySeal: unicitySeal,

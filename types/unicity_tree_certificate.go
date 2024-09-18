@@ -10,14 +10,16 @@ import (
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
 )
 
-var ErrUnicityTreeCertificateIsNil = errors.New("unicity tree certificate is nil")
-var errUCIsNil = errors.New("new UC is nil")
-var errLastUCIsNil = errors.New("last UC is nil")
+var (
+	ErrUnicityTreeCertificateIsNil = errors.New("unicity tree certificate is nil")
+	ErrUCIsNil                     = errors.New("new UC is nil")
+	ErrLastUCIsNil                 = errors.New("last UC is nil")
+)
 
 type UnicityTreeCertificate struct {
 	_                        struct{}        `cbor:",toarray"`
 	SystemIdentifier         SystemID        `json:"system_identifier,omitempty"`
-	SiblingHashes            []*imt.PathItem `json:"sibling_hashes,omitempty"`
+	HashSteps                []*imt.PathItem `json:"hash_steps,omitempty"`
 	PartitionDescriptionHash []byte          `json:"partition_description_hash,omitempty"`
 }
 
@@ -36,7 +38,7 @@ func (t *UnicityTreeData) Key() []byte {
 	return t.SystemIdentifier.Bytes()
 }
 
-func (x *UnicityTreeCertificate) IsValid(ir *InputRecord, systemIdentifier SystemID, systemDescriptionHash []byte, hashAlgorithm crypto.Hash) error {
+func (x *UnicityTreeCertificate) IsValid(systemIdentifier SystemID, systemDescriptionHash []byte) error {
 	if x == nil {
 		return ErrUnicityTreeCertificateIsNil
 	}
@@ -46,36 +48,41 @@ func (x *UnicityTreeCertificate) IsValid(ir *InputRecord, systemIdentifier Syste
 	if !bytes.Equal(systemDescriptionHash, x.PartitionDescriptionHash) {
 		return fmt.Errorf("invalid system description hash: expected %X, got %X", systemDescriptionHash, x.PartitionDescriptionHash)
 	}
-	if len(x.SiblingHashes) == 0 {
-		return fmt.Errorf("error sibling hash chain is empty")
-	}
-	if !bytes.Equal(x.SiblingHashes[0].Key, x.SystemIdentifier.Bytes()) {
-		return fmt.Errorf("error invalid leaf key: expected %X got %X", x.SystemIdentifier.Bytes(), x.SiblingHashes[0].Key)
-	}
-	leaf := UnicityTreeData{
-		SystemIdentifier:         x.SystemIdentifier,
-		InputRecord:              ir,
-		PartitionDescriptionHash: x.PartitionDescriptionHash,
-	}
-	hasher := hashAlgorithm.New()
-	leaf.AddToHasher(hasher)
-	dataHash := hasher.Sum(nil)
-	if !bytes.Equal(x.SiblingHashes[0].Hash, dataHash) {
-		return fmt.Errorf("error invalid data hash: expected %X got %X", x.SiblingHashes[0].Hash, dataHash)
-	}
 	return nil
 }
 
-func (x *UnicityTreeCertificate) EvalAuthPath(hashAlgorithm crypto.Hash) []byte {
+func (x *UnicityTreeCertificate) EvalAuthPath(inputRecord *InputRecord, hashAlgorithm crypto.Hash) []byte {
+	// restore the merkle path with the first hash step
+	var hashSteps []*imt.PathItem
+	hashSteps = append(hashSteps, x.FirstHashStep(inputRecord, hashAlgorithm))
+	hashSteps = append(hashSteps, x.HashSteps...)
+
 	// calculate root hash from the merkle path
-	return imt.IndexTreeOutput(x.SiblingHashes, x.SystemIdentifier.Bytes(), hashAlgorithm)
+	return imt.IndexTreeOutput(hashSteps, x.SystemIdentifier.Bytes(), hashAlgorithm)
 }
 
 func (x *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
 	hasher.Write(x.SystemIdentifier.Bytes())
-	for _, siblingHash := range x.SiblingHashes {
-		hasher.Write(siblingHash.Key)
-		hasher.Write(siblingHash.Hash)
+	for _, hashStep := range x.HashSteps {
+		hasher.Write(hashStep.Key)
+		hasher.Write(hashStep.Hash)
 	}
 	hasher.Write(x.PartitionDescriptionHash)
+}
+
+// FirstHashStep restores the first hash step that was left out as an optimization
+func (x *UnicityTreeCertificate) FirstHashStep(inputRecord *InputRecord, hashAlgorithm crypto.Hash) *imt.PathItem {
+	leaf := UnicityTreeData{
+		SystemIdentifier:         x.SystemIdentifier,
+		InputRecord:              inputRecord,
+		PartitionDescriptionHash: x.PartitionDescriptionHash,
+	}
+	hasher := hashAlgorithm.New()
+	leaf.AddToHasher(hasher)
+	leafHash := hasher.Sum(nil)
+
+	return &imt.PathItem{
+		Key:  x.SystemIdentifier.Bytes(),
+		Hash: leafHash,
+	}
 }

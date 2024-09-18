@@ -54,7 +54,7 @@ func TestUnicitySeal_IsValid(t *testing.T) {
 			Signatures:           nil,
 		}
 		tb := NewTrustBase(t, verifier)
-		require.Error(t, seal.Verify(tb), errInvalidTimestamp)
+		require.Error(t, seal.Verify(tb), ErrInvalidTimestamp)
 	})
 }
 
