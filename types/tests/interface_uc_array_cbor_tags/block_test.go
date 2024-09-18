@@ -37,6 +37,46 @@ func TestCborArray_uc1(t *testing.T) {
 	require.Equal(t, block, &newBlock)
 }
 
+func TestCborArray_uc1_withTxos(t *testing.T) {
+	block := &Block{
+		ID: "block-1",
+		UC: &UnicityCertificateV1{FieldA: "test-fieldA"},
+		Transactions: []*TransactionRecord{
+			{
+				Tx: &TransactionOrderV1{
+					TypeID: 1,
+				},
+			},
+			{
+				Tx: &TransactionOrderV1{
+					TypeID: 42,
+				},
+			},
+		},
+	}
+
+	cborData, err := types.Cbor.Marshal(block)
+	if err != nil {
+		fmt.Println("Error serializing block:", err)
+		return
+	}
+
+	fmt.Printf("Serialized CBOR: %X\n", cborData)
+
+	var taggedBlock cbor.Tag
+	err = types.Cbor.Unmarshal(cborData, &taggedBlock)
+	require.NoError(t, err)
+	require.EqualValues(t, Block1Tag, taggedBlock.Number)
+
+	var newBlock Block
+	err = types.Cbor.Unmarshal(cborData, &newBlock)
+	require.NoError(t, err)
+
+	fmt.Printf("Deserialized Block: %+v\n", newBlock)
+
+	require.Equal(t, block, &newBlock)
+}
+
 func TestCborArray_uc2(t *testing.T) {
 	block := &Block{
 		ID: "block-2",

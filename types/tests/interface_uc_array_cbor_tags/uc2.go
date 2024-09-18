@@ -28,6 +28,8 @@ func (uc *UnicityCertificateV2) MarshalCBOR() ([]byte, error) {
 	})
 }
 
-func (uc *UnicityCertificateV2) UnmarshallCBOR(data []byte) error {
-	return types.Cbor.Unmarshal(data, uc)
+func (uc *UnicityCertificateV2) UnmarshalCBOR(data []byte) error {
+	type alias UnicityCertificateV2
+	var aux = (*alias)(uc)
+	return types.Cbor.Unmarshal(data, aux)
 }

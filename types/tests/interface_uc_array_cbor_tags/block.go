@@ -9,10 +9,11 @@ import (
 
 type (
 	Block struct {
-		_  struct{} `cbor:",toarray"`
-		ID string
-		H  *Header
-		UC UnicityCertificate
+		_            struct{} `cbor:",toarray"`
+		ID           string
+		H            *Header
+		Transactions []*TransactionRecord
+		UC           UnicityCertificate
 	}
 
 	Header struct {
