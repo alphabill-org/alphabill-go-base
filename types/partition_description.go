@@ -102,7 +102,7 @@ func (pdr *PartitionDescriptionRecord) GetSystemIdentifier() SystemID {
 }
 
 /*
-IsValidShard checks is the argument valid shard ID in the Partition.
+IsValidShard checks if the argument is a valid shard ID in the Partition.
 */
 func (pdr *PartitionDescriptionRecord) IsValidShard(id ShardID) error {
 	if len(pdr.Shards) == 0 && id.Length() != 0 {
@@ -115,7 +115,7 @@ func (pdr *PartitionDescriptionRecord) IsValidShard(id ShardID) error {
 		return fmt.Errorf("partition has %d bit unit IDs but shard ID is %d bits", pdr.UnitIdLen, id.Length())
 	}
 	if id.Length() != 0 && !slices.ContainsFunc(pdr.Shards, func(x ShardID) bool { return id.Equal(x) }) {
-		return errors.New("shard ID doesn't belong into the sharding scheme")
+		return fmt.Errorf("shard ID %s doesn't belong into the sharding scheme", id)
 	}
 	return nil
 }

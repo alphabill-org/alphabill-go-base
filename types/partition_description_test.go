@@ -124,7 +124,7 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 
 		// id which is not in the scheme (two bits)
 		err = pdr.IsValidShard(ShardID{bits: []byte{0}, length: 2})
-		require.EqualError(t, err, `shard ID doesn't belong into the sharding scheme`)
+		require.EqualError(t, err, `shard ID 00 doesn't belong into the sharding scheme`)
 	})
 
 	t.Run("shard id longer than unit id", func(t *testing.T) {
