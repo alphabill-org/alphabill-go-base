@@ -18,13 +18,15 @@ var (
 	ErrInvalidPartitionRound = errors.New("partition round is 0")
 )
 
+// Shard input record (IR) of a shard of a partition.
 type InputRecord struct {
 	_               struct{} `cbor:",toarray"`
 	PreviousHash    []byte   `json:"previous_hash,omitempty"`      // previously certified state hash
 	Hash            []byte   `json:"hash,omitempty"`               // state hash to be certified
 	BlockHash       []byte   `json:"block_hash,omitempty"`         // hash of the block
 	SummaryValue    []byte   `json:"summary_value,omitempty"`      // summary value to certified
-	RoundNumber     uint64   `json:"round_number,omitempty"`       // transaction system's round number
+	RoundNumber     uint64   `json:"round_number,omitempty"`       // shard's round number
+	Epoch           uint64   `json:"epoch,omitempty"`              // shard’s epoch number
 	SumOfEarnedFees uint64   `json:"sum_of_earned_fees,omitempty"` // sum of the actual fees over all transaction records in the block
 }
 
@@ -42,6 +44,9 @@ func EqualIR(a, b *InputRecord) bool {
 }
 
 func AssertEqualIR(a, b *InputRecord) error {
+	if a.Epoch != b.Epoch {
+		return fmt.Errorf("epoch is different: %v vs %v", a.Epoch, b.Epoch)
+	}
 	if a.RoundNumber != b.RoundNumber {
 		return fmt.Errorf("round number is different: %v vs %v", a.RoundNumber, b.RoundNumber)
 	}
@@ -103,6 +108,7 @@ func (x *InputRecord) Bytes() []byte {
 	b.Write(x.BlockHash)
 	b.Write(x.SummaryValue)
 	b.Write(util.Uint64ToBytes(x.RoundNumber))
+	b.Write(util.Uint64ToBytes(x.Epoch))
 	b.Write(util.Uint64ToBytes(x.SumOfEarnedFees))
 	return b.Bytes()
 }
@@ -115,6 +121,7 @@ func (x *InputRecord) NewRepeatIR() *InputRecord {
 		BlockHash:       bytes.Clone(x.BlockHash),
 		SummaryValue:    bytes.Clone(x.SummaryValue),
 		RoundNumber:     x.RoundNumber,
+		Epoch:           x.Epoch,
 		SumOfEarnedFees: x.SumOfEarnedFees,
 	}
 }
@@ -123,6 +130,6 @@ func (x *InputRecord) String() string {
 	if x == nil {
 		return "input record is nil"
 	}
-	return fmt.Sprintf("H: %X H': %X Bh: %X round: %v fees: %d summary: %d",
-		x.Hash, x.PreviousHash, x.BlockHash, x.RoundNumber, x.SumOfEarnedFees, x.SumOfEarnedFees)
+	return fmt.Sprintf("H: %X H': %X Bh: %X round: %d epoch: %d fees: %d summary: %X",
+		x.Hash, x.PreviousHash, x.BlockHash, x.RoundNumber, x.Epoch, x.SumOfEarnedFees, x.SummaryValue)
 }
