@@ -99,6 +99,12 @@ func (id *ShardID) UnmarshalText(src []byte) error {
 	if id.bits, id.length, err = decodeBitstring(res); err != nil {
 		return fmt.Errorf("decoding bitstring: %w", err)
 	}
+	// some tests use "deep equal" comparison and it will break if we
+	// use empty slice instead of nil (as the ShardID zero value does, but
+	// decodeBitstring returns empty non nil slice for zero length bit string)
+	if id.length == 0 && id.bits != nil {
+		id.bits = nil
+	}
 	return nil
 }
 
