@@ -93,7 +93,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			UnicitySeal: seal,
 		}
 		require.EqualError(t, uc.IsValid(crypto.SHA256, identifier, sdrh),
-			"unicity seal hash 010203 does not match with the root hash of the unicity tree 48DDB8477B58564F8647737B92841EF6461103F4848AB79C2A8894F9DA7E374D")
+			"unicity seal hash 010203 does not match with the root hash of the unicity tree 227AD98477346D339C657B3C5C12CAE6E1D0692E0019C63BE130CD373E3C5219")
 	})
 	t.Run("valid", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
@@ -109,7 +109,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
 			PreviousHash:         zeroHash,
-			Hash:                 hexDecode(t, "48DDB8477B58564F8647737B92841EF6461103F4848AB79C2A8894F9DA7E374D"),
+			Hash:                 hexDecode(t, "227AD98477346D339C657B3C5C12CAE6E1D0692E0019C63BE130CD373E3C5219"),
 		}
 		require.NoError(t, seal.Sign("test", signer))
 		uc := &UnicityCertificate{
@@ -145,7 +145,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
 			PreviousHash:         zeroHash,
-			Hash:                 hexDecode(t, "48DDB8477B58564F8647737B92841EF6461103F4848AB79C2A8894F9DA7E374D"),
+			Hash:                 hexDecode(t, "227AD98477346D339C657B3C5C12CAE6E1D0692E0019C63BE130CD373E3C5219"),
 		}
 		require.NoError(t, seal.Sign("test", signer))
 		uc := &UnicityCertificate{
@@ -173,7 +173,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			RootChainRoundNumber: 1,
 			Timestamp:            1712524909,
 			PreviousHash:         zeroHash,
-			Hash:                 hexDecode(t, "48DDB8477B58564F8647737B92841EF6461103F4848AB79C2A8894F9DA7E374D"),
+			Hash:                 hexDecode(t, "227AD98477346D339C657B3C5C12CAE6E1D0692E0019C63BE130CD373E3C5219"),
 		}
 		require.NoError(t, seal.Sign("test", signer))
 		uc := &UnicityCertificate{
@@ -683,6 +683,7 @@ func TestUCHash(t *testing.T) {
 		0, 0, 3, // IR: block hash
 		0, 0, 4, // IR: summary hash
 		0, 0, 0, 0, 0, 0, 0, 6, // IR: round
+		0, 0, 0, 0, 0, 0, 0, 0, // IR: epoch
 		0, 0, 0, 0, 0, 0, 0, 20, // IR: sum of fees
 		1, 1, 1, 1, // UT: identifier
 		1, 1, 1, 1, 1, 2, 3, // UT: siblings key+hash

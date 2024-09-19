@@ -17,9 +17,13 @@ type ShardID struct {
 // Length returns shard ID length in bits.
 func (id ShardID) Length() uint { return id.length }
 
+// Bytes returns binary serialization of the shard ID suitable for hashing
+func (id ShardID) Bytes() []byte {
+	return encodeBitstring(id.bits, id.length)
+}
+
 func (id ShardID) AddToHasher(h hash.Hash) {
-	h.Write(binary.BigEndian.AppendUint32(nil, uint32(id.length)))
-	h.Write(id.bits)
+	h.Write(id.Bytes())
 }
 
 func (id ShardID) String() (s string) {
