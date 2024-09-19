@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"hash"
+	"slices"
 	"time"
 )
 
@@ -98,4 +99,45 @@ func (pdr *PartitionDescriptionRecord) Hash(hashAlgorithm crypto.Hash) []byte {
 
 func (pdr *PartitionDescriptionRecord) GetSystemIdentifier() SystemID {
 	return pdr.SystemIdentifier
+}
+
+/*
+IsValidShard checks if the argument is a valid shard ID in the Partition.
+*/
+func (pdr *PartitionDescriptionRecord) IsValidShard(id ShardID) error {
+	if len(pdr.Shards) == 0 && id.Length() != 0 {
+		return errors.New("only empty shard ID is valid in a single-shard sharding scheme")
+	}
+	if len(pdr.Shards) != 0 && id.Length() == 0 {
+		return errors.New("empty shard ID is not valid in multi-shard sharding scheme")
+	}
+	if pdr.UnitIdLen < uint32(id.Length()) {
+		return fmt.Errorf("partition has %d bit unit IDs but shard ID is %d bits", pdr.UnitIdLen, id.Length())
+	}
+	if id.Length() != 0 && !slices.ContainsFunc(pdr.Shards, func(x ShardID) bool { return id.Equal(x) }) {
+		return fmt.Errorf("shard ID %s doesn't belong into the sharding scheme", id)
+	}
+	return nil
+}
+
+/*
+UnitIdValidator returns function which checks that unit ID passed as argument
+has correct length and that the unit belongs into the given shard.
+*/
+func (pdr *PartitionDescriptionRecord) UnitIdValidator(sid ShardID) func(unitID UnitID) error {
+	shardMatcher := sid.Comparator()
+	idLen := int(pdr.TypeIdLen+pdr.UnitIdLen) / 8
+	if (pdr.TypeIdLen+pdr.UnitIdLen)%8 > 0 {
+		idLen++
+	}
+
+	return func(unitID UnitID) error {
+		if len(unitID) != idLen {
+			return fmt.Errorf("expected %d byte unit ID, got %d bytes", idLen, len(unitID))
+		}
+		if !shardMatcher(unitID) {
+			return errors.New("unit doesn't belong into the shard")
+		}
+		return nil
+	}
 }

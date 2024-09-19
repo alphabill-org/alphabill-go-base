@@ -3,7 +3,6 @@ package types
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/hex"
 	"reflect"
 	"testing"
 
@@ -16,6 +15,7 @@ var ir = &InputRecord{
 	BlockHash:       []byte{0, 0, 3},
 	SummaryValue:    []byte{0, 0, 4},
 	RoundNumber:     1,
+	Epoch:           0,
 	SumOfEarnedFees: 20,
 }
 
@@ -96,11 +96,10 @@ func TestInputRecord_IsNil(t *testing.T) {
 }
 
 func TestInputRecord_AddToHasher(t *testing.T) {
-	expectedHash, _ := hex.DecodeString("c8a1b4ed8f753eddc73762e9666ba4012e99d44633ee4576153a31d2f03385b4")
 	hasher := sha256.New()
 	ir.AddToHasher(hasher)
 	hash := hasher.Sum(nil)
-	require.Equal(t, expectedHash, hash)
+	require.Equal(t, []byte{0xf9, 0x8a, 0x74, 0xa4, 0x31, 0x2a, 0x7e, 0xb8, 0x8d, 0x89, 0x2f, 0x45, 0xd4, 0x4d, 0x6d, 0x13, 0x44, 0xb0, 0xdb, 0x63, 0xcc, 0x2e, 0xb6, 0xff, 0xd7, 0x5e, 0x5e, 0x5a, 0xfe, 0x1e, 0xe7, 0xfc}, hash)
 }
 
 func Test_EqualIR(t *testing.T) {
@@ -299,5 +298,5 @@ func TestStringer(t *testing.T) {
 		RoundNumber:     2,
 		SumOfEarnedFees: 33,
 	}
-	require.Equal(t, "H: 020202 H': 010101 Bh: 030303 round: 2 fees: 33 summary: 33", testIR.String())
+	require.Equal(t, "H: 020202 H': 010101 Bh: 030303 round: 2 epoch: 0 fees: 33 summary: 040404", testIR.String())
 }

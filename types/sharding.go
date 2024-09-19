@@ -17,9 +17,13 @@ type ShardID struct {
 // Length returns shard ID length in bits.
 func (id ShardID) Length() uint { return id.length }
 
+// Bytes returns binary serialization of the shard ID suitable for hashing
+func (id ShardID) Bytes() []byte {
+	return encodeBitstring(id.bits, id.length)
+}
+
 func (id ShardID) AddToHasher(h hash.Hash) {
-	h.Write(binary.BigEndian.AppendUint32(nil, uint32(id.length)))
-	h.Write(id.bits)
+	h.Write(id.Bytes())
 }
 
 func (id ShardID) String() (s string) {
@@ -94,6 +98,12 @@ func (id *ShardID) UnmarshalText(src []byte) error {
 	}
 	if id.bits, id.length, err = decodeBitstring(res); err != nil {
 		return fmt.Errorf("decoding bitstring: %w", err)
+	}
+	// some tests use "deep equal" comparison and it will break if we
+	// use empty slice instead of nil (as the ShardID zero value does, but
+	// decodeBitstring returns empty non nil slice for zero length bit string)
+	if id.length == 0 && id.bits != nil {
+		id.bits = nil
 	}
 	return nil
 }

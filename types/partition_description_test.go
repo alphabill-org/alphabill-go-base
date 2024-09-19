@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_SystemDescriptionRecord_Hash(t *testing.T) {
+func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
 	pdr := PartitionDescriptionRecord{
 		SystemIdentifier: 1,
 		TypeIdLen:        8,
@@ -31,7 +31,7 @@ func Test_SystemDescriptionRecord_Hash(t *testing.T) {
 	require.NotEqualValues(t, sdrHash, pdr2.Hash(crypto.SHA256))
 }
 
-func TestSystemDescriptionRecord_IsValid(t *testing.T) {
+func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 	validPDR := func() *PartitionDescriptionRecord {
 		return &PartitionDescriptionRecord{
 			SystemIdentifier: 1,
@@ -82,5 +82,104 @@ func TestSystemDescriptionRecord_IsValid(t *testing.T) {
 
 		pdr.T2Timeout = 2 * time.Minute
 		require.EqualError(t, pdr.IsValid(), "t2 timeout value out of allowed range: 2m0s")
+	})
+}
+
+func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
+	t.Run("empty scheme", func(t *testing.T) {
+		pdr := &PartitionDescriptionRecord{
+			SystemIdentifier: 1,
+			TypeIdLen:        8,
+			UnitIdLen:        256,
+			T2Timeout:        2500 * time.Millisecond,
+			Shards:           nil,
+		}
+
+		// empty sharding scheme - only empty id is valid
+		err := pdr.IsValidShard(ShardID{bits: []byte{0}, length: 1})
+		require.EqualError(t, err, `only empty shard ID is valid in a single-shard sharding scheme`)
+
+		require.NoError(t, pdr.IsValidShard(ShardID{}))
+	})
+
+	t.Run("non empty scheme", func(t *testing.T) {
+		pdr := &PartitionDescriptionRecord{
+			SystemIdentifier: 1,
+			TypeIdLen:        8,
+			UnitIdLen:        256,
+			T2Timeout:        2500 * time.Millisecond,
+			Shards: ShardingScheme{
+				ShardID{bits: []byte{0}, length: 1},
+				ShardID{bits: []byte{1}, length: 1},
+			},
+		}
+
+		// empty id is invalid in multi-shard scheme
+		err := pdr.IsValidShard(ShardID{})
+		require.EqualError(t, err, `empty shard ID is not valid in multi-shard sharding scheme`)
+
+		// single bit IDs "0" and "1" must be valid
+		require.NoError(t, pdr.IsValidShard(ShardID{bits: []byte{0}, length: 1}))
+		require.NoError(t, pdr.IsValidShard(ShardID{bits: []byte{1}, length: 1}))
+
+		// id which is not in the scheme (two bits)
+		err = pdr.IsValidShard(ShardID{bits: []byte{0}, length: 2})
+		require.EqualError(t, err, `shard ID 00 doesn't belong into the sharding scheme`)
+	})
+
+	t.Run("shard id longer than unit id", func(t *testing.T) {
+		pdr := &PartitionDescriptionRecord{
+			SystemIdentifier: 1,
+			TypeIdLen:        8,
+			UnitIdLen:        8,
+			T2Timeout:        2500 * time.Millisecond,
+			Shards: ShardingScheme{
+				ShardID{bits: []byte{0}, length: 1},
+				ShardID{bits: []byte{1}, length: 1},
+			},
+		}
+		err := pdr.IsValidShard(ShardID{bits: []byte{0, 1}, length: 9})
+		require.EqualError(t, err, `partition has 8 bit unit IDs but shard ID is 9 bits`)
+	})
+}
+
+func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
+	t.Run("unit ID length", func(t *testing.T) {
+		pdr := &PartitionDescriptionRecord{
+			SystemIdentifier: 1,
+			TypeIdLen:        8,
+			UnitIdLen:        8,
+			T2Timeout:        2500 * time.Millisecond,
+		}
+		vf := pdr.UnitIdValidator(ShardID{})
+
+		require.EqualError(t, vf(nil), `expected 2 byte unit ID, got 0 bytes`)
+
+		require.EqualError(t, vf([]byte{1}), `expected 2 byte unit ID, got 1 bytes`)
+
+		require.EqualError(t, vf([]byte{1, 2, 3}), `expected 2 byte unit ID, got 3 bytes`)
+
+		require.NoError(t, vf([]byte{1, 2}))
+	})
+
+	t.Run("matching shard ID", func(t *testing.T) {
+		pdr := &PartitionDescriptionRecord{
+			SystemIdentifier: 1,
+			TypeIdLen:        8,
+			UnitIdLen:        8,
+			T2Timeout:        2500 * time.Millisecond,
+			Shards: ShardingScheme{
+				ShardID{bits: []byte{0}, length: 1},
+				ShardID{bits: []byte{1}, length: 1},
+			},
+		}
+		// validator for shard "1"
+		vf := pdr.UnitIdValidator(ShardID{bits: []byte{128}, length: 1})
+
+		// unit ID in the shard "0"
+		require.EqualError(t, vf([]byte{0b0111_0000, 1}), `unit doesn't belong into the shard`)
+
+		// unit ID in the shard "1"
+		require.NoError(t, vf([]byte{0b1000_0000, 2}))
 	})
 }
