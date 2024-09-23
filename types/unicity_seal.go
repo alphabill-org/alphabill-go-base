@@ -193,12 +193,12 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 	}
 	if prevHash, ok := arr[2].([]byte); ok {
 		x.PreviousHash = prevHash
-	} else {
+	} else if prevHash != nil {
 		return errors.New("invalid previous hash")
 	}
 	if hash, ok := arr[3].([]byte); ok {
 		x.Hash = hash
-	} else {
+	} else if hash != nil {
 		return errors.New("invalid hash")
 	}
 	if sigs, ok := arr[4].([]byte); ok {
@@ -207,7 +207,7 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 			return err
 		}
 		x.Signatures = sigMap
-	} else {
+	} else if sigs != nil {
 		return errors.New("invalid signatures")
 	}
 	return nil

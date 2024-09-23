@@ -214,7 +214,7 @@ func TestUnicitySeal_cbor(t *testing.T) {
 	seal := &UnicitySeal{
 		RootChainRoundNumber: 1,
 		Timestamp:            NewTimestamp(),
-		PreviousHash:         zeroHash,
+		PreviousHash:         nil,
 		Hash:                 zeroHash,
 	}
 	err := seal.Sign("test", signer)
