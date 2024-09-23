@@ -171,15 +171,16 @@ func (x *UnicitySeal) MarshalCBOR() ([]byte, error) {
 }
 
 func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
-	version, arr, err := Cbor.UnmarshalVersioned(b)
+	_, arr, err := Cbor.UnmarshalVersioned(b)
 	if err != nil {
 		return err
 	}
-	if version != x.GetVersion() {
-		return fmt.Errorf("invalid version %d, expected %d", version, x.GetVersion())
-	}
-	if len(arr) != 5 {
-		return errors.New("invalid array length")
+	// with forward compatibility, newer versions can be added, thus must not fail here
+	//if version != x.GetVersion() {
+	//	return fmt.Errorf("invalid version %d, expected %d", version, x.GetVersion())
+	//}
+	if len(arr) < 5 {
+		return fmt.Errorf("invalid array length: %d", len(arr))
 	}
 	if round, ok := arr[0].(uint64); ok {
 		x.RootChainRoundNumber = round

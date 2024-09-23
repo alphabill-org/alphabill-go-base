@@ -234,3 +234,38 @@ func TestUnicitySeal_cbor(t *testing.T) {
 	err = res.Verify(tb)
 	require.NoError(t, err)
 }
+
+func TestUnicitySeal_forwardCompatibility(t *testing.T) {
+	type TestUnicitySealV2 struct {
+		_                    struct{} `cbor:",toarray"`
+		RootChainRoundNumber uint64
+		Timestamp            uint64
+		PreviousHash         []byte
+		Hash                 []byte
+		Signatures           SignatureMap
+		NewField             string // added in version 2 (tag: 1002)
+	}
+
+	seal2 := &TestUnicitySealV2{
+		RootChainRoundNumber: 1,
+		Timestamp:            NewTimestamp(),
+		PreviousHash:         nil,
+		Hash:                 zeroHash,
+		NewField:             "test",
+	}
+
+	data, err := Cbor.MarshalVersioned(1002, seal2.RootChainRoundNumber, seal2.Timestamp, seal2.PreviousHash, seal2.Hash, seal2.Signatures, seal2.NewField)
+	require.NoError(t, err)
+
+	// decode into version 1
+	res := &UnicitySeal{}
+	require.NoError(t, Cbor.Unmarshal(data, res))
+	expected := &UnicitySeal{
+		RootChainRoundNumber: seal2.RootChainRoundNumber,
+		Timestamp:            seal2.Timestamp,
+		PreviousHash:         seal2.PreviousHash,
+		Hash:                 seal2.Hash,
+		Signatures:           seal2.Signatures,
+	}
+	require.EqualValues(t, expected, res)
+}
