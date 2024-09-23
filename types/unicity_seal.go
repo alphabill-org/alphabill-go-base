@@ -93,6 +93,10 @@ func NewTimestamp() uint64 {
 	return uint64(time.Now().Unix())
 }
 
+func (x *UnicitySeal) GetVersion() ABVersion {
+	return UnicitySealV1Tag
+}
+
 func (x *UnicitySeal) IsValid() error {
 	if x == nil {
 		return ErrUnicitySealIsNil
@@ -156,4 +160,55 @@ func (x *UnicitySeal) Verify(tb RootTrustBase) error {
 func (x *UnicitySeal) AddToHasher(hasher hash.Hash) {
 	hasher.Write(x.Bytes())
 	x.Signatures.AddToHasher(hasher)
+}
+
+func (x *UnicitySeal) MarshalCBOR() ([]byte, error) {
+	sigs, err := x.Signatures.MarshalCBOR()
+	if err != nil {
+		return nil, err
+	}
+	return Cbor.MarshalVersioned(x.GetVersion(), x.RootChainRoundNumber, x.Timestamp, x.PreviousHash, x.Hash, sigs)
+}
+
+func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
+	version, arr, err := Cbor.UnmarshalVersioned(b)
+	if err != nil {
+		return err
+	}
+	if version != x.GetVersion() {
+		return fmt.Errorf("invalid version %d, expected %d", version, x.GetVersion())
+	}
+	if len(arr) != 5 {
+		return errors.New("invalid array length")
+	}
+	if round, ok := arr[0].(uint64); ok {
+		x.RootChainRoundNumber = round
+	} else {
+		return errors.New("invalid root round number")
+	}
+	if ts, ok := arr[1].(uint64); ok {
+		x.Timestamp = ts
+	} else {
+		return errors.New("invalid timestamp")
+	}
+	if prevHash, ok := arr[2].([]byte); ok {
+		x.PreviousHash = prevHash
+	} else {
+		return errors.New("invalid previous hash")
+	}
+	if hash, ok := arr[3].([]byte); ok {
+		x.Hash = hash
+	} else {
+		return errors.New("invalid hash")
+	}
+	if sigs, ok := arr[4].([]byte); ok {
+		var sigMap SignatureMap
+		if err := sigMap.UnmarshalCBOR(sigs); err != nil {
+			return err
+		}
+		x.Signatures = sigMap
+	} else {
+		return errors.New("invalid signatures")
+	}
+	return nil
 }

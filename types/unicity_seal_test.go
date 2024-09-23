@@ -208,3 +208,29 @@ func TestSeal_AddToHasher(t *testing.T) {
 	hasher.Write([]byte{1, 1, 1})
 	require.Equal(t, hash, hasher.Sum(nil))
 }
+
+func TestUnicitySeal_cbor(t *testing.T) {
+	signer, verifier := testsig.CreateSignerAndVerifier(t)
+	seal := &UnicitySeal{
+		RootChainRoundNumber: 1,
+		Timestamp:            NewTimestamp(),
+		PreviousHash:         zeroHash,
+		Hash:                 zeroHash,
+	}
+	err := seal.Sign("test", signer)
+	require.NoError(t, err)
+
+	tb := NewTrustBase(t, verifier)
+	err = seal.Verify(tb)
+	require.NoError(t, err)
+
+	data, err := Cbor.Marshal(seal)
+	require.NoError(t, err)
+
+	res := &UnicitySeal{}
+	require.NoError(t, Cbor.Unmarshal(data, res))
+	require.EqualValues(t, seal, res)
+
+	err = res.Verify(tb)
+	require.NoError(t, err)
+}
