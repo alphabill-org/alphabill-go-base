@@ -29,11 +29,22 @@ var (
 type SignatureMap map[string][]byte
 type UnicitySeal struct {
 	_                    struct{}     `cbor:",toarray"`
+	Version              ABVersion    `json:"version"`
 	RootChainRoundNumber uint64       `json:"root_chain_round_number,omitempty"`
 	Timestamp            uint64       `json:"timestamp,omitempty"`
 	PreviousHash         []byte       `json:"previous_hash,omitempty"`
 	Hash                 []byte       `json:"hash,omitempty"`
 	Signatures           SignatureMap `json:"signatures,omitempty"`
+}
+
+func NewUnicitySeal(setter func(seal *UnicitySeal)) *UnicitySeal {
+	us := &UnicitySeal{}
+	us.Version = us.GetVersion()
+
+	if setter != nil {
+		setter(us)
+	}
+	return us
 }
 
 // Signatures are serialized as alphabetically sorted CBOR array
@@ -94,7 +105,11 @@ func NewTimestamp() uint64 {
 }
 
 func (x *UnicitySeal) GetVersion() ABVersion {
-	return UnicitySealV1Tag
+	return 1
+}
+
+func (x *UnicitySeal) GetTag() ABTag {
+	return UnicitySealTag
 }
 
 func (x *UnicitySeal) IsValid() error {
@@ -167,42 +182,50 @@ func (x *UnicitySeal) MarshalCBOR() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Cbor.MarshalVersioned(x.GetVersion(), x.RootChainRoundNumber, x.Timestamp, x.PreviousHash, x.Hash, sigs)
+	return Cbor.MarshalTagged(x.GetTag(), x.GetVersion(), x.RootChainRoundNumber, x.Timestamp, x.PreviousHash, x.Hash, sigs)
 }
 
 func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
-	_, arr, err := Cbor.UnmarshalVersioned(b)
+	tag, arr, err := Cbor.UnmarshalTagged(b)
 	if err != nil {
 		return err
+	}
+	if tag != x.GetTag() {
+		return fmt.Errorf("invalid tag %d, expected %d", tag, x.GetTag())
 	}
 	// with forward compatibility, newer versions can be added, thus must not fail here
 	//if version != x.GetVersion() {
 	//	return fmt.Errorf("invalid version %d, expected %d", version, x.GetVersion())
 	//}
-	if len(arr) < 5 {
+	if len(arr) < 6 {
 		return fmt.Errorf("invalid array length: %d", len(arr))
 	}
-	if round, ok := arr[0].(uint64); ok {
+	if version, ok := arr[0].(uint64); ok {
+		x.Version = ABVersion(version)
+	} else {
+		return errors.New("invalid version number")
+	}
+	if round, ok := arr[1].(uint64); ok {
 		x.RootChainRoundNumber = round
 	} else {
 		return errors.New("invalid root round number")
 	}
-	if ts, ok := arr[1].(uint64); ok {
+	if ts, ok := arr[2].(uint64); ok {
 		x.Timestamp = ts
 	} else {
 		return errors.New("invalid timestamp")
 	}
-	if prevHash, ok := arr[2].([]byte); ok {
+	if prevHash, ok := arr[3].([]byte); ok {
 		x.PreviousHash = prevHash
 	} else if prevHash != nil {
 		return errors.New("invalid previous hash")
 	}
-	if hash, ok := arr[3].([]byte); ok {
+	if hash, ok := arr[4].([]byte); ok {
 		x.Hash = hash
 	} else if hash != nil {
 		return errors.New("invalid hash")
 	}
-	if sigs, ok := arr[4].([]byte); ok {
+	if sigs, ok := arr[5].([]byte); ok {
 		var sigMap SignatureMap
 		if err := sigMap.UnmarshalCBOR(sigs); err != nil {
 			return err

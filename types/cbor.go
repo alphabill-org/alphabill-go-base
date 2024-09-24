@@ -45,7 +45,7 @@ func (c cborHandler) Marshal(v any) ([]byte, error) {
 	return enc.Marshal(v)
 }
 
-func (c cborHandler) MarshalVersioned(tag ABVersion, arr ...interface{}) ([]byte, error) {
+func (c cborHandler) MarshalTagged(tag ABTag, arr ...interface{}) ([]byte, error) {
 	data, err := c.Marshal(arr)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (c cborHandler) Unmarshal(data []byte, v any) error {
 	return cbor.Unmarshal(data, v)
 }
 
-func (c cborHandler) UnmarshalVersioned(data []byte) (ABVersion, []interface{}, error) {
+func (c cborHandler) UnmarshalTagged(data []byte) (ABTag, []interface{}, error) {
 	var raw cbor.RawTag
 	if err := c.Unmarshal(data, &raw); err != nil {
 		return 0, nil, err
@@ -69,7 +69,7 @@ func (c cborHandler) UnmarshalVersioned(data []byte) (ABVersion, []interface{}, 
 	if err := c.Unmarshal(raw.Content, &arr); err != nil {
 		return 0, nil, err
 	}
-	return ABVersion(raw.Number), arr, nil
+	return ABTag(raw.Number), arr, nil
 }
 
 func (c cborHandler) GetEncoder(w io.Writer) (*cbor.Encoder, error) {
