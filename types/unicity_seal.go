@@ -39,11 +39,12 @@ type UnicitySeal struct {
 
 func NewUnicitySeal(setter func(seal *UnicitySeal)) *UnicitySeal {
 	us := &UnicitySeal{}
-	us.Version = us.GetVersion()
 
 	if setter != nil {
 		setter(us)
 	}
+
+	us.Version = us.GetVersion()
 	return us
 }
 
@@ -134,6 +135,7 @@ func (x *UnicitySeal) IsValid() error {
 // Bytes - serialize everything except signatures (used for sign and verify)
 func (x *UnicitySeal) Bytes() []byte {
 	var b bytes.Buffer
+	b.Write(util.Uint64ToBytes(uint64(x.Version)))
 	b.Write(util.Uint64ToBytes(x.RootChainRoundNumber))
 	b.Write(util.Uint64ToBytes(x.Timestamp))
 	b.Write(x.PreviousHash)

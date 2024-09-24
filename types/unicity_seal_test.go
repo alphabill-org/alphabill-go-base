@@ -185,18 +185,19 @@ func TestSignatureMap_AddToHasher_Nil(t *testing.T) {
 }
 
 func TestSeal_AddToHasher(t *testing.T) {
-	seal := &UnicitySeal{
-		RootChainRoundNumber: 1,
-		Timestamp:            100000,
-		PreviousHash:         zeroHash,
-		Hash:                 zeroHash,
-		Signatures:           map[string][]byte{"xxx": {1, 1, 1}, "aaa": {2, 2, 2}},
-	}
+	seal := NewUnicitySeal(func(s *UnicitySeal) {
+		s.RootChainRoundNumber = 1
+		s.Timestamp = NewTimestamp()
+		s.PreviousHash = zeroHash
+		s.Hash = zeroHash
+		s.Signatures = map[string][]byte{"xxx": {1, 1, 1}, "aaa": {2, 2, 2}}
+	})
 	hasher := gocrypto.SHA256.New()
 	seal.AddToHasher(hasher)
 	hash := hasher.Sum(nil)
 	// serialize manually
 	hasher.Reset()
+	hasher.Write(util.Uint64ToBytes(uint64(seal.Version)))
 	hasher.Write(util.Uint64ToBytes(seal.RootChainRoundNumber))
 	hasher.Write(util.Uint64ToBytes(seal.Timestamp))
 	hasher.Write(seal.PreviousHash)
