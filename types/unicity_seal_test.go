@@ -185,7 +185,7 @@ func TestSignatureMap_AddToHasher_Nil(t *testing.T) {
 }
 
 func TestSeal_AddToHasher(t *testing.T) {
-	seal := NewUnicitySeal(func(s *UnicitySeal) {
+	seal := NewUnicitySealV1(func(s *UnicitySeal) {
 		s.RootChainRoundNumber = 1
 		s.Timestamp = NewTimestamp()
 		s.PreviousHash = zeroHash
@@ -197,7 +197,7 @@ func TestSeal_AddToHasher(t *testing.T) {
 	hash := hasher.Sum(nil)
 	// serialize manually
 	hasher.Reset()
-	hasher.Write(util.Uint64ToBytes(uint64(seal.Version)))
+	hasher.Write(util.Uint64ToBytes(uint64(seal.GetVersion())))
 	hasher.Write(util.Uint64ToBytes(seal.RootChainRoundNumber))
 	hasher.Write(util.Uint64ToBytes(seal.Timestamp))
 	hasher.Write(seal.PreviousHash)
@@ -212,7 +212,7 @@ func TestSeal_AddToHasher(t *testing.T) {
 
 func TestUnicitySeal_cbor(t *testing.T) {
 	signer, verifier := testsig.CreateSignerAndVerifier(t)
-	seal := NewUnicitySeal(func(s *UnicitySeal) {
+	seal := NewUnicitySealV1(func(s *UnicitySeal) {
 		s.RootChainRoundNumber = 1
 		s.Timestamp = NewTimestamp()
 		s.PreviousHash = nil
@@ -240,7 +240,7 @@ func TestUnicitySeal_cbor(t *testing.T) {
 func TestUnicitySeal_forwardCompatibility(t *testing.T) {
 	type TestUnicitySealV2 struct {
 		_                    struct{} `cbor:",toarray"`
-		Version              ABVersion
+		version              ABVersion
 		RootChainRoundNumber uint64
 		Timestamp            uint64
 		PreviousHash         []byte
@@ -250,7 +250,7 @@ func TestUnicitySeal_forwardCompatibility(t *testing.T) {
 	}
 
 	seal2 := &TestUnicitySealV2{
-		Version:              2,
+		version:              2,
 		RootChainRoundNumber: 1,
 		Timestamp:            NewTimestamp(),
 		PreviousHash:         nil,
@@ -258,14 +258,14 @@ func TestUnicitySeal_forwardCompatibility(t *testing.T) {
 		NewField:             "test",
 	}
 
-	data, err := Cbor.MarshalTagged(UnicitySealTag, seal2.Version, seal2.RootChainRoundNumber, seal2.Timestamp, seal2.PreviousHash, seal2.Hash, seal2.Signatures, seal2.NewField)
+	data, err := Cbor.MarshalTagged(UnicitySealTag, seal2.version, seal2.RootChainRoundNumber, seal2.Timestamp, seal2.PreviousHash, seal2.Hash, seal2.Signatures, seal2.NewField)
 	require.NoError(t, err)
 
 	// decode into version 1
 	res := &UnicitySeal{}
 	require.NoError(t, Cbor.Unmarshal(data, res))
 	expected := &UnicitySeal{
-		Version:              seal2.Version,
+		version:              seal2.version,
 		RootChainRoundNumber: seal2.RootChainRoundNumber,
 		Timestamp:            seal2.Timestamp,
 		PreviousHash:         seal2.PreviousHash,

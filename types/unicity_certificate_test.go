@@ -668,7 +668,7 @@ func TestUCHash(t *testing.T) {
 			PartitionDescriptionHash: []byte{1, 2, 3, 4},
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
 		},
-		UnicitySeal: NewUnicitySeal(func(s *UnicitySeal) {
+		UnicitySeal: NewUnicitySealV1(func(s *UnicitySeal) {
 			s.RootChainRoundNumber = 1
 			s.Timestamp = 9
 			s.PreviousHash = []byte{1, 2, 3}

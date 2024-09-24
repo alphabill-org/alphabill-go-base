@@ -28,8 +28,8 @@ var (
 
 type SignatureMap map[string][]byte
 type UnicitySeal struct {
-	_                    struct{}     `cbor:",toarray"`
-	Version              ABVersion    `json:"version"`
+	_                    struct{} `cbor:",toarray"`
+	version              ABVersion
 	RootChainRoundNumber uint64       `json:"root_chain_round_number,omitempty"`
 	Timestamp            uint64       `json:"timestamp,omitempty"`
 	PreviousHash         []byte       `json:"previous_hash,omitempty"`
@@ -37,14 +37,13 @@ type UnicitySeal struct {
 	Signatures           SignatureMap `json:"signatures,omitempty"`
 }
 
-func NewUnicitySeal(setter func(seal *UnicitySeal)) *UnicitySeal {
-	us := &UnicitySeal{}
+func NewUnicitySealV1(setter func(seal *UnicitySeal)) *UnicitySeal {
+	us := &UnicitySeal{version: 1}
 
 	if setter != nil {
 		setter(us)
 	}
 
-	us.Version = us.GetVersion()
 	return us
 }
 
@@ -106,7 +105,7 @@ func NewTimestamp() uint64 {
 }
 
 func (x *UnicitySeal) GetVersion() ABVersion {
-	return 1
+	return x.version
 }
 
 func (x *UnicitySeal) GetTag() ABTag {
@@ -135,7 +134,7 @@ func (x *UnicitySeal) IsValid() error {
 // Bytes - serialize everything except signatures (used for sign and verify)
 func (x *UnicitySeal) Bytes() []byte {
 	var b bytes.Buffer
-	b.Write(util.Uint64ToBytes(uint64(x.Version)))
+	b.Write(util.Uint64ToBytes(uint64(x.version)))
 	b.Write(util.Uint64ToBytes(x.RootChainRoundNumber))
 	b.Write(util.Uint64ToBytes(x.Timestamp))
 	b.Write(x.PreviousHash)
@@ -203,7 +202,10 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 		return fmt.Errorf("invalid array length: %d", len(arr))
 	}
 	if version, ok := arr[0].(uint64); ok {
-		x.Version = ABVersion(version)
+		if version == 0 {
+			return fmt.Errorf("invalid version number: %d", version)
+		}
+		x.version = ABVersion(version)
 	} else {
 		return errors.New("invalid version number")
 	}
