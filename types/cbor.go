@@ -3,13 +3,15 @@ package types
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/fxamacker/cbor/v2"
 )
 
 type (
-	RawCBOR []byte
+	RawCBOR         []byte
+	RawCBORSequence []byte
 
 	cborHandler struct {
 		encMode cbor.EncMode
@@ -21,6 +23,10 @@ var (
 
 	cborNil = []byte{0xf6}
 )
+
+type Version uint // or e.g TaggedVersion struct { Version uint; Tag uint }
+
+var NilVersion Version = 0
 
 /*
 Set Core Deterministic Encoding as standard. See <https://www.rfc-editor.org/rfc/rfc8949.html#name-deterministically-encoded-c>.
@@ -45,8 +51,42 @@ func (c cborHandler) Marshal(v any) ([]byte, error) {
 	return enc.Marshal(v)
 }
 
+func validateVersion(ver Version) error {
+	if ver == NilVersion {
+		return errors.New("version is nil")
+	}
+	return nil
+}
+
+func (c cborHandler) MarshalVersioned(ver Version, v any) ([]byte, error) {
+	if err := validateVersion(ver); err != nil {
+		return nil, err
+	}
+	buf := &bytes.Buffer{}
+	enc, err := c.GetEncoder(buf)
+	if err != nil {
+		return nil, err
+	}
+	if err = enc.Encode(ver); err != nil {
+		return nil, fmt.Errorf("failed to encode version: %w", err)
+	}
+	if err = enc.Encode(v); err != nil {
+		return nil, fmt.Errorf("failed to encode value: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
 func (c cborHandler) Unmarshal(data []byte, v any) error {
 	return cbor.Unmarshal(data, v)
+}
+
+func (c cborHandler) UnmarshalVersion(data []byte) (Version, []byte, error) {
+	var ver Version
+	rest, err := cbor.UnmarshalFirst(data, &ver)
+	if err != nil {
+		return NilVersion, nil, fmt.Errorf("failed to decode version: %w", err)
+	}
+	return ver, rest, nil
 }
 
 func (c cborHandler) GetEncoder(w io.Writer) (*cbor.Encoder, error) {

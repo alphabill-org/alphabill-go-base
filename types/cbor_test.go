@@ -2,8 +2,10 @@ package types
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
+	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -283,4 +285,141 @@ func Test_RawCBOR(t *testing.T) {
 		require.NoError(t, d.UnmarshalCBOR(buf))
 		require.Equal(t, data, d)
 	})
+}
+
+func TestCborSequence(t *testing.T) {
+	t.Parallel()
+
+	type MyStruct struct {
+		_    struct{} `cbor:",toarray"`
+		Name string
+		Data []byte
+	}
+	data := &MyStruct{Name: "Neo", Data: []byte{1, 2, 3}}
+
+	t.Run("VersionWithStringTag", func(t *testing.T) {
+		type TaggedVersion struct {
+			_       struct{} `cbor:",toarray"`
+			Version uint
+			Tag     string
+		}
+
+		ver := &TaggedVersion{Version: 1, Tag: "MyStruct"}
+		buf := &bytes.Buffer{}
+		enc := cbor.NewEncoder(buf)
+		require.NoError(t, enc.Encode(ver))
+		require.NoError(t, enc.Encode(data))
+		b := buf.Bytes()
+		fmt.Printf("CBOR: %X\n", b)
+
+		var ver2 TaggedVersion
+		rest, err := cbor.UnmarshalFirst(b, &ver2)
+		require.NoError(t, err)
+		require.Equal(t, ver, &ver2)
+		data2 := &MyStruct{}
+		err = cbor.Unmarshal(rest, &data2)
+		require.NoError(t, err)
+		require.Equal(t, data, data2)
+	})
+
+	t.Run("VersionWithIntTag", func(t *testing.T) {
+		type TaggedVersion struct {
+			_       struct{} `cbor:",toarray"`
+			Version uint
+			Tag     uint
+		}
+
+		ver := &TaggedVersion{Version: 1, Tag: 0xFF}
+		buf := &bytes.Buffer{}
+		enc := getCborEncoder(t).NewEncoder(buf)
+		require.NoError(t, enc.Encode(ver))
+		require.NoError(t, enc.Encode(data))
+		b := buf.Bytes()
+		fmt.Printf("CBOR: %X\n", b)
+
+		var ver2 TaggedVersion
+		rest, err := cbor.UnmarshalFirst(b, &ver2)
+		require.NoError(t, err)
+		require.Equal(t, ver, &ver2)
+		data2 := &MyStruct{}
+		err = cbor.Unmarshal(rest, &data2)
+		require.NoError(t, err)
+		require.Equal(t, data, data2)
+	})
+
+	t.Run("SimpleVersion", func(t *testing.T) {
+		var ver uint = 24
+		buf := &bytes.Buffer{}
+		enc := getCborEncoder(t).NewEncoder(buf)
+		require.NoError(t, enc.Encode(ver))
+		require.NoError(t, enc.Encode(data))
+		b := buf.Bytes()
+		fmt.Printf("CBOR: %X\n", b)
+
+		var ver2 uint
+		rest, err := cbor.UnmarshalFirst(b, &ver2)
+		require.NoError(t, err)
+		require.Equal(t, ver, ver2)
+		data2 := &MyStruct{}
+		err = cbor.Unmarshal(rest, &data2)
+		require.NoError(t, err)
+		require.Equal(t, data, data2)
+	})
+}
+
+func TestVersionedCbor(t *testing.T) {
+	t.Parallel()
+
+	type MyStruct struct {
+		_    struct{} `cbor:",toarray"`
+		Name string
+		Data []byte
+	}
+
+	type MyStructV2 struct {
+		_    struct{} `cbor:",toarray"`
+		Name string
+		Data []byte
+		Tag  string
+	}
+
+	data := &MyStruct{Name: "Neo", Data: []byte{1, 2, 3}}
+	dataV2 := &MyStructV2{Name: "Neo2", Data: []byte{1, 2, 3}, Tag: "Hello"}
+
+	t.Run("Nil version", func(t *testing.T) {
+		_, err := Cbor.MarshalVersioned(0, data)
+		require.Error(t, err)
+	})
+
+	t.Run("VersionedCbor V1", func(t *testing.T) {
+		buf, err := Cbor.MarshalVersioned(1, data)
+		require.NoError(t, err)
+		fmt.Printf("CBOR: %X\n", buf)
+
+		var data2 MyStruct
+		ver, rest, err := Cbor.UnmarshalVersion(buf)
+		require.NoError(t, err)
+		require.EqualValues(t, uint(1), ver)
+		require.NoError(t, Cbor.Unmarshal(rest, &data2))
+		require.Equal(t, data, &data2)
+	})
+
+	t.Run("VersionedCbor V2", func(t *testing.T) {
+		buf, err := Cbor.MarshalVersioned(2, dataV2)
+		require.NoError(t, err)
+		fmt.Printf("CBOR: %X\n", buf)
+
+		var data2 MyStructV2
+		ver, rest, err := Cbor.UnmarshalVersion(buf)
+		require.NoError(t, err)
+		require.EqualValues(t, uint(2), ver)
+		require.NoError(t, Cbor.Unmarshal(rest, &data2))
+		require.Equal(t, dataV2, &data2)
+	})
+}
+
+func getCborEncoder(t *testing.T) cbor.EncMode {
+	enc, err := cbor.CoreDetEncOptions().EncMode()
+	require.NoError(t, err)
+	return enc
 }
