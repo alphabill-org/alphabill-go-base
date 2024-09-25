@@ -185,18 +185,19 @@ func TestSignatureMap_AddToHasher_Nil(t *testing.T) {
 }
 
 func TestSeal_AddToHasher(t *testing.T) {
-	seal := &UnicitySeal{
-		RootChainRoundNumber: 1,
-		Timestamp:            100000,
-		PreviousHash:         zeroHash,
-		Hash:                 zeroHash,
-		Signatures:           map[string][]byte{"xxx": {1, 1, 1}, "aaa": {2, 2, 2}},
-	}
+	seal := NewUnicitySealV1(func(s *UnicitySeal) {
+		s.RootChainRoundNumber = 1
+		s.Timestamp = NewTimestamp()
+		s.PreviousHash = zeroHash
+		s.Hash = zeroHash
+		s.Signatures = map[string][]byte{"xxx": {1, 1, 1}, "aaa": {2, 2, 2}}
+	})
 	hasher := gocrypto.SHA256.New()
 	seal.AddToHasher(hasher)
 	hash := hasher.Sum(nil)
 	// serialize manually
 	hasher.Reset()
+	hasher.Write(util.Uint64ToBytes(uint64(seal.GetVersion())))
 	hasher.Write(util.Uint64ToBytes(seal.RootChainRoundNumber))
 	hasher.Write(util.Uint64ToBytes(seal.Timestamp))
 	hasher.Write(seal.PreviousHash)
@@ -207,4 +208,69 @@ func TestSeal_AddToHasher(t *testing.T) {
 	hasher.Write([]byte("xxx"))
 	hasher.Write([]byte{1, 1, 1})
 	require.Equal(t, hash, hasher.Sum(nil))
+}
+
+func TestUnicitySeal_cbor(t *testing.T) {
+	signer, verifier := testsig.CreateSignerAndVerifier(t)
+	seal := NewUnicitySealV1(func(s *UnicitySeal) {
+		s.RootChainRoundNumber = 1
+		s.Timestamp = NewTimestamp()
+		s.PreviousHash = nil
+		s.Hash = zeroHash
+	})
+
+	err := seal.Sign("test", signer)
+	require.NoError(t, err)
+
+	tb := NewTrustBase(t, verifier)
+	err = seal.Verify(tb)
+	require.NoError(t, err)
+
+	data, err := Cbor.Marshal(seal)
+	require.NoError(t, err)
+
+	res := &UnicitySeal{}
+	require.NoError(t, Cbor.Unmarshal(data, res))
+	require.EqualValues(t, seal, res)
+
+	err = res.Verify(tb)
+	require.NoError(t, err)
+}
+
+func TestUnicitySeal_forwardCompatibility(t *testing.T) {
+	type TestUnicitySealV2 struct {
+		_                    struct{} `cbor:",toarray"`
+		version              ABVersion
+		RootChainRoundNumber uint64
+		Timestamp            uint64
+		PreviousHash         []byte
+		Hash                 []byte
+		Signatures           SignatureMap
+		NewField             string // added in version 2 (tag: 1002)
+	}
+
+	seal2 := &TestUnicitySealV2{
+		version:              2,
+		RootChainRoundNumber: 1,
+		Timestamp:            NewTimestamp(),
+		PreviousHash:         nil,
+		Hash:                 zeroHash,
+		NewField:             "test",
+	}
+
+	data, err := Cbor.MarshalTagged(UnicitySealTag, seal2.version, seal2.RootChainRoundNumber, seal2.Timestamp, seal2.PreviousHash, seal2.Hash, seal2.Signatures, seal2.NewField)
+	require.NoError(t, err)
+
+	// decode into version 1
+	res := &UnicitySeal{}
+	require.NoError(t, Cbor.Unmarshal(data, res))
+	expected := &UnicitySeal{
+		Version:              seal2.version,
+		RootChainRoundNumber: seal2.RootChainRoundNumber,
+		Timestamp:            seal2.Timestamp,
+		PreviousHash:         seal2.PreviousHash,
+		Hash:                 seal2.Hash,
+		Signatures:           seal2.Signatures,
+	}
+	require.EqualValues(t, expected, res)
 }
