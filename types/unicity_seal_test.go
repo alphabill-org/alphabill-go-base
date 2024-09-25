@@ -265,7 +265,7 @@ func TestUnicitySeal_forwardCompatibility(t *testing.T) {
 	res := &UnicitySeal{}
 	require.NoError(t, Cbor.Unmarshal(data, res))
 	expected := &UnicitySeal{
-		version:              seal2.version,
+		Version:              seal2.version,
 		RootChainRoundNumber: seal2.RootChainRoundNumber,
 		Timestamp:            seal2.Timestamp,
 		PreviousHash:         seal2.PreviousHash,
