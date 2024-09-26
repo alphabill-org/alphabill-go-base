@@ -22,8 +22,8 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 		RoundNumber:     1,
 		SumOfEarnedFees: 2,
 	}
-	txr1 := createTransactionRecord(createTxOrder(t), 1)
-	txr2 := createTransactionRecord(createTxOrder(t), 1)
+	txr1 := createTransactionRecord(createTransactionOrder(t), 1)
+	txr2 := createTransactionRecord(createTransactionOrder(t), 1)
 	block := &Block{
 		Header: &Header{
 			SystemID:          systemID,

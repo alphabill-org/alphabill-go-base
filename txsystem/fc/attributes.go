@@ -5,12 +5,12 @@ import (
 )
 
 const (
-	PayloadTypeAddFeeCredit      = "addFC"
-	PayloadTypeCloseFeeCredit    = "closeFC"
-	PayloadTypeReclaimFeeCredit  = "reclFC"
-	PayloadTypeTransferFeeCredit = "transFC"
-	PayloadTypeLockFeeCredit     = "lockFC"
-	PayloadTypeUnlockFeeCredit   = "unlockFC"
+	TransactionTypeTransferFeeCredit uint16 = 14
+	TransactionTypeReclaimFeeCredit  uint16 = 15
+	TransactionTypeAddFeeCredit      uint16 = 16
+	TransactionTypeCloseFeeCredit    uint16 = 17
+	TransactionTypeLockFeeCredit     uint16 = 18
+	TransactionTypeUnlockFeeCredit   uint16 = 19
 )
 
 type (
@@ -60,11 +60,8 @@ type (
 )
 
 func IsFeeCreditTx(tx *types.TransactionOrder) bool {
-	typeUrl := tx.PayloadType()
-	return typeUrl == PayloadTypeTransferFeeCredit ||
-		typeUrl == PayloadTypeAddFeeCredit ||
-		typeUrl == PayloadTypeCloseFeeCredit ||
-		typeUrl == PayloadTypeReclaimFeeCredit ||
-		typeUrl == PayloadTypeLockFeeCredit ||
-		typeUrl == PayloadTypeUnlockFeeCredit
+	if tx == nil {
+		return false
+	}
+	return tx.Type >= TransactionTypeTransferFeeCredit && tx.Type <= TransactionTypeUnlockFeeCredit
 }

@@ -88,12 +88,12 @@ func NewUnitData(unitID types.UnitID) (types.UnitData, error) {
 }
 
 func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, latestAdditionTime uint64) types.UnitID {
-	ownerPredicate := templates.NewP2pkh256FeeAuthBytesFromKey(pubKey)
+	ownerPredicate := templates.NewP2pkh256BytesFromKey(pubKey)
 	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 
 func NewFeeCreditRecordIDFromPublicKeyHash(shardPart, pubKeyHash []byte, latestAdditionTime uint64) types.UnitID {
-	ownerPredicate := templates.NewP2pkh256FeeAuthBytesFromKeyHash(pubKeyHash)
+	ownerPredicate := templates.NewP2pkh256BytesFromKeyHash(pubKeyHash)
 	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 

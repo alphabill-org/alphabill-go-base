@@ -8,12 +8,13 @@ import (
 
 const SystemIdentifierLength = 4
 
-type SystemID uint32
+type (
+	NetworkID uint16
+	SystemID  uint32
 
-/*
-UnitID is the extended identifier, combining the type and the unit identifiers.
-*/
-type UnitID []byte
+	// UnitID is the extended identifier, combining the type and the unit identifiers.
+	UnitID []byte
+)
 
 // NewUnitID creates a new UnitID consisting of a shardPart, unitPart and typePart.
 func NewUnitID(unitIDLength int, shardPart []byte, unitPart []byte, typePart []byte) UnitID {
@@ -77,9 +78,9 @@ func BytesToSystemID(b []byte) (SystemID, error) {
 }
 
 func (sid SystemID) Bytes() []byte {
-	bytes := make([]byte, SystemIdentifierLength)
-	binary.BigEndian.PutUint32(bytes, uint32(sid))
-	return bytes
+	b := make([]byte, SystemIdentifierLength)
+	binary.BigEndian.PutUint32(b, uint32(sid))
+	return b
 }
 
 func (sid SystemID) String() string {

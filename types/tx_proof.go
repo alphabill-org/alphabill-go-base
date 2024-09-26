@@ -85,7 +85,7 @@ func VerifyTxProof(proof *TxProof, txRecord *TransactionRecord, tb RootTrustBase
 	}
 	// TODO ch 2.8.7: Verify Transaction Proof: VerifyTxProof: System description must be an input parameter
 	sdrHash := proof.GetUnicityTreeSystemDescriptionHash()
-	if err := proof.UnicityCertificate.Verify(tb, hashAlgorithm, txRecord.TransactionOrder.SystemID(), sdrHash); err != nil {
+	if err := proof.UnicityCertificate.Verify(tb, hashAlgorithm, txRecord.TransactionOrder.SystemID, sdrHash); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 	// h ← plain_tree_output(C, H(P))
