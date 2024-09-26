@@ -14,4 +14,5 @@ type Tagged interface {
 const (
 	_ = iota + ABTag(1000)
 	UnicitySealTag
+	RootGenesisTag
 )
