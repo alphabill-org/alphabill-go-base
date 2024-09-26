@@ -79,6 +79,13 @@ func (t *TransactionRecord) IsSuccessful() bool {
 	return t.ServerMetadata.SuccessIndicator == TxStatusSuccessful
 }
 
+func (t *TransactionRecord) UnitID() UnitID {
+	if t == nil || t.TransactionOrder == nil {
+		return nil
+	}
+	return t.TransactionOrder.UnitID
+}
+
 func (sm *ServerMetadata) GetActualFee() uint64 {
 	if sm == nil {
 		return 0

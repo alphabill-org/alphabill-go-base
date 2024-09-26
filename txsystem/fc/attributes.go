@@ -44,7 +44,6 @@ type (
 		_                      struct{}                 `cbor:",toarray"`
 		CloseFeeCreditTransfer *types.TransactionRecord // bill transfer record of type "close fee credit"
 		CloseFeeCreditProof    *types.TxProof           // transaction proof of "close fee credit" transaction
-		Counter                uint64                   // the transaction counter of this unit
 	}
 
 	LockFeeCreditAttributes struct {

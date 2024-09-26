@@ -38,9 +38,8 @@ type (
 	}
 
 	SwapDCAttributes struct {
-		_                 struct{} `cbor:",toarray"`
-		DustTransferProof []*DustTransferProof
-		TargetValue       uint64 // value added to target bill
+		_                  struct{}               `cbor:",toarray"`
+		DustTransferProofs []*types.TxRecordProof // the dust transfer records and proofs
 	}
 
 	LockAttributes struct {
@@ -58,11 +57,5 @@ type (
 		_              struct{} `cbor:",toarray"`
 		Amount         uint64
 		OwnerPredicate []byte
-	}
-
-	DustTransferProof struct {
-		_               struct{} `cbor:",toarray"`
-		DcTransfer      *types.TransactionRecord
-		DcTransferProof *types.TxProof
 	}
 )

@@ -113,10 +113,8 @@ type (
 	}
 
 	JoinFungibleTokenAttributes struct {
-		_                struct{}                   `cbor:",toarray"`
-		BurnTransactions []*types.TransactionRecord // the transactions that burned the source tokens
-		Proofs           []*types.TxProof           // block proofs for burn transactions
-		Counter          uint64                     // the transaction counter of this token
+		_               struct{}               `cbor:",toarray"`
+		BurnTokenProofs []*types.TxRecordProof // the transaction records and proofs that burned the source tokens
 	}
 
 	LockTokenAttributes struct {
