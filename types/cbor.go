@@ -45,8 +45,31 @@ func (c cborHandler) Marshal(v any) ([]byte, error) {
 	return enc.Marshal(v)
 }
 
+func (c cborHandler) MarshalTagged(tag ABTag, arr ...interface{}) ([]byte, error) {
+	data, err := c.Marshal(arr)
+	if err != nil {
+		return nil, err
+	}
+	return c.Marshal(cbor.RawTag{
+		Number:  uint64(tag),
+		Content: data,
+	})
+}
+
 func (c cborHandler) Unmarshal(data []byte, v any) error {
 	return cbor.Unmarshal(data, v)
+}
+
+func (c cborHandler) UnmarshalTagged(data []byte) (ABTag, []interface{}, error) {
+	var raw cbor.RawTag
+	if err := c.Unmarshal(data, &raw); err != nil {
+		return 0, nil, err
+	}
+	arr := make([]interface{}, 0)
+	if err := c.Unmarshal(raw.Content, &arr); err != nil {
+		return 0, nil, err
+	}
+	return ABTag(raw.Number), arr, nil
 }
 
 func (c cborHandler) GetEncoder(w io.Writer) (*cbor.Encoder, error) {
