@@ -26,10 +26,7 @@ func (id ShardID) Bytes() []byte {
 Key is intended to be used where comparable shard ID is needed (ie map key).
 */
 func (id ShardID) Key() string {
-	// more efficient than casting Bytes (iow encoding to bitstring)
-	// but we relay on the unused bits being cleared and empty ID
-	// having either nil or empty slice as "bits" value
-	return string(id.bits)
+	return string(id.Bytes())
 }
 
 func (id ShardID) AddToHasher(h hash.Hash) {

@@ -250,15 +250,19 @@ func Test_ShardID_MarshalCBOR(t *testing.T) {
 }
 
 func Test_ShardID_Key(t *testing.T) {
-	// these tests are mainly checking that assumptions hold
-	// ie that Key of empty ID is always the same
-
 	t.Run("zero value", func(t *testing.T) {
-		id := ShardID{}
-		require.Equal(t, "", id.Key())
+		idN := ShardID{}
+		idE := ShardID{bits: []byte{}, length: 0}
+		require.Equal(t, idN.Key(), idE.Key())
+	})
 
-		id = ShardID{bits: []byte{}, length: 0}
-		require.Equal(t, "", id.Key())
+	t.Run("different length of zero bits", func(t *testing.T) {
+		id1 := ShardID{bits: []byte{0}, length: 1}
+		id2 := ShardID{bits: []byte{0}, length: 2}
+		id8 := ShardID{bits: []byte{0}, length: 8}
+		require.NotEqual(t, id1.Key(), id2.Key())
+		require.NotEqual(t, id1.Key(), id8.Key())
+		require.NotEqual(t, id2.Key(), id8.Key())
 	})
 
 	t.Run("text marshaling", func(t *testing.T) {
