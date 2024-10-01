@@ -22,6 +22,13 @@ func (id ShardID) Bytes() []byte {
 	return encodeBitstring(id.bits, id.length)
 }
 
+/*
+Key is intended to be used where comparable shard ID is needed (ie map key).
+*/
+func (id ShardID) Key() string {
+	return string(id.Bytes())
+}
+
 func (id ShardID) AddToHasher(h hash.Hash) {
 	h.Write(id.Bytes())
 }

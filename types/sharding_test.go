@@ -248,3 +248,66 @@ func Test_ShardID_MarshalCBOR(t *testing.T) {
 		require.True(t, id.Equal(v2.ID))
 	})
 }
+
+func Test_ShardID_Key(t *testing.T) {
+	t.Run("zero value", func(t *testing.T) {
+		idN := ShardID{}
+		idE := ShardID{bits: []byte{}, length: 0}
+		require.Equal(t, idN.Key(), idE.Key())
+	})
+
+	t.Run("different length of zero bits", func(t *testing.T) {
+		id1 := ShardID{bits: []byte{0}, length: 1}
+		id2 := ShardID{bits: []byte{0}, length: 2}
+		id8 := ShardID{bits: []byte{0}, length: 8}
+		require.NotEqual(t, id1.Key(), id2.Key())
+		require.NotEqual(t, id1.Key(), id8.Key())
+		require.NotEqual(t, id2.Key(), id8.Key())
+	})
+
+	t.Run("text marshaling", func(t *testing.T) {
+		// after marshal -> unmarshal must produce the same key
+		var idA, idB ShardID
+		buf, err := idA.MarshalText()
+		require.NoError(t, err)
+		require.NoError(t, idB.UnmarshalText(buf))
+		require.Equal(t, idA.Key(), idB.Key())
+
+		// non empty ID
+		idA0, idA1 := idA.Split()
+		buf, err = idA0.MarshalText()
+		require.NoError(t, err)
+		require.NoError(t, idB.UnmarshalText(buf))
+		require.Equal(t, idA0.Key(), idB.Key())
+		require.NotEqual(t, idA0.Key(), idA1.Key())
+		require.NotEqual(t, idA0.Key(), idA.Key())
+
+		buf, err = idA1.MarshalText()
+		require.NoError(t, err)
+		require.NoError(t, idB.UnmarshalText(buf))
+		require.Equal(t, idA1.Key(), idB.Key())
+	})
+
+	t.Run("CBOR marshaling", func(t *testing.T) {
+		// after marshal -> unmarshal must produce the same key
+		var idA, idB ShardID
+		buf, err := idA.MarshalCBOR()
+		require.NoError(t, err)
+		require.NoError(t, idB.UnmarshalCBOR(buf))
+		require.Equal(t, idA.Key(), idB.Key())
+
+		// non empty ID
+		idA0, idA1 := idA.Split()
+		buf, err = idA0.MarshalCBOR()
+		require.NoError(t, err)
+		require.NoError(t, idB.UnmarshalCBOR(buf))
+		require.Equal(t, idA0.Key(), idB.Key())
+		require.NotEqual(t, idA0.Key(), idA1.Key())
+		require.NotEqual(t, idA0.Key(), idA.Key())
+
+		buf, err = idA1.MarshalCBOR()
+		require.NoError(t, err)
+		require.NoError(t, idB.UnmarshalCBOR(buf))
+		require.Equal(t, idA1.Key(), idB.Key())
+	})
+}

@@ -142,7 +142,7 @@ func (n *NonFungibleTokenTypeData) Copy() types.UnitData {
 func (n *NonFungibleTokenData) Write(hasher hash.Hash) error {
 	res, err := types.Cbor.Marshal(n)
 	if err != nil {
-		return fmt.Errorf("ft data serialization error: %w", err)
+		return fmt.Errorf("nft data serialization error: %w", err)
 	}
 	_, err = hasher.Write(res)
 	return err
