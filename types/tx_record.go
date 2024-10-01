@@ -72,18 +72,46 @@ func (t *TransactionRecord) GetActualFee() uint64 {
 	return t.ServerMetadata.GetActualFee()
 }
 
-func (t *TransactionRecord) IsSuccessful() bool {
-	if t == nil || t.ServerMetadata == nil {
-		return false
+func (t *TransactionRecord) TxStatus() TxStatus {
+	if t == nil {
+		return 0
 	}
-	return t.ServerMetadata.SuccessIndicator == TxStatusSuccessful
+	return t.ServerMetadata.TxStatus()
+}
+
+func (t *TransactionRecord) IsSuccessful() bool {
+	return t.TxStatus() == TxStatusSuccessful
 }
 
 func (t *TransactionRecord) UnitID() UnitID {
-	if t == nil || t.TransactionOrder == nil {
+	return t.GetTransactionOrder().GetUnitID()
+}
+
+func (t *TransactionRecord) GetTransactionOrder() *TransactionOrder {
+	if t == nil {
 		return nil
 	}
-	return t.TransactionOrder.UnitID
+	return t.TransactionOrder
+}
+
+func (t *TransactionRecord) TargetUnits() []UnitID {
+	if t == nil {
+		return nil
+	}
+	return t.ServerMetadata.GetTargetUnits()
+}
+
+func (t *TransactionRecord) IsValid() error {
+	if t == nil {
+		return ErrTransactionRecordIsNil
+	}
+	if t.TransactionOrder == nil {
+		return ErrTransactionOrderIsNil
+	}
+	if t.ServerMetadata == nil {
+		return ErrServerMetadataIsNil
+	}
+	return nil
 }
 
 func (sm *ServerMetadata) GetActualFee() uint64 {
@@ -91,6 +119,13 @@ func (sm *ServerMetadata) GetActualFee() uint64 {
 		return 0
 	}
 	return sm.ActualFee
+}
+
+func (sm *ServerMetadata) TxStatus() TxStatus {
+	if sm == nil {
+		return 0
+	}
+	return sm.SuccessIndicator
 }
 
 func (sm *ServerMetadata) UnmarshalDetails(v any) error {
@@ -101,6 +136,9 @@ func (sm *ServerMetadata) UnmarshalDetails(v any) error {
 }
 
 func (sm *ServerMetadata) SetError(e error) {
+	if sm == nil {
+		return
+	}
 	// on error clear changed units
 	if errors.Is(e, ErrOutOfGas) {
 		sm.SuccessIndicator = TxErrOutOfGas
@@ -112,5 +150,69 @@ func (sm *ServerMetadata) SetError(e error) {
 }
 
 func (sm *ServerMetadata) ErrDetail() error {
+	if sm == nil {
+		return nil
+	}
 	return sm.errDetail
+}
+
+func (sm *ServerMetadata) GetTargetUnits() []UnitID {
+	if sm == nil {
+		return nil
+	}
+	return sm.TargetUnits
+}
+
+func (t *TxRecordProof) IsValid() error {
+	if t == nil {
+		return errors.New("transaction record proof is nil")
+	}
+	if err := t.TxRecord.IsValid(); err != nil {
+		return err
+	}
+	if err := t.TxProof.IsValid(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *TxRecordProof) UnitID() UnitID {
+	return t.TransactionOrder().GetUnitID()
+}
+
+func (t *TxRecordProof) TransactionOrder() *TransactionOrder {
+	if t == nil {
+		return nil
+	}
+	return t.TxRecord.GetTransactionOrder()
+}
+
+func (t *TxRecordProof) ActualFee() uint64 {
+	if t == nil {
+		return 0
+	}
+	return t.TxRecord.GetActualFee()
+}
+
+func (t *TxRecordProof) TxStatus() TxStatus {
+	if t == nil {
+		return 0
+	}
+	return t.TxRecord.TxStatus()
+}
+
+func (t *TxRecordProof) Timeout() uint64 {
+	return t.TransactionOrder().Timeout()
+}
+
+func (t *TxRecordProof) FeeCreditRecordID() []byte {
+	return t.TransactionOrder().FeeCreditRecordID()
+}
+
+func (t *TxRecordProof) MaxFee() uint64 {
+	return t.TransactionOrder().MaxFee()
+}
+
+func (t *TxRecordProof) ReferenceNumber() []byte {
+	return t.TransactionOrder().ReferenceNumber()
 }

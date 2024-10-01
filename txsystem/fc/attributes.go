@@ -15,10 +15,9 @@ const (
 
 type (
 	AddFeeCreditAttributes struct {
-		_                       struct{}                 `cbor:",toarray"`
-		FeeCreditOwnerPredicate []byte                   // target fee credit record owner predicate
-		FeeCreditTransfer       *types.TransactionRecord // bill transfer record of type "transfer fee credit"
-		FeeCreditTransferProof  *types.TxProof           // transaction proof of "transfer fee credit" transaction
+		_                       struct{}             `cbor:",toarray"`
+		FeeCreditOwnerPredicate []byte               // target fee credit record owner predicate
+		FeeCreditTransferProof  *types.TxRecordProof // transaction proof of "transfer fee credit" transaction
 	}
 
 	TransferFeeCreditAttributes struct {
@@ -41,9 +40,8 @@ type (
 	}
 
 	ReclaimFeeCreditAttributes struct {
-		_                      struct{}                 `cbor:",toarray"`
-		CloseFeeCreditTransfer *types.TransactionRecord // bill transfer record of type "close fee credit"
-		CloseFeeCreditProof    *types.TxProof           // transaction proof of "close fee credit" transaction
+		_                   struct{}             `cbor:",toarray"`
+		CloseFeeCreditProof *types.TxRecordProof // transaction proof of "close fee credit" transaction
 	}
 
 	LockFeeCreditAttributes struct {

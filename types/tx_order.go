@@ -6,7 +6,11 @@ import (
 	"fmt"
 )
 
-var ErrTransactionOrderIsNil = errors.New("transaction order is nil")
+var (
+	ErrTransactionRecordIsNil = errors.New("transaction record is nil")
+	ErrTransactionOrderIsNil  = errors.New("transaction order is nil")
+	ErrServerMetadataIsNil    = errors.New("server metadata is nil")
+)
 
 type (
 	TransactionOrder struct {
@@ -158,36 +162,71 @@ func (t *TransactionOrder) UnmarshalAttributes(v any) error {
 	return Cbor.Unmarshal(t.Attributes, v)
 }
 
+func (t *TransactionOrder) HasStateLock() bool {
+	return t != nil && t.StateLock != nil
+}
+
+func (t *TransactionOrder) GetUnitID() UnitID {
+	if t == nil {
+		return nil
+	}
+	return t.UnitID
+}
+
 func (t *TransactionOrder) Timeout() uint64 {
-	if t == nil || t.ClientMetadata == nil {
+	if t == nil {
 		return 0
 	}
-	return t.ClientMetadata.Timeout
+	return t.ClientMetadata.GetTimeout()
 }
 
 func (t *TransactionOrder) FeeCreditRecordID() []byte {
-	if t == nil || t.ClientMetadata == nil {
+	if t == nil {
 		return nil
 	}
-	return t.ClientMetadata.FeeCreditRecordID
+	return t.ClientMetadata.GetFeeCreditRecordID()
 }
 
 func (t *TransactionOrder) MaxFee() uint64 {
-	if t == nil || t.ClientMetadata == nil {
+	if t == nil {
 		return 0
 	}
-	return t.ClientMetadata.MaxTransactionFee
+	return t.ClientMetadata.GetMaxFee()
 }
 
 func (t *TransactionOrder) ReferenceNumber() []byte {
-	if t == nil || t.ClientMetadata == nil {
+	if t == nil {
 		return nil
 	}
-	return t.ClientMetadata.ReferenceNumber
+	return t.ClientMetadata.GetReferenceNumber()
 }
 
-func (t *TransactionOrder) HasStateLock() bool {
-	return t != nil && t.StateLock != nil
+func (c *ClientMetadata) GetTimeout() uint64 {
+	if c == nil {
+		return 0
+	}
+	return c.Timeout
+}
+
+func (c *ClientMetadata) GetMaxFee() uint64 {
+	if c == nil {
+		return 0
+	}
+	return c.MaxTransactionFee
+}
+
+func (c *ClientMetadata) GetFeeCreditRecordID() []byte {
+	if c == nil {
+		return nil
+	}
+	return c.FeeCreditRecordID
+}
+
+func (c *ClientMetadata) GetReferenceNumber() []byte {
+	if c == nil {
+		return nil
+	}
+	return c.ReferenceNumber
 }
 
 func (s StateLock) IsValid() error {
