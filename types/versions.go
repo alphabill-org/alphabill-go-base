@@ -3,9 +3,7 @@ package types
 import "fmt"
 
 type ABTag = uint64
-type ABVersion = uint64
-
-//var ErrInvalidVersion = errors.New("invalid version")
+type ABVersion = uint32
 
 // Versioned interface is used by the structs that require versioning.
 // By our convention, the version is the first field of the struct with type ABVersion.

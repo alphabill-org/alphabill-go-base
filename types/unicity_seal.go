@@ -37,16 +37,6 @@ type UnicitySeal struct {
 	Signatures           SignatureMap `json:"signatures,omitempty"`
 }
 
-func NewUnicitySealV1(setter func(seal *UnicitySeal)) *UnicitySeal {
-	us := &UnicitySeal{Version: 1}
-
-	if setter != nil {
-		setter(us)
-	}
-
-	return us
-}
-
 // Signatures are serialized as alphabetically sorted CBOR array
 type signaturesCBOR []*signature
 type signature struct {
@@ -105,7 +95,10 @@ func NewTimestamp() uint64 {
 }
 
 func (x *UnicitySeal) GetVersion() ABVersion {
-	return x.Version
+	if x != nil && x.Version > 0 {
+		return x.Version
+	}
+	return 1
 }
 
 func (x *UnicitySeal) GetTag() ABTag {
@@ -134,7 +127,7 @@ func (x *UnicitySeal) IsValid() error {
 // Bytes - serialize everything except signatures (used for sign and verify)
 func (x *UnicitySeal) Bytes() []byte {
 	var b bytes.Buffer
-	b.Write(util.Uint64ToBytes(uint64(x.Version)))
+	b.Write(util.Uint32ToBytes(x.GetVersion()))
 	b.Write(util.Uint64ToBytes(x.RootChainRoundNumber))
 	b.Write(util.Uint64ToBytes(x.Timestamp))
 	b.Write(x.PreviousHash)
