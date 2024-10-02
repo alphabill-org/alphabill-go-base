@@ -73,6 +73,20 @@ func (b *Block) HeaderHash(algorithm crypto.Hash) []byte {
 	return b.Header.Hash(algorithm)
 }
 
+/*
+Size returns Block Size value used in Certification Request.
+*/
+func (b *Block) Size() (bs uint64, _ error) {
+	for x, v := range b.Transactions {
+		buf, err := v.Bytes()
+		if err != nil {
+			return 0, fmt.Errorf("failed to get binary size of the transaction %d in the block: %w", x, err)
+		}
+		bs += uint64(len(buf))
+	}
+	return bs, nil
+}
+
 func (b *Block) GetRoundNumber() uint64 {
 	if b != nil {
 		return b.UnicityCertificate.GetRoundNumber()
