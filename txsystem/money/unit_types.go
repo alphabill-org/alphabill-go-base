@@ -13,8 +13,8 @@ const (
 )
 
 var (
-	BillUnitType            = []byte{0x00}
-	FeeCreditRecordUnitType = []byte{0x0f}
+	BillUnitType            = []byte{1}
+	FeeCreditRecordUnitType = []byte{16}
 )
 
 func NewBillID(shardPart []byte, unitPart []byte) types.UnitID {

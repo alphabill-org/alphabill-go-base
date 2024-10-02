@@ -16,11 +16,11 @@ const (
 )
 
 var (
-	FungibleTokenTypeUnitType    = []byte{0x20}
-	FungibleTokenUnitType        = []byte{0x21}
-	NonFungibleTokenTypeUnitType = []byte{0x22}
-	NonFungibleTokenUnitType     = []byte{0x23}
-	FeeCreditRecordUnitType      = []byte{0x2f}
+	FungibleTokenTypeUnitType    = []byte{1}
+	NonFungibleTokenTypeUnitType = []byte{2}
+	FungibleTokenUnitType        = []byte{3}
+	NonFungibleTokenUnitType     = []byte{4}
+	FeeCreditRecordUnitType      = []byte{16}
 )
 
 func NewFungibleTokenTypeID(shardPart []byte, unitPart []byte) types.UnitID {
