@@ -217,9 +217,9 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 	} else if prevHash != nil {
 		return errors.New("invalid previous hash")
 	}
-	if hash, ok := arr[4].([]byte); ok {
-		x.Hash = hash
-	} else if hash != nil {
+	if h, ok := arr[4].([]byte); ok {
+		x.Hash = h
+	} else {
 		return errors.New("invalid hash")
 	}
 	if sigs, ok := arr[5].([]byte); ok {
