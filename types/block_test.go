@@ -284,6 +284,35 @@ func TestBlock_Hash(t *testing.T) {
 	})
 }
 
+func TestBlock_Size(t *testing.T) {
+	// size of an empty block must be zero
+	b := Block{}
+	size, err := b.Size()
+	require.NoError(t, err)
+	require.EqualValues(t, 0, size)
+
+	txr := createTransactionRecord(createTxOrder(t), 1)
+	buf, err := txr.Bytes()
+	require.NoError(t, err)
+	txSize := len(buf)
+
+	// add an txr to the block - size must be != 0 now
+	b.Transactions = append(b.Transactions, txr)
+	size, err = b.Size()
+	require.NoError(t, err)
+	require.EqualValues(t, txSize, size)
+	// adding the same txr once more (not valid but not important
+	// in this context) should double the size
+	b.Transactions = append(b.Transactions, txr)
+	size, err = b.Size()
+	require.NoError(t, err)
+	require.EqualValues(t, 2*txSize, size)
+	// second consecutive call must return the same value
+	size, err = b.Size()
+	require.NoError(t, err)
+	require.EqualValues(t, 2*txSize, size)
+}
+
 func TestHeader_IsValid(t *testing.T) {
 	t.Run("header is nil", func(t *testing.T) {
 		var h *Header = nil
