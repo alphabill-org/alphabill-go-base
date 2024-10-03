@@ -101,10 +101,6 @@ func (x *UnicitySeal) GetVersion() ABVersion {
 	return 1
 }
 
-func (x *UnicitySeal) GetTag() ABTag {
-	return UnicitySealTag
-}
-
 func (x *UnicitySeal) IsValid() error {
 	if x == nil {
 		return ErrUnicitySealIsNil
@@ -176,7 +172,7 @@ func (x *UnicitySeal) MarshalCBOR() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Cbor.MarshalTagged(x.GetTag(), x.GetVersion(), x.RootChainRoundNumber, x.Timestamp, x.PreviousHash, x.Hash, sigs)
+	return Cbor.MarshalTagged(UnicitySealTag, x.GetVersion(), x.RootChainRoundNumber, x.Timestamp, x.PreviousHash, x.Hash, sigs)
 }
 
 func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
@@ -184,19 +180,18 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 	if err != nil {
 		return err
 	}
-	if tag != x.GetTag() {
-		return fmt.Errorf("invalid tag %d, expected %d", tag, x.GetTag())
+	if tag != UnicitySealTag {
+		return fmt.Errorf("invalid tag %d, expected %d", tag, UnicitySealTag)
 	}
-	// with forward compatibility, newer versions can be added, thus must not fail here
-	//if version != x.GetVersion() {
-	//	return fmt.Errorf("invalid version %d, expected %d", version, x.GetVersion())
-	//}
 	if len(arr) < 6 {
 		return fmt.Errorf("invalid array length: %d", len(arr))
 	}
 	if version, ok := arr[0].(uint64); ok {
 		if version == 0 {
 			return fmt.Errorf("invalid version number: %d", version)
+		}
+		if version > 1 {
+			return fmt.Errorf("invalid version number: expected 1, got %d", version)
 		}
 		x.Version = ABVersion(version)
 	} else {

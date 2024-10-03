@@ -241,7 +241,7 @@ func TestUnicitySeal_cbor(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestUnicitySeal_forwardCompatibility(t *testing.T) {
+func TestUnicitySeal_forwardCompatibility_notSupported(t *testing.T) {
 	type TestUnicitySealV2 struct {
 		_                    struct{} `cbor:",toarray"`
 		version              ABVersion
@@ -267,14 +267,5 @@ func TestUnicitySeal_forwardCompatibility(t *testing.T) {
 
 	// decode into version 1
 	res := &UnicitySeal{}
-	require.NoError(t, Cbor.Unmarshal(data, res))
-	expected := &UnicitySeal{
-		Version:              seal2.version,
-		RootChainRoundNumber: seal2.RootChainRoundNumber,
-		Timestamp:            seal2.Timestamp,
-		PreviousHash:         seal2.PreviousHash,
-		Hash:                 seal2.Hash,
-		Signatures:           seal2.Signatures,
-	}
-	require.EqualValues(t, expected, res)
+	require.Error(t, Cbor.Unmarshal(data, res))
 }
