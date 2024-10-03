@@ -12,17 +12,6 @@ type Versioned interface {
 	GetVersion() ABVersion
 }
 
-// Tagged interface is used by the structs that are versioned and are serialized into CBOR bytes.
-// Tag allows to identify the struct type when unmarshalling.
-type Tagged interface {
-	GetTag() ABTag
-}
-
-type TaggedVersioned interface {
-	Tagged
-	Versioned
-}
-
 const (
 	_ = iota + ABTag(1000)
 	UnicitySealTag
@@ -33,6 +22,6 @@ const (
 	PartitionNodeTag
 )
 
-func ErrInvalidVersion(s TaggedVersioned) error {
-	return fmt.Errorf("invalid version %d (tag %d)", s.GetVersion(), s.GetTag())
+func ErrInvalidVersion(s Versioned) error {
+	return fmt.Errorf("invalid version %d (type %T)", s.GetVersion(), s)
 }

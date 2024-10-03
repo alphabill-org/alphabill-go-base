@@ -81,7 +81,7 @@ func (c cborHandler) UnmarshalTagged(data []byte) (ABTag, []interface{}, error) 
 	if err := c.Unmarshal(raw.Content, &arr); err != nil {
 		return 0, nil, err
 	}
-	return ABTag(raw.Number), arr, nil
+	return raw.Number, arr, nil
 }
 
 func (c cborHandler) UnmarshalTaggedValue(tag ABTag, data []byte, v any) error {
