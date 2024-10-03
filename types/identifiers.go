@@ -6,7 +6,16 @@ import (
 	"fmt"
 )
 
-const SystemIdentifierLength = 4
+const (
+	NetworkMainNet NetworkID = 1
+	NetworkTestNet NetworkID = 2
+	NetworkLocal   NetworkID = 3
+)
+
+const (
+	SystemIdentifierLength  = 4
+	NetworkIdentifierLength = 2
+)
 
 type (
 	NetworkID uint16
@@ -85,4 +94,10 @@ func (sid SystemID) Bytes() []byte {
 
 func (sid SystemID) String() string {
 	return fmt.Sprintf("%08X", uint32(sid))
+}
+
+func (nid NetworkID) Bytes() []byte {
+	b := make([]byte, NetworkIdentifierLength)
+	binary.BigEndian.PutUint16(b, uint16(nid))
+	return b
 }

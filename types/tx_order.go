@@ -166,6 +166,20 @@ func (t *TransactionOrder) HasStateLock() bool {
 	return t != nil && t.StateLock != nil
 }
 
+func (t *TransactionOrder) GetNetworkID() NetworkID {
+	if t == nil {
+		return 0
+	}
+	return t.NetworkID
+}
+
+func (t *TransactionOrder) GetSystemID() SystemID {
+	if t == nil {
+		return 0
+	}
+	return t.SystemID
+}
+
 func (t *TransactionOrder) GetUnitID() UnitID {
 	if t == nil {
 		return nil

@@ -83,6 +83,14 @@ func (t *TransactionRecord) IsSuccessful() bool {
 	return t.TxStatus() == TxStatusSuccessful
 }
 
+func (t *TransactionRecord) NetworkID() NetworkID {
+	return t.GetTransactionOrder().GetNetworkID()
+}
+
+func (t *TransactionRecord) SystemID() SystemID {
+	return t.GetTransactionOrder().GetSystemID()
+}
+
 func (t *TransactionRecord) UnitID() UnitID {
 	return t.GetTransactionOrder().GetUnitID()
 }
@@ -174,6 +182,20 @@ func (t *TxRecordProof) IsValid() error {
 		return err
 	}
 	return nil
+}
+
+func (t *TxRecordProof) NetworkID() NetworkID {
+	if t == nil {
+		return 0
+	}
+	return t.TxRecord.NetworkID()
+}
+
+func (t *TxRecordProof) SystemID() SystemID {
+	if t == nil {
+		return 0
+	}
+	return t.TxRecord.SystemID()
 }
 
 func (t *TxRecordProof) UnitID() UnitID {
