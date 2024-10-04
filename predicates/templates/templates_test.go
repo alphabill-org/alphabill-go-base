@@ -57,30 +57,22 @@ func Test_ExtractPubKeyHashFromP2pkhPredicate(t *testing.T) {
 	pubKeyHash, err := hex.DecodeString("F52022BB450407D92F13BF1C53128A676BCF304818E9F41A5EF4EBEAE9C0D6B0")
 	require.NoError(t, err)
 
-	// P2pkh256 predicate
 	result, err := ExtractPubKeyHashFromP2pkhPredicate(NewP2pkh256BytesFromKeyHash(pubKeyHash))
 	require.NoError(t, err)
 	require.Equal(t, pubKeyHash, result)
-
-	// P2pkh256FeeAuth predicate
-	result, err = ExtractPubKeyHashFromP2pkhPredicate(NewP2pkh256FeeAuthBytesFromKeyHash(pubKeyHash))
-	require.NoError(t, err)
-	require.Equal(t, pubKeyHash, result)
-
 }
 
 func Test_IsP2pkhTemplate(t *testing.T) {
 	t.Parallel()
 
 	t.Run("p2pkh template true", func(t *testing.T) {
-		require.True(t, IsP2pkhTemplate(&predicates.Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID}}))
-		require.True(t, IsP2pkhTemplate(&predicates.Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256FeeAuthID}}))
+		require.NoError(t, VerifyP2pkhPredicate(&predicates.Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID}}))
 	})
 
 	t.Run("p2pkh template false", func(t *testing.T) {
-		require.False(t, IsP2pkhTemplate(nil))
-		require.False(t, IsP2pkhTemplate(&predicates.Predicate{}))
-		require.False(t, IsP2pkhTemplate(&predicates.Predicate{Tag: 999, Code: []byte{P2pkh256ID}}))
-		require.False(t, IsP2pkhTemplate(&predicates.Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID, P2pkh256ID}}))
+		require.Error(t, VerifyP2pkhPredicate(nil))
+		require.Error(t, VerifyP2pkhPredicate(&predicates.Predicate{}))
+		require.Error(t, VerifyP2pkhPredicate(&predicates.Predicate{Tag: 999, Code: []byte{P2pkh256ID}}))
+		require.Error(t, VerifyP2pkhPredicate(&predicates.Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256ID, P2pkh256ID}}))
 	})
 }

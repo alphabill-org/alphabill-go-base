@@ -13,8 +13,8 @@ const (
 )
 
 var (
-	BillUnitType            = []byte{0x00}
-	FeeCreditRecordUnitType = []byte{0x0f}
+	BillUnitType            = []byte{1}
+	FeeCreditRecordUnitType = []byte{16}
 )
 
 func NewBillID(shardPart []byte, unitPart []byte) types.UnitID {
@@ -26,12 +26,12 @@ func NewFeeCreditRecordID(shardPart []byte, unitPart []byte) types.UnitID {
 }
 
 func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, latestAdditionTime uint64) types.UnitID {
-	ownerPredicate := templates.NewP2pkh256FeeAuthBytesFromKey(pubKey)
+	ownerPredicate := templates.NewP2pkh256BytesFromKey(pubKey)
 	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 
 func NewFeeCreditRecordIDFromPublicKeyHash(shardPart, pubKeyHash []byte, latestAdditionTime uint64) types.UnitID {
-	ownerPredicate := templates.NewP2pkh256FeeAuthBytesFromKeyHash(pubKeyHash)
+	ownerPredicate := templates.NewP2pkh256BytesFromKeyHash(pubKeyHash)
 	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 

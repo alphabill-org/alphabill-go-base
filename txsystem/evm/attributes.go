@@ -10,9 +10,9 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-const DefaultSystemID types.SystemID = 0x00000003
+const DefaultSystemID types.SystemID = 3
 
-const PayloadTypeEVMCall = "evm"
+const TransactionTypeEVMCall uint16 = 1
 
 type (
 	TxAttributes struct {

@@ -6,10 +6,22 @@ import (
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
-// HashForNewTokenID generates new token identifier from the transaction attributes and client metadata.
+// tokenHashData defines the cbor data for calculating new token ID.
+type tokenHashData struct {
+	_              struct{} `cbor:",toarray"`
+	Attributes     types.RawCBOR
+	ClientMetadata *types.ClientMetadata
+}
+
+// HashForNewTokenID generates new token ID (unit part of the extended identifier) from the transaction order.
+// Use NewFungibleTokenID or NewNonFungibleTokenID to generate the extended identifier from the unit part.
 func HashForNewTokenID(tx *types.TransactionOrder, hashFunc crypto.Hash) ([]byte, error) {
-	hasher := hashFunc.New()
-	hasher.Write(tx.Payload.Attributes)
-	tx.Payload.ClientMetadata.AddToHasher(hasher)
-	return hasher.Sum(nil), nil
+	if tx == nil {
+		return nil, types.ErrTransactionOrderIsNil
+	}
+	hashData := tokenHashData{
+		Attributes:     tx.Attributes,
+		ClientMetadata: tx.ClientMetadata,
+	}
+	return types.HashCBOR(hashData, hashFunc)
 }

@@ -34,10 +34,11 @@ func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
 func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 	validPDR := func() *PartitionDescriptionRecord {
 		return &PartitionDescriptionRecord{
-			SystemIdentifier: 1,
-			TypeIdLen:        8,
-			UnitIdLen:        256,
-			T2Timeout:        2500 * time.Millisecond,
+			NetworkIdentifier: 5,
+			SystemIdentifier:  1,
+			TypeIdLen:         8,
+			UnitIdLen:         256,
+			T2Timeout:         2500 * time.Millisecond,
 		}
 	}
 
@@ -46,6 +47,14 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 	t.Run("system description is nil", func(t *testing.T) {
 		var s *PartitionDescriptionRecord = nil
 		require.EqualError(t, s.IsValid(), "system description record is nil")
+	})
+
+	t.Run("network identifier", func(t *testing.T) {
+		pdr := validPDR()
+		require.EqualValues(t, 5, pdr.GetNetworkIdentifier())
+
+		pdr.NetworkIdentifier = 0
+		require.EqualError(t, pdr.IsValid(), "invalid network identifier: 0")
 	})
 
 	t.Run("system identifier", func(t *testing.T) {

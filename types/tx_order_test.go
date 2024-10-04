@@ -8,32 +8,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type Attributes struct {
-	_                 struct{} `cbor:",toarray"`
-	NewOwnerPredicate []byte
-	TargetValue       uint64
-	Counter           uint64
-}
-
 var (
-	systemID              SystemID = 0x01000001
-	payloadAttributesType          = "transfer"
-	unitID                         = make([]byte, 32)
-	timeout               uint64   = 42
-	maxFee                uint64   = 69
-	feeCreditRecordID              = []byte{32, 32, 32, 32}
-	newOwnerPredicate              = []byte{1, 2, 3, 4}
-	targetValue           uint64   = 100
-	counter               uint64   = 123
+	networkID         NetworkID = 1
+	systemID          SystemID  = 0x01000001
+	transactionType   uint16    = 1
+	unitID                      = make([]byte, 32)
+	timeout           uint64    = 42
+	maxFee            uint64    = 69
+	feeCreditRecordID           = []byte{32, 32, 32, 32}
+	newOwnerPredicate           = []byte{1, 2, 3, 4}
+	targetValue       uint64    = 100
+	counter           uint64    = 123
 
-	// 86                                       # array(6)
+	// 88                                       # array(8)
+	//   01                                     #   unsigned(1)
 	//   1A                                     #   uint32
 	//      01000001                            #     "\x01\x00\x00\x01"
-	//   68                                     #   text(8)
-	//      7472616e73666572                    #     "transfer"
 	//   58 20                                  #   bytes(32)
 	//      00000000000000000000000000000000    #     "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 	//      00000000000000000000000000000000    #     "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+	//   01                                     #   unsigned(1)
 	//   83                                     #   array(3)
 	//      44                                  #     bytes(4)
 	//         01020304                         #       "\x01\x02\x03\x04"
@@ -41,70 +35,79 @@ var (
 	//      58 20                               #     bytes(32)
 	//         00000000000000000000000000000000 #       "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 	//         00000000000000000000000000000000 #       "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-	//   83                                     #   array(3)
+	//   F6                                     #   primitive(22)
+	//   84                                     #   array(4)
 	//      18 2a                               #     unsigned(42)
 	//      18 45                               #     unsigned(69)
 	//      44                                  #     bytes(4)
 	//         20202020                         #       "    "
 	//      43                                  #     bytes(3)
 	//         524546                           #       "REF"
-	payloadInHEX = "86" +
+	//   F6                                     #   primitive(22)
+	payloadInHEX = "87" + // 8 element array
+		"01" + // NetworkID
 		"1A01000001" + // SystemID
-		"687472616E73666572" + // Type
 		"58200000000000000000000000000000000000000000000000000000000000000000" + // UnitID
+		"01" + // Type
 		"8344010203041864187b" + // Attributes
 		"f6" + // State lock
 		"84182a1845442020202043524546" // Client metadata
 )
 
+type testAttributes struct {
+	_                 struct{} `cbor:",toarray"`
+	NewOwnerPredicate []byte
+	TargetValue       uint64
+	Counter           uint64
+}
+
 func TestMarshalPayload(t *testing.T) {
-	payloadBytes, err := createTxOrder(t).PayloadBytes()
+	payload := createTransactionOrder(t).Payload
+	payloadBytes, err := Cbor.Marshal(payload)
 	require.NoError(t, err)
 	require.Equal(t, hexDecode(t, payloadInHEX), payloadBytes)
 }
 
-func TestMarshalNilPayload(t *testing.T) {
-	txo := &TransactionOrder{Payload: nil}
-	payloadBytes, err := txo.PayloadBytes()
-	require.NoError(t, err)
-	require.Equal(t, cborNil, payloadBytes)
-}
-
 func TestMarshalNilValuesInPayload(t *testing.T) {
-	order := &TransactionOrder{Payload: &Payload{
-		SystemID:       0,
-		Type:           "",
-		UnitID:         nil,
-		Attributes:     nil,
-		ClientMetadata: nil,
-	}}
-	payloadBytes, err := order.PayloadBytes()
+	txo := &TransactionOrder{
+		Payload: Payload{
+			NetworkID:      0,
+			SystemID:       0,
+			UnitID:         nil,
+			Type:           0,
+			Attributes:     nil,
+			StateLock:      nil,
+			ClientMetadata: nil,
+		},
+	}
+	payloadBytes, err := Cbor.Marshal(txo.Payload)
 	require.NoError(t, err)
-	// 86    # array(6)
+	// 87    # array(7)
 	//   00 #   zero, unsigned int
-	//   60 #   text(0)
-	//      #     ""
+	//   00 #   zero, unsigned int
+	//   f6 #   null, simple(22)
+	//   00 #   zero, unsigned int
 	//   f6 #   null, simple(22)
 	//   f6 #   null, simple(22)
 	//   f6 #   null, simple(22)
-	//   f6 #   null, simple(22)
-	require.Equal(t, []byte{0x86, 0x00, 0x60, 0xf6, 0xf6, 0xf6, 0xf6}, payloadBytes)
+	require.Equal(t, []byte{0x87, 0x0, 0x0, 0xf6, 0x0, 0xf6, 0xf6, 0xf6}, payloadBytes)
 
-	payload := &Payload{}
-	require.NoError(t, Cbor.Unmarshal(payloadBytes, payload))
-	require.EqualValues(t, order.Payload, payload)
+	var payload Payload
+	require.NoError(t, Cbor.Unmarshal(payloadBytes, &payload))
+	require.EqualValues(t, txo.Payload, payload)
 }
 
 func TestUnmarshalPayload(t *testing.T) {
-	payload := &Payload{}
-	require.NoError(t, Cbor.Unmarshal(hexDecode(t, payloadInHEX), payload))
-
+	var payload Payload
+	require.NoError(t, Cbor.Unmarshal(hexDecode(t, payloadInHEX), &payload))
+	require.Equal(t, networkID, payload.NetworkID)
 	require.Equal(t, systemID, payload.SystemID)
-	require.Equal(t, payloadAttributesType, payload.Type)
 	require.Equal(t, UnitID(unitID), payload.UnitID)
+	require.Equal(t, transactionType, payload.Type)
 
-	attributes := &Attributes{}
-	require.NoError(t, payload.UnmarshalAttributes(attributes))
+	txo := TransactionOrder{Payload: payload}
+	var attributes *testAttributes
+	require.NoError(t, txo.UnmarshalAttributes(&attributes))
 	require.Equal(t, newOwnerPredicate, attributes.NewOwnerPredicate)
 	require.Equal(t, targetValue, attributes.TargetValue)
 	require.Equal(t, counter, attributes.Counter)
@@ -117,67 +120,40 @@ func TestUnmarshalPayload(t *testing.T) {
 }
 
 func TestUnmarshalAttributes(t *testing.T) {
-	txOrder := createTxOrder(t)
-	attributes := &Attributes{}
-	require.NoError(t, txOrder.UnmarshalAttributes(attributes))
-	require.Equal(t, newOwnerPredicate, attributes.NewOwnerPredicate)
-	require.Equal(t, targetValue, attributes.TargetValue)
-	require.Equal(t, counter, attributes.Counter)
-	require.Equal(t, UnitID(unitID), txOrder.UnitID())
-	require.Equal(t, systemID, txOrder.SystemID())
-	require.Equal(t, timeout, txOrder.Timeout())
-	require.Equal(t, payloadAttributesType, txOrder.PayloadType())
-	require.Equal(t, feeCreditRecordID, txOrder.GetClientFeeCreditRecordID())
-	require.Equal(t, maxFee, txOrder.GetClientMaxTxFee())
-	require.NotNil(t, txOrder.Hash(crypto.SHA256))
+	txo := createTransactionOrder(t)
+	attr := &testAttributes{}
+	require.NoError(t, txo.UnmarshalAttributes(attr))
+	require.Equal(t, newOwnerPredicate, attr.NewOwnerPredicate)
+	require.Equal(t, targetValue, attr.TargetValue)
+	require.Equal(t, counter, attr.Counter)
+	require.Equal(t, UnitID(unitID), txo.UnitID)
+	require.Equal(t, systemID, txo.SystemID)
+	require.Equal(t, timeout, txo.Timeout())
+	require.Equal(t, transactionType, txo.Type)
+	require.Equal(t, feeCreditRecordID, txo.FeeCreditRecordID())
+	require.Equal(t, maxFee, txo.MaxFee())
+	require.NotNil(t, txo.Hash(crypto.SHA256))
 }
 
 func TestHasStateLock(t *testing.T) {
-	var payload *Payload = nil
-	require.False(t, payload.HasStateLock())
-	payload = &Payload{}
-	require.False(t, payload.HasStateLock())
-	payload.StateLock = &StateLock{}
-	require.True(t, payload.HasStateLock())
+	var txo *TransactionOrder
+	require.False(t, txo.HasStateLock())
+
+	txo = &TransactionOrder{}
+	require.False(t, txo.HasStateLock())
+
+	txo.StateLock = &StateLock{}
+	require.True(t, txo.HasStateLock())
 }
 
 func Test_Payload_SetAttributes(t *testing.T) {
-	attributes := &Attributes{NewOwnerPredicate: []byte{9, 3, 5, 2, 6}, TargetValue: 59, Counter: 123}
-	pl := Payload{}
-	require.NoError(t, pl.SetAttributes(attributes))
+	expectedAttributes := &testAttributes{NewOwnerPredicate: []byte{9, 3, 5, 2, 6}, TargetValue: 59, Counter: 123}
+	txo := TransactionOrder{}
+	require.NoError(t, txo.SetAttributes(expectedAttributes))
 
-	attrData := &Attributes{}
-	require.NoError(t, pl.UnmarshalAttributes(attrData))
-	require.Equal(t, attributes, attrData, "expected to get back the same attributes")
-}
-
-func createTxOrder(t *testing.T) *TransactionOrder {
-	attributes := &Attributes{NewOwnerPredicate: newOwnerPredicate, TargetValue: targetValue, Counter: counter}
-
-	attr, err := Cbor.Marshal(attributes)
-	require.NoError(t, err)
-
-	order := &TransactionOrder{Payload: &Payload{
-		SystemID:   systemID,
-		Type:       payloadAttributesType,
-		UnitID:     unitID,
-		Attributes: attr,
-		ClientMetadata: &ClientMetadata{
-			Timeout:           timeout,
-			MaxTransactionFee: maxFee,
-			FeeCreditRecordID: feeCreditRecordID,
-			ReferenceNumber:   []byte("REF"),
-		},
-	}}
-	return order
-}
-
-func hexDecode(t *testing.T, s string) []byte {
-	data, err := hex.DecodeString(s)
-	if err != nil {
-		require.NoError(t, err)
-	}
-	return data
+	actualAttributes := &testAttributes{}
+	require.NoError(t, txo.UnmarshalAttributes(actualAttributes))
+	require.Equal(t, expectedAttributes, actualAttributes, "expected to get back the same attributes")
 }
 
 func TestStateLock_IsValid(t *testing.T) {
@@ -200,4 +176,31 @@ func TestStateLock_IsValid(t *testing.T) {
 		}
 		require.EqualError(t, s.IsValid(), "missing rollback predicate")
 	})
+}
+
+func createTransactionOrder(t *testing.T) *TransactionOrder {
+	attr := &testAttributes{NewOwnerPredicate: newOwnerPredicate, TargetValue: targetValue, Counter: counter}
+	attrBytes, err := Cbor.Marshal(attr)
+	require.NoError(t, err)
+	return &TransactionOrder{Payload: Payload{
+		NetworkID:  1,
+		SystemID:   systemID,
+		UnitID:     unitID,
+		Type:       transactionType,
+		Attributes: attrBytes,
+		ClientMetadata: &ClientMetadata{
+			Timeout:           timeout,
+			MaxTransactionFee: maxFee,
+			FeeCreditRecordID: feeCreditRecordID,
+			ReferenceNumber:   []byte("REF"),
+		},
+	}}
+}
+
+func hexDecode(t *testing.T, s string) []byte {
+	data, err := hex.DecodeString(s)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	return data
 }

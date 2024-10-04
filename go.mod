@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/ethereum/go-ethereum v1.14.0
-	github.com/fxamacker/cbor/v2 v2.6.0
+	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/stretchr/testify v1.8.4
 )
 

@@ -3,10 +3,10 @@ package orchestration
 import "github.com/alphabill-org/alphabill-go-base/types"
 
 const (
-	PayloadTypeAddVAR = "addVar" // add validator assignment record
+	TransactionTypeAddVAR uint16 = 1
 )
 
-const DefaultSystemID types.SystemID = 0x00000004
+const DefaultSystemID types.SystemID = 4
 
 type (
 	AddVarAttributes struct {

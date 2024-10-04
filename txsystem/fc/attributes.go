@@ -5,20 +5,19 @@ import (
 )
 
 const (
-	PayloadTypeAddFeeCredit      = "addFC"
-	PayloadTypeCloseFeeCredit    = "closeFC"
-	PayloadTypeReclaimFeeCredit  = "reclFC"
-	PayloadTypeTransferFeeCredit = "transFC"
-	PayloadTypeLockFeeCredit     = "lockFC"
-	PayloadTypeUnlockFeeCredit   = "unlockFC"
+	TransactionTypeTransferFeeCredit uint16 = 14
+	TransactionTypeReclaimFeeCredit  uint16 = 15
+	TransactionTypeAddFeeCredit      uint16 = 16
+	TransactionTypeCloseFeeCredit    uint16 = 17
+	TransactionTypeLockFeeCredit     uint16 = 18
+	TransactionTypeUnlockFeeCredit   uint16 = 19
 )
 
 type (
 	AddFeeCreditAttributes struct {
-		_                       struct{}                 `cbor:",toarray"`
-		FeeCreditOwnerPredicate []byte                   // target fee credit record owner predicate
-		FeeCreditTransfer       *types.TransactionRecord // bill transfer record of type "transfer fee credit"
-		FeeCreditTransferProof  *types.TxProof           // transaction proof of "transfer fee credit" transaction
+		_                       struct{}             `cbor:",toarray"`
+		FeeCreditOwnerPredicate []byte               // target fee credit record owner predicate
+		FeeCreditTransferProof  *types.TxRecordProof // transaction proof of "transfer fee credit" transaction
 	}
 
 	TransferFeeCreditAttributes struct {
@@ -41,10 +40,8 @@ type (
 	}
 
 	ReclaimFeeCreditAttributes struct {
-		_                      struct{}                 `cbor:",toarray"`
-		CloseFeeCreditTransfer *types.TransactionRecord // bill transfer record of type "close fee credit"
-		CloseFeeCreditProof    *types.TxProof           // transaction proof of "close fee credit" transaction
-		Counter                uint64                   // the transaction counter of this unit
+		_                   struct{}             `cbor:",toarray"`
+		CloseFeeCreditProof *types.TxRecordProof // transaction proof of "close fee credit" transaction
 	}
 
 	LockFeeCreditAttributes struct {
@@ -60,11 +57,8 @@ type (
 )
 
 func IsFeeCreditTx(tx *types.TransactionOrder) bool {
-	typeUrl := tx.PayloadType()
-	return typeUrl == PayloadTypeTransferFeeCredit ||
-		typeUrl == PayloadTypeAddFeeCredit ||
-		typeUrl == PayloadTypeCloseFeeCredit ||
-		typeUrl == PayloadTypeReclaimFeeCredit ||
-		typeUrl == PayloadTypeLockFeeCredit ||
-		typeUrl == PayloadTypeUnlockFeeCredit
+	if tx == nil {
+		return false
+	}
+	return tx.Type >= TransactionTypeTransferFeeCredit && tx.Type <= TransactionTypeUnlockFeeCredit
 }

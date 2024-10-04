@@ -147,8 +147,8 @@ func TestBlock_IsValid(t *testing.T) {
 			RoundNumber:     1,
 			SumOfEarnedFees: 2,
 		}
-		txr1 := createTransactionRecord(createTxOrder(t), 1)
-		txr2 := createTransactionRecord(createTxOrder(t), 2)
+		txr1 := createTransactionRecord(createTransactionOrder(t), 1)
+		txr2 := createTransactionRecord(createTransactionOrder(t), 2)
 		b := &Block{
 			Header: &Header{
 				SystemID:          systemID,
@@ -180,8 +180,8 @@ func TestBlock_IsValid(t *testing.T) {
 			RoundNumber:     1,
 			SumOfEarnedFees: 2,
 		}
-		txr1 := createTransactionRecord(createTxOrder(t), 1)
-		txr2 := createTransactionRecord(createTxOrder(t), 2)
+		txr1 := createTransactionRecord(createTransactionOrder(t), 1)
+		txr2 := createTransactionRecord(createTransactionOrder(t), 2)
 		b := &Block{
 			Header: &Header{
 				SystemID:          systemID,
