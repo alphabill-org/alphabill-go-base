@@ -11,6 +11,7 @@ var ErrUnicityCertificateIsNil = errors.New("unicity certificate is nil")
 
 type UnicityCertificate struct {
 	_                      struct{}                `cbor:",toarray"`
+	Version                ABVersion               `json:"version,omitempty"`
 	InputRecord            *InputRecord            `json:"input_record,omitempty"`
 	UnicityTreeCertificate *UnicityTreeCertificate `json:"unicity_tree_certificate,omitempty"`
 	UnicitySeal            *UnicitySeal            `json:"unicity_seal,omitempty"`

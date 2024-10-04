@@ -20,14 +20,15 @@ var (
 
 // Shard input record (IR) of a shard of a partition.
 type InputRecord struct {
-	_               struct{} `cbor:",toarray"`
-	PreviousHash    []byte   `json:"previous_hash,omitempty"`      // previously certified state hash
-	Hash            []byte   `json:"hash,omitempty"`               // state hash to be certified
-	BlockHash       []byte   `json:"block_hash,omitempty"`         // hash of the block
-	SummaryValue    []byte   `json:"summary_value,omitempty"`      // summary value to certified
-	RoundNumber     uint64   `json:"round_number,omitempty"`       // shard's round number
-	Epoch           uint64   `json:"epoch,omitempty"`              // shard’s epoch number
-	SumOfEarnedFees uint64   `json:"sum_of_earned_fees,omitempty"` // sum of the actual fees over all transaction records in the block
+	_               struct{}  `cbor:",toarray"`
+	Version         ABVersion `json:"version,omitempty"`
+	PreviousHash    []byte    `json:"previous_hash,omitempty"`      // previously certified state hash
+	Hash            []byte    `json:"hash,omitempty"`               // state hash to be certified
+	BlockHash       []byte    `json:"block_hash,omitempty"`         // hash of the block
+	SummaryValue    []byte    `json:"summary_value,omitempty"`      // summary value to certified
+	RoundNumber     uint64    `json:"round_number,omitempty"`       // shard's round number
+	Epoch           uint64    `json:"epoch,omitempty"`              // shard’s epoch number
+	SumOfEarnedFees uint64    `json:"sum_of_earned_fees,omitempty"` // sum of the actual fees over all transaction records in the block
 }
 
 func isZeroHash(hash []byte) bool {
