@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/fxamacker/cbor/v2"
@@ -51,7 +52,18 @@ func (c cborHandler) MarshalTagged(tag ABTag, arr ...interface{}) ([]byte, error
 		return nil, err
 	}
 	return c.Marshal(cbor.RawTag{
-		Number:  uint64(tag),
+		Number:  tag,
+		Content: data,
+	})
+}
+
+func (c cborHandler) MarshalTaggedValue(tag ABTag, v any) ([]byte, error) {
+	data, err := c.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	return c.Marshal(cbor.RawTag{
+		Number:  tag,
 		Content: data,
 	})
 }
@@ -69,7 +81,28 @@ func (c cborHandler) UnmarshalTagged(data []byte) (ABTag, []interface{}, error) 
 	if err := c.Unmarshal(raw.Content, &arr); err != nil {
 		return 0, nil, err
 	}
-	return ABTag(raw.Number), arr, nil
+	return raw.Number, arr, nil
+}
+
+func (c cborHandler) UnmarshalTaggedValue(tag ABTag, data []byte, v any) error {
+	var raw cbor.RawTag
+	if err := c.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	if raw.Number != tag {
+		return fmt.Errorf("unexpected tag: %d, expected: %d", raw.Number, tag)
+	}
+
+	if err := c.Unmarshal(raw.Content, v); err != nil {
+		return err
+	}
+	// check if v is of Versioned interface
+	if ver, ok := v.(Versioned); ok {
+		if ver.GetVersion() == 0 {
+			return errors.New("version number cannot be zero")
+		}
+	}
+	return nil
 }
 
 func (c cborHandler) GetEncoder(w io.Writer) (*cbor.Encoder, error) {
