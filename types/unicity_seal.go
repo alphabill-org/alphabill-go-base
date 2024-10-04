@@ -37,16 +37,6 @@ type UnicitySeal struct {
 	Signatures           SignatureMap `json:"signatures,omitempty"`
 }
 
-func NewUnicitySealV1(setter func(seal *UnicitySeal)) *UnicitySeal {
-	us := &UnicitySeal{Version: 1}
-
-	if setter != nil {
-		setter(us)
-	}
-
-	return us
-}
-
 // Signatures are serialized as alphabetically sorted CBOR array
 type signaturesCBOR []*signature
 type signature struct {
@@ -105,11 +95,10 @@ func NewTimestamp() uint64 {
 }
 
 func (x *UnicitySeal) GetVersion() ABVersion {
-	return x.Version
-}
-
-func (x *UnicitySeal) GetTag() ABTag {
-	return UnicitySealTag
+	if x != nil && x.Version > 0 {
+		return x.Version
+	}
+	return 1
 }
 
 func (x *UnicitySeal) IsValid() error {
@@ -134,7 +123,7 @@ func (x *UnicitySeal) IsValid() error {
 // Bytes - serialize everything except signatures (used for sign and verify)
 func (x *UnicitySeal) Bytes() []byte {
 	var b bytes.Buffer
-	b.Write(util.Uint64ToBytes(uint64(x.Version)))
+	b.Write(util.Uint32ToBytes(x.GetVersion()))
 	b.Write(util.Uint64ToBytes(x.RootChainRoundNumber))
 	b.Write(util.Uint64ToBytes(x.Timestamp))
 	b.Write(x.PreviousHash)
@@ -183,7 +172,7 @@ func (x *UnicitySeal) MarshalCBOR() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Cbor.MarshalTagged(x.GetTag(), x.GetVersion(), x.RootChainRoundNumber, x.Timestamp, x.PreviousHash, x.Hash, sigs)
+	return Cbor.MarshalTagged(UnicitySealTag, x.GetVersion(), x.RootChainRoundNumber, x.Timestamp, x.PreviousHash, x.Hash, sigs)
 }
 
 func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
@@ -191,19 +180,15 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 	if err != nil {
 		return err
 	}
-	if tag != x.GetTag() {
-		return fmt.Errorf("invalid tag %d, expected %d", tag, x.GetTag())
+	if tag != UnicitySealTag {
+		return fmt.Errorf("invalid tag %d, expected %d", tag, UnicitySealTag)
 	}
-	// with forward compatibility, newer versions can be added, thus must not fail here
-	//if version != x.GetVersion() {
-	//	return fmt.Errorf("invalid version %d, expected %d", version, x.GetVersion())
-	//}
 	if len(arr) < 6 {
 		return fmt.Errorf("invalid array length: %d", len(arr))
 	}
 	if version, ok := arr[0].(uint64); ok {
-		if version == 0 {
-			return fmt.Errorf("invalid version number: %d", version)
+		if version != 1 {
+			return fmt.Errorf("invalid version number: expected 1, got %d", version)
 		}
 		x.Version = ABVersion(version)
 	} else {
@@ -219,14 +204,14 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 	} else {
 		return errors.New("invalid timestamp")
 	}
-	if prevHash, ok := arr[3].([]byte); ok {
+	if prevHash, ok := arr[3].([]byte); ok || prevHash == nil {
 		x.PreviousHash = prevHash
-	} else if prevHash != nil {
+	} else {
 		return errors.New("invalid previous hash")
 	}
-	if hash, ok := arr[4].([]byte); ok {
-		x.Hash = hash
-	} else if hash != nil {
+	if h, ok := arr[4].([]byte); ok {
+		x.Hash = h
+	} else {
 		return errors.New("invalid hash")
 	}
 	if sigs, ok := arr[5].([]byte); ok {

@@ -668,13 +668,13 @@ func TestUCHash(t *testing.T) {
 			PartitionDescriptionHash: []byte{1, 2, 3, 4},
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
 		},
-		UnicitySeal: NewUnicitySealV1(func(s *UnicitySeal) {
-			s.RootChainRoundNumber = 1
-			s.Timestamp = 9
-			s.PreviousHash = []byte{1, 2, 3}
-			s.Hash = []byte{2, 3, 4}
-			s.Signatures = map[string][]byte{"1": {1, 1, 1}}
-		}),
+		UnicitySeal: &UnicitySeal{
+			RootChainRoundNumber: 1,
+			Timestamp:            9,
+			PreviousHash:         []byte{1, 2, 3},
+			Hash:                 []byte{2, 3, 4},
+			Signatures:           map[string][]byte{"1": {1, 1, 1}},
+		},
 	}
 	// serialize manually
 	expectedBytes := []byte{
@@ -688,7 +688,7 @@ func TestUCHash(t *testing.T) {
 		1, 1, 1, 1, // UT: identifier
 		1, 1, 1, 1, 1, 2, 3, // UT: siblings key+hash
 		1, 2, 3, 4, // UT: system description hash
-		0, 0, 0, 0, 0, 0, 0, 1, // US: version
+		0, 0, 0, 1, // US: version
 		0, 0, 0, 0, 0, 0, 0, 1, // US: root round
 		0, 0, 0, 0, 0, 0, 0, 9, // US: timestamp
 		1, 2, 3, // US: previous hash
