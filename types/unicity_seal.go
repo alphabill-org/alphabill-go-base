@@ -187,10 +187,7 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 		return fmt.Errorf("invalid array length: %d", len(arr))
 	}
 	if version, ok := arr[0].(uint64); ok {
-		if version == 0 {
-			return fmt.Errorf("invalid version number: %d", version)
-		}
-		if version > 1 {
+		if version != 1 {
 			return fmt.Errorf("invalid version number: expected 1, got %d", version)
 		}
 		x.Version = ABVersion(version)
@@ -207,9 +204,9 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 	} else {
 		return errors.New("invalid timestamp")
 	}
-	if prevHash, ok := arr[3].([]byte); ok {
+	if prevHash, ok := arr[3].([]byte); ok || prevHash == nil {
 		x.PreviousHash = prevHash
-	} else if prevHash != nil {
+	} else {
 		return errors.New("invalid previous hash")
 	}
 	if h, ok := arr[4].([]byte); ok {
