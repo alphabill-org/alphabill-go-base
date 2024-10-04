@@ -10,7 +10,8 @@ import (
 )
 
 type (
-	RawCBOR []byte
+	RawCBOR    []byte
+	TaggedCBOR = RawCBOR
 
 	cborHandler struct {
 		encMode cbor.EncMode

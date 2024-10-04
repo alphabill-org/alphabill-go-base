@@ -3,11 +3,11 @@ package types
 import (
 	"crypto"
 	"crypto/sha256"
+	"encoding/hex"
 	"testing"
 
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -655,7 +655,9 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 
 func TestUCHash(t *testing.T) {
 	uc := &UnicityCertificate{
+		Version: 1,
 		InputRecord: &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			BlockHash:       []byte{0, 0, 3},
@@ -669,6 +671,7 @@ func TestUCHash(t *testing.T) {
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
 		},
 		UnicitySeal: &UnicitySeal{
+			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            9,
 			PreviousHash:         []byte{1, 2, 3},
@@ -772,4 +775,18 @@ func TestUnicityCertificate_GetRootRoundNumber(t *testing.T) {
 			}}
 		require.EqualValues(t, 1, x.GetRootRoundNumber())
 	})
+}
+
+func Test_CborUnmarshal(t *testing.T) {
+	bs, err := hex.DecodeString("D903EF8401D903F08801F6F6F6F600000AF6F6")
+	require.NoError(t, err)
+
+	uc := &UnicityCertificate{}
+	err = uc.UnmarshalCBOR(bs)
+	require.NoError(t, err)
+	require.NotNil(t, uc.InputRecord)
+
+	uc2 := UnicityCertificate{}
+	err = Cbor.Unmarshal(bs, &uc2)
+	require.NoError(t, err)
 }

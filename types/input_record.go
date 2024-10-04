@@ -73,6 +73,9 @@ func (x *InputRecord) IsValid() error {
 	if x == nil {
 		return ErrInputRecordIsNil
 	}
+	if x.Version == 0 {
+		return ErrInvalidVersion(x)
+	}
 	if x.Hash == nil {
 		return ErrHashIsNil
 	}
@@ -104,6 +107,7 @@ func (x *InputRecord) AddToHasher(hasher hash.Hash) {
 
 func (x *InputRecord) Bytes() []byte {
 	var b bytes.Buffer
+	b.Write(util.Uint32ToBytes(x.Version))
 	b.Write(x.PreviousHash)
 	b.Write(x.Hash)
 	b.Write(x.BlockHash)
@@ -133,4 +137,24 @@ func (x *InputRecord) String() string {
 	}
 	return fmt.Sprintf("H: %X H': %X Bh: %X round: %d epoch: %d fees: %d summary: %X",
 		x.Hash, x.PreviousHash, x.BlockHash, x.RoundNumber, x.Epoch, x.SumOfEarnedFees, x.SummaryValue)
+}
+
+func (x *InputRecord) GetVersion() ABVersion {
+	if x != nil && x.Version > 0 {
+		return x.Version
+	}
+	return 1
+}
+
+func (x *InputRecord) MarshalCBOR() ([]byte, error) {
+	type alias InputRecord
+	if x.Version == 0 {
+		x.Version = x.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(InputRecordTag, (*alias)(x))
+}
+
+func (x *InputRecord) UnmarshalCBOR(data []byte) error {
+	type alias InputRecord
+	return Cbor.UnmarshalTaggedValue(InputRecordTag, data, (*alias)(x))
 }

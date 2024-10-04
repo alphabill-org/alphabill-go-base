@@ -23,7 +23,7 @@ type (
 		_                  struct{} `cbor:",toarray"`
 		Header             *Header
 		Transactions       []*TransactionRecord
-		UnicityCertificate *UnicityCertificate
+		UnicityCertificate TaggedCBOR
 	}
 
 	Header struct {
@@ -35,20 +35,30 @@ type (
 	}
 )
 
+func (b *Block) getUCv1() *UnicityCertificate {
+	uc := &UnicityCertificate{}
+	err := Cbor.Unmarshal(b.UnicityCertificate, uc)
+	if err != nil {
+		return nil // or panic?
+	}
+	return uc
+}
+
 // Hash returns the hash of the block. Hash of a block is computed as hash of block header fields and tree hash
 // of transactions.
 func (b *Block) Hash(algorithm crypto.Hash) ([]byte, error) {
 	if err := b.Header.IsValid(); err != nil {
 		return nil, fmt.Errorf("invalid block: %w", err)
 	}
-	if b.UnicityCertificate.GetStateHash() == nil {
+	uc := b.getUCv1()
+	if uc.GetStateHash() == nil {
 		return nil, fmt.Errorf("invalid block: state hash is nil")
 	}
-	if b.UnicityCertificate.GetPreviousStateHash() == nil {
+	if uc.GetPreviousStateHash() == nil {
 		return nil, fmt.Errorf("invalid block: previous state hash is nil")
 	}
 	// 0H - if there are no transactions and state does not change
-	if len(b.Transactions) == 0 && bytes.Equal(b.UnicityCertificate.InputRecord.PreviousHash, b.UnicityCertificate.InputRecord.Hash) {
+	if len(b.Transactions) == 0 && bytes.Equal(uc.InputRecord.PreviousHash, uc.InputRecord.Hash) {
 		return make([]byte, algorithm.Size()), nil
 	}
 	// init transactions merkle root to 0H
@@ -63,8 +73,8 @@ func (b *Block) Hash(algorithm crypto.Hash) ([]byte, error) {
 	headerHash := b.HeaderHash(algorithm)
 	hasher := algorithm.New()
 	hasher.Write(headerHash)
-	hasher.Write(b.UnicityCertificate.InputRecord.PreviousHash)
-	hasher.Write(b.UnicityCertificate.InputRecord.Hash)
+	hasher.Write(uc.InputRecord.PreviousHash)
+	hasher.Write(uc.InputRecord.Hash)
 	hasher.Write(merkleRoot)
 	return hasher.Sum(nil), nil
 }
@@ -89,14 +99,14 @@ func (b *Block) Size() (bs uint64, _ error) {
 
 func (b *Block) GetRoundNumber() uint64 {
 	if b != nil {
-		return b.UnicityCertificate.GetRoundNumber()
+		return b.getUCv1().GetRoundNumber()
 	}
 	return 0
 }
 
 func (b *Block) GetBlockFees() uint64 {
 	if b != nil {
-		return b.UnicityCertificate.GetFeeSum()
+		return b.getUCv1().GetFeeSum()
 	}
 	return 0
 }
@@ -105,13 +115,14 @@ func (b *Block) InputRecord() (*InputRecord, error) {
 	if b == nil {
 		return nil, errBlockIsNil
 	}
-	if b.UnicityCertificate == nil {
+	uc := b.getUCv1()
+	if uc == nil {
 		return nil, ErrUCIsNil
 	}
-	if b.UnicityCertificate.InputRecord == nil {
+	if uc.InputRecord == nil {
 		return nil, ErrInputRecordIsNil
 	}
-	return b.UnicityCertificate.InputRecord, nil
+	return uc.InputRecord, nil
 }
 
 func (b *Block) IsValid(algorithm crypto.Hash, systemDescriptionHash []byte) error {
@@ -124,10 +135,11 @@ func (b *Block) IsValid(algorithm crypto.Hash, systemDescriptionHash []byte) err
 	if b.Transactions == nil {
 		return errTransactionsIsNil
 	}
-	if b.UnicityCertificate == nil {
+	uc := b.getUCv1()
+	if uc == nil {
 		return fmt.Errorf("unicity certificate is nil")
 	}
-	if err := b.UnicityCertificate.IsValid(algorithm, b.Header.SystemID, systemDescriptionHash); err != nil {
+	if err := uc.IsValid(algorithm, b.Header.SystemID, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity certificate validation failed: %w", err)
 	}
 	// match block hash to input record
@@ -135,7 +147,7 @@ func (b *Block) IsValid(algorithm crypto.Hash, systemDescriptionHash []byte) err
 	if err != nil {
 		return fmt.Errorf("block hash calculation failed: %w", err)
 	}
-	if !bytes.Equal(hash, b.UnicityCertificate.InputRecord.BlockHash) {
+	if !bytes.Equal(hash, uc.InputRecord.BlockHash) {
 		return fmt.Errorf("block hash does not match to the block hash in the unicity certificate input record")
 	}
 	return nil
