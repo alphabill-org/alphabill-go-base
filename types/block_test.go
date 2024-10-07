@@ -291,7 +291,7 @@ func TestBlock_Size(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 0, size)
 
-	txr := createTransactionRecord(createTxOrder(t), 1)
+	txr := createTransactionRecord(createTransactionOrder(t), 1)
 	buf, err := txr.Bytes()
 	require.NoError(t, err)
 	txSize := len(buf)
