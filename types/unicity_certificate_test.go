@@ -21,7 +21,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		require.ErrorIs(t, uc.Verify(nil, crypto.SHA256, 0, nil), ErrUnicityCertificateIsNil)
 	})
 	t.Run("invalid input record", func(t *testing.T) {
-		uc := &UnicityCertificate{}
+		uc := &UnicityCertificate{Version: 1}
 		require.EqualValues(t, 0, uc.GetRoundNumber())
 		require.EqualValues(t, 0, uc.GetRootRoundNumber())
 		require.Nil(t, uc.GetStateHash())
@@ -29,7 +29,9 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 	})
 	t.Run("invalid uct is nil", func(t *testing.T) {
 		uc := &UnicityCertificate{
+			Version: 1,
 			InputRecord: &InputRecord{
+				Version:         1,
 				PreviousHash:    []byte{0, 0, 1},
 				Hash:            []byte{0, 0, 2},
 				BlockHash:       []byte{0, 0, 3},
@@ -43,6 +45,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 	t.Run("invalid unicity seal is nil", func(t *testing.T) {
 		hasher := crypto.SHA256.New()
 		inputRecord := &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			BlockHash:       []byte{0, 0, 3},
@@ -59,6 +62,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		dataHash := hasher.Sum(nil)
 		require.NotNil(t, dataHash)
 		uc := &UnicityCertificate{
+			Version:     1,
 			InputRecord: inputRecord,
 			UnicityTreeCertificate: &UnicityTreeCertificate{
 				SystemIdentifier:         identifier,
@@ -71,6 +75,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 	t.Run("invalid root hash", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		seal := &UnicitySeal{
+			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
 			PreviousHash:         zeroHash,
@@ -78,7 +83,9 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		}
 		require.NoError(t, seal.Sign("test", signer))
 		uc := &UnicityCertificate{
+			Version: 1,
 			InputRecord: &InputRecord{
+				Version:         1,
 				PreviousHash:    []byte{0, 0, 1},
 				Hash:            []byte{0, 0, 2},
 				BlockHash:       []byte{0, 0, 3},
@@ -93,11 +100,12 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			UnicitySeal: seal,
 		}
 		require.EqualError(t, uc.IsValid(crypto.SHA256, identifier, sdrh),
-			"unicity seal hash 010203 does not match with the root hash of the unicity tree 227AD98477346D339C657B3C5C12CAE6E1D0692E0019C63BE130CD373E3C5219")
+			"unicity seal hash 010203 does not match with the root hash of the unicity tree C74D4EA52F8E4D121B20AFC7A628C06F32CF56699DFF6C85676C767F439E8FF4")
 	})
 	t.Run("valid", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		inputRecord := &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			BlockHash:       []byte{0, 0, 3},
@@ -106,13 +114,15 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			SumOfEarnedFees: 20,
 		}
 		seal := &UnicitySeal{
+			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
 			PreviousHash:         zeroHash,
-			Hash:                 hexDecode(t, "227AD98477346D339C657B3C5C12CAE6E1D0692E0019C63BE130CD373E3C5219"),
+			Hash:                 hexDecode(t, "C74D4EA52F8E4D121B20AFC7A628C06F32CF56699DFF6C85676C767F439E8FF4"),
 		}
 		require.NoError(t, seal.Sign("test", signer))
 		uc := &UnicityCertificate{
+			Version:     1,
 			InputRecord: inputRecord,
 			UnicityTreeCertificate: &UnicityTreeCertificate{
 				SystemIdentifier:         identifier,
@@ -127,13 +137,14 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 func TestUnicityCertificate_Verify(t *testing.T) {
 	sdrh := zeroHash
 	t.Run("UC is nil", func(t *testing.T) {
-		uc := UnicityCertificate{}
+		uc := UnicityCertificate{Version: 1}
 		require.EqualError(t, uc.Verify(nil, crypto.SHA256, 0, nil),
 			"unicity certificate validation failed: input record error: input record is nil")
 	})
 	t.Run("tb is nil", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		inputRecord := &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			BlockHash:       []byte{0, 0, 3},
@@ -142,13 +153,15 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			SumOfEarnedFees: 20,
 		}
 		seal := &UnicitySeal{
+			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
 			PreviousHash:         zeroHash,
-			Hash:                 hexDecode(t, "227AD98477346D339C657B3C5C12CAE6E1D0692E0019C63BE130CD373E3C5219"),
+			Hash:                 hexDecode(t, "C74D4EA52F8E4D121B20AFC7A628C06F32CF56699DFF6C85676C767F439E8FF4"),
 		}
 		require.NoError(t, seal.Sign("test", signer))
 		uc := &UnicityCertificate{
+			Version:     1,
 			InputRecord: inputRecord,
 			UnicityTreeCertificate: &UnicityTreeCertificate{
 				SystemIdentifier:         identifier,
@@ -162,6 +175,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 	t.Run("verify ok", func(t *testing.T) {
 		signer, verifier := testsig.CreateSignerAndVerifier(t)
 		inputRecord := &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			BlockHash:       []byte{0, 0, 3},
@@ -170,13 +184,15 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			SumOfEarnedFees: 20,
 		}
 		seal := &UnicitySeal{
+			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            1712524909,
 			PreviousHash:         zeroHash,
-			Hash:                 hexDecode(t, "227AD98477346D339C657B3C5C12CAE6E1D0692E0019C63BE130CD373E3C5219"),
+			Hash:                 hexDecode(t, "C74D4EA52F8E4D121B20AFC7A628C06F32CF56699DFF6C85676C767F439E8FF4"),
 		}
 		require.NoError(t, seal.Sign("test", signer))
 		uc := &UnicityCertificate{
+			Version:     1,
 			InputRecord: inputRecord,
 			UnicityTreeCertificate: &UnicityTreeCertificate{
 				SystemIdentifier:         identifier,
@@ -191,7 +207,9 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 
 func TestUnicityCertificate_isRepeat(t *testing.T) {
 	uc := &UnicityCertificate{
+		Version: 1,
 		InputRecord: &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			BlockHash:       []byte{0, 0, 3},
@@ -200,6 +218,7 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 			SumOfEarnedFees: 20,
 		},
 		UnicitySeal: &UnicitySeal{
+			Version:              1,
 			RootChainRoundNumber: 1,
 		},
 	}
@@ -207,8 +226,10 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 	// everything is equal, this is the same UC and not repeat
 	require.False(t, isRepeat(uc, uc))
 	ruc := &UnicityCertificate{
+		Version:     1,
 		InputRecord: uc.InputRecord.NewRepeatIR(),
 		UnicitySeal: &UnicitySeal{
+			Version:              1,
 			RootChainRoundNumber: uc.UnicitySeal.RootChainRoundNumber + 1,
 		},
 	}
@@ -223,7 +244,9 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 	require.False(t, isRepeat(uc, ruc))
 	// if anything else changes, it is no longer considered repeat
 	require.False(t, isRepeat(uc, &UnicityCertificate{
+		Version: 1,
 		InputRecord: &InputRecord{
+			Version:         1,
 			Hash:            []byte{0, 0, 2},
 			BlockHash:       []byte{0, 0, 3},
 			SummaryValue:    []byte{0, 0, 4},
@@ -232,7 +255,9 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 		},
 	}))
 	require.False(t, isRepeat(uc, &UnicityCertificate{
+		Version: 1,
 		InputRecord: &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			BlockHash:       []byte{0, 0, 3},
@@ -249,7 +274,9 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 	t.Run("err - previous UC is nil", func(t *testing.T) {
 		var prevUC *UnicityCertificate = nil
 		newUC := &UnicityCertificate{
+			Version: 1,
 			InputRecord: &InputRecord{
+				Version:         1,
 				PreviousHash:    []byte{0, 0, 1},
 				Hash:            []byte{0, 0, 2},
 				BlockHash:       []byte{0, 0, 3},
@@ -257,13 +284,15 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 				RoundNumber:     6,
 				SumOfEarnedFees: 2,
 			},
-			UnicitySeal: &UnicitySeal{RootChainRoundNumber: 10},
+			UnicitySeal: &UnicitySeal{Version: 1, RootChainRoundNumber: 10},
 		}
 		require.ErrorIs(t, CheckNonEquivocatingCertificates(prevUC, newUC), ErrLastUCIsNil)
 	})
 	t.Run("err - new UC is nil", func(t *testing.T) {
 		prevUC := &UnicityCertificate{
+			Version: 1,
 			InputRecord: &InputRecord{
+				Version:         1,
 				PreviousHash:    []byte{0, 0, 1},
 				Hash:            []byte{0, 0, 2},
 				BlockHash:       []byte{0, 0, 3},
@@ -271,14 +300,16 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 				RoundNumber:     6,
 				SumOfEarnedFees: 2,
 			},
-			UnicitySeal: &UnicitySeal{RootChainRoundNumber: 10},
+			UnicitySeal: &UnicitySeal{Version: 1, RootChainRoundNumber: 10},
 		}
 		var newUC *UnicityCertificate = nil
 		require.ErrorIs(t, CheckNonEquivocatingCertificates(prevUC, newUC), ErrUCIsNil)
 	})
 	t.Run("equal UC's", func(t *testing.T) {
 		prevUC := &UnicityCertificate{
+			Version: 1,
 			InputRecord: &InputRecord{
+				Version:         1,
 				PreviousHash:    []byte{0, 0, 1},
 				Hash:            []byte{0, 0, 2},
 				BlockHash:       []byte{0, 0, 3},
@@ -286,10 +317,12 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 				RoundNumber:     6,
 				SumOfEarnedFees: 2,
 			},
-			UnicitySeal: &UnicitySeal{RootChainRoundNumber: 10},
+			UnicitySeal: &UnicitySeal{Version: 1, RootChainRoundNumber: 10},
 		}
 		newUC := &UnicityCertificate{
+			Version: 1,
 			InputRecord: &InputRecord{
+				Version:         1,
 				PreviousHash:    []byte{0, 0, 1},
 				Hash:            []byte{0, 0, 2},
 				BlockHash:       []byte{0, 0, 3},
@@ -297,7 +330,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 				RoundNumber:     6,
 				SumOfEarnedFees: 2,
 			},
-			UnicitySeal: &UnicitySeal{RootChainRoundNumber: 10},
+			UnicitySeal: &UnicitySeal{Version: 1, RootChainRoundNumber: 10},
 		}
 		require.NoError(t, CheckNonEquivocatingCertificates(prevUC, newUC))
 	})
@@ -681,6 +714,8 @@ func TestUCHash(t *testing.T) {
 	}
 	// serialize manually
 	expectedBytes := []byte{
+		0, 0, 0, 1, // UC: version
+		0, 0, 0, 1, // IR: version
 		0, 0, 1, // IR: previous hash
 		0, 0, 2, // IR: hash
 		0, 0, 3, // IR: block hash

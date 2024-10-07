@@ -149,6 +149,7 @@ func TestBlock_IsValid(t *testing.T) {
 			T2Timeout:        2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			SummaryValue:    []byte{0, 0, 4},
@@ -184,6 +185,7 @@ func TestBlock_IsValid(t *testing.T) {
 			T2Timeout:        2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			SummaryValue:    []byte{0, 0, 4},
