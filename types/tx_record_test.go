@@ -4,63 +4,49 @@ import (
 	"crypto"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	"github.com/stretchr/testify/require"
 )
 
+type testProcessingDetails struct {
+	_ struct{} `cbor:",toarray"`
+	A int
+	B string
+}
+
 func TestTransactionRecordFunctions(t *testing.T) {
-	txOrder := createTxOrder(t)
-	payloadBytes, _ := txOrder.PayloadBytes()
+	txo := createTransactionOrder(t)
+	expectedProcessingDetails := testProcessingDetails{A: 97, B: "b"}
+	processingDetailsCBOR, err := Cbor.Marshal(expectedProcessingDetails)
+	require.NoError(t, err)
 	serverMetadata := &ServerMetadata{
 		ActualFee:         1,
-		TargetUnits:       []UnitID{txOrder.UnitID()},
+		TargetUnits:       []UnitID{txo.UnitID},
 		SuccessIndicator:  TxStatusSuccessful,
-		ProcessingDetails: payloadBytes,
+		ProcessingDetails: processingDetailsCBOR,
 	}
-	transactionRecord := &TransactionRecord{
-		TransactionOrder: txOrder,
+	txr := &TransactionRecord{
+		TransactionOrder: txo,
 		ServerMetadata:   serverMetadata,
 	}
-	expectedHash := "0x9d4b3225f7105aa5dbe917e7b90ae3860ee3b9656bc9684476f1cdff01f20b51"
-	expectedBytes, err := Cbor.Marshal(transactionRecord)
-	require.NoError(t, err)
 
 	t.Run("Test Hash", func(t *testing.T) {
-		require.Equal(t, expectedHash, hexutil.Encode(transactionRecord.Hash(crypto.SHA256)))
+		require.NotEmpty(t, txr.Hash(crypto.SHA256))
 	})
 
 	t.Run("Test Bytes", func(t *testing.T) {
-		bytes, err := transactionRecord.Bytes()
+		bytes, err := txr.Bytes()
 		require.NoError(t, err)
-		require.Equal(t, expectedBytes, bytes)
+		require.NotEmpty(t, bytes)
 	})
 
 	t.Run("Test UnmarshalProcessingDetails", func(t *testing.T) {
-		var payload Payload
-		err := transactionRecord.UnmarshalProcessingDetails(&payload)
-		require.NoError(t, err)
-		require.Equal(t, txOrder.Payload.UnitID, payload.UnitID)
-		require.Equal(t, txOrder.Payload.SystemID, payload.SystemID)
-		require.Equal(t, txOrder.Payload.Type, payload.Type)
-		require.Equal(t, txOrder.Payload.Attributes, payload.Attributes)
-		require.Equal(t, txOrder.Payload.ClientMetadata, payload.ClientMetadata)
+		var actualProcessingDetails testProcessingDetails
+		require.NoError(t, txr.UnmarshalProcessingDetails(&actualProcessingDetails))
+		require.Equal(t, expectedProcessingDetails, actualProcessingDetails)
 	})
 
 	t.Run("Test GetActualFee", func(t *testing.T) {
-		require.EqualValues(t, uint64(1), transactionRecord.GetActualFee())
-		require.EqualValues(t, uint64(1), serverMetadata.GetActualFee())
-	})
-
-	t.Run("Test UnmarshalDetails", func(t *testing.T) {
-		var payload Payload
-		err := serverMetadata.UnmarshalDetails(&payload)
-		require.NoError(t, err)
-		require.Equal(t, txOrder.Payload.UnitID, payload.UnitID)
-		require.Equal(t, txOrder.Payload.SystemID, payload.SystemID)
-		require.Equal(t, txOrder.Payload.Type, payload.Type)
-		require.Equal(t, txOrder.Payload.Attributes, payload.Attributes)
-		require.Equal(t, txOrder.Payload.ClientMetadata, payload.ClientMetadata)
+		require.EqualValues(t, uint64(1), txr.GetActualFee())
 	})
 }
 

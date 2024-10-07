@@ -6,14 +6,24 @@ import (
 	"fmt"
 )
 
-const SystemIdentifierLength = 4
+const (
+	NetworkMainNet NetworkID = 1
+	NetworkTestNet NetworkID = 2
+	NetworkLocal   NetworkID = 3
+)
 
-type SystemID uint32
+const (
+	SystemIdentifierLength  = 4
+	NetworkIdentifierLength = 2
+)
 
-/*
-UnitID is the extended identifier, combining the type and the unit identifiers.
-*/
-type UnitID []byte
+type (
+	NetworkID uint16
+	SystemID  uint32
+
+	// UnitID is the extended identifier, combining the type and the unit identifiers.
+	UnitID []byte
+)
 
 // NewUnitID creates a new UnitID consisting of a shardPart, unitPart and typePart.
 func NewUnitID(unitIDLength int, shardPart []byte, unitPart []byte, typePart []byte) UnitID {
@@ -77,11 +87,17 @@ func BytesToSystemID(b []byte) (SystemID, error) {
 }
 
 func (sid SystemID) Bytes() []byte {
-	bytes := make([]byte, SystemIdentifierLength)
-	binary.BigEndian.PutUint32(bytes, uint32(sid))
-	return bytes
+	b := make([]byte, SystemIdentifierLength)
+	binary.BigEndian.PutUint32(b, uint32(sid))
+	return b
 }
 
 func (sid SystemID) String() string {
 	return fmt.Sprintf("%08X", uint32(sid))
+}
+
+func (nid NetworkID) Bytes() []byte {
+	b := make([]byte, NetworkIdentifierLength)
+	binary.BigEndian.PutUint16(b, uint16(nid))
+	return b
 }

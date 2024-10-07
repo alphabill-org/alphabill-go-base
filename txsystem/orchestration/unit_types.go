@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	VarUnitType = []byte{0x40}
+	VarUnitType = []byte{1}
 )
 
 // NewVarID return new Validator Assignment Record ID
