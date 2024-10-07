@@ -192,24 +192,24 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 		}
 		x.Version = ABVersion(version)
 	} else {
-		return errors.New("unicity seal: invalid version number")
+		return fmt.Errorf("unicity seal: unexpected type of version: %+v", arr[0])
 	}
 	if round, ok := arr[1].(uint64); ok {
 		x.RootChainRoundNumber = round
 	} else {
-		return fmt.Errorf("unicity seal: invalid root round number: %+v", arr[1])
+		return fmt.Errorf("unicity seal: unexpected type of root round number: %+v", arr[1])
 	}
 	if ts, ok := arr[2].(uint64); ok {
 		x.Timestamp = ts
 	} else {
-		return fmt.Errorf("unicity seal: invalid timestamp: %+v", arr[2])
+		return fmt.Errorf("unicity seal: unexpected type of timestamp: %+v", arr[2])
 	}
-	if prevHash, ok := arr[3].([]byte); ok || prevHash == nil {
+	if prevHash, ok := arr[3].([]byte); ok || arr[3] == nil {
 		x.PreviousHash = prevHash
 	} else {
 		return fmt.Errorf("unicity seal: invalid previous hash: %+v", arr[3])
 	}
-	if h, ok := arr[4].([]byte); ok || h == nil {
+	if h, ok := arr[4].([]byte); ok || arr[4] == nil {
 		x.Hash = h
 	} else {
 		return fmt.Errorf("unicity seal: invalid hash: %+v", arr[4])
@@ -220,7 +220,7 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 			return err
 		}
 		x.Signatures = sigMap
-	} else if sigs != nil {
+	} else if arr[5] != nil {
 		return fmt.Errorf("unicity seal: invalid signatures: %+v", arr[5])
 	}
 	return nil
