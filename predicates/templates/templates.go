@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/alphabill-org/alphabill-go-base/hash"
@@ -12,7 +13,6 @@ const (
 	AlwaysFalseID byte = iota
 	AlwaysTrueID
 	P2pkh256ID
-	P2pkh256FeeAuthID
 
 	TemplateStartByte = 0x00
 )
@@ -66,24 +66,6 @@ func NewP2pkh256BytesFromKeyHash(pubKeyHash []byte) types.PredicateBytes {
 	return pb
 }
 
-func NewP2pkh256FeeAuthFromKey(pubKey []byte) predicates.Predicate {
-	return NewP2pkh256FeeAuthFromKeyHash(hash.Sum256(pubKey))
-}
-
-func NewP2pkh256FeeAuthFromKeyHash(pubKeyHash []byte) predicates.Predicate {
-	return predicates.Predicate{Tag: TemplateStartByte, Code: []byte{P2pkh256FeeAuthID}, Params: pubKeyHash}
-}
-
-func NewP2pkh256FeeAuthBytesFromKey(pubKey []byte) types.PredicateBytes {
-	pb, _ := types.Cbor.Marshal(NewP2pkh256FeeAuthFromKey(pubKey))
-	return pb
-}
-
-func NewP2pkh256FeeAuthBytesFromKeyHash(pubKeyHash []byte) types.PredicateBytes {
-	pb, _ := types.Cbor.Marshal(NewP2pkh256FeeAuthFromKeyHash(pubKeyHash))
-	return pb
-}
-
 func NewP2pkh256SignatureBytes(sig, pubKey []byte) []byte {
 	sb, _ := types.Cbor.Marshal(P2pkh256Signature{Sig: sig, PubKey: pubKey})
 	return sb
@@ -94,18 +76,23 @@ func ExtractPubKeyHashFromP2pkhPredicate(pb []byte) ([]byte, error) {
 	if err := types.Cbor.Unmarshal(pb, predicate); err != nil {
 		return nil, fmt.Errorf("extracting predicate: %w", err)
 	}
-	if predicate.Tag != TemplateStartByte {
-		return nil, fmt.Errorf("not a predicate template (tag %d)", predicate.Tag)
-	}
-	if len(predicate.Code) != 1 || !(predicate.Code[0] == P2pkh256ID  || predicate.Code[0] == P2pkh256FeeAuthID) {
-		return nil, fmt.Errorf("not a p2pkh predicate (id %X)", predicate.Code)
+	if err := VerifyP2pkhPredicate(predicate); err != nil {
+		return nil, err
 	}
 	return predicate.Params, nil
 }
 
-func IsP2pkhTemplate(predicate *predicates.Predicate) bool {
-	return predicate != nil &&
-		predicate.Tag == TemplateStartByte &&
-		len(predicate.Code) == 1 &&
-		(predicate.Code[0] == P2pkh256ID || predicate.Code[0] == P2pkh256FeeAuthID)
+// VerifyP2pkhPredicate returns nil if the predicate is a valid P2PKH256 predicate,
+// or an error if the predicate is invalid, with a description of the specific validation error.
+func VerifyP2pkhPredicate(predicate *predicates.Predicate) error {
+	if predicate == nil {
+		return errors.New("predicate is nil")
+	}
+	if predicate.Tag != TemplateStartByte {
+		return fmt.Errorf("not a predicate template (tag %d)", predicate.Tag)
+	}
+	if len(predicate.Code) != 1 || predicate.Code[0] != P2pkh256ID {
+		return fmt.Errorf("not a p2pkh predicate (id %X)", predicate.Code)
+	}
+	return nil
 }

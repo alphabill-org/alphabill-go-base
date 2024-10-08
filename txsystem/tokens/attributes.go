@@ -7,23 +7,21 @@ import (
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
-const DefaultSystemID types.SystemID = 0x00000002
+const DefaultSystemID types.SystemID = 2
 
 const (
-	PayloadTypeDefineNFT   = "defNT"
-	PayloadTypeMintNFT     = "mintNT"
-	PayloadTypeTransferNFT = "transNT"
-	PayloadTypeUpdateNFT   = "updateNT"
-
-	PayloadTypeDefineFT   = "defFT"
-	PayloadTypeMintFT     = "mintFT"
-	PayloadTypeTransferFT = "transFT"
-	PayloadTypeSplitFT    = "splitFT"
-	PayloadTypeBurnFT     = "burnFT"
-	PayloadTypeJoinFT     = "joinFT"
-
-	PayloadTypeLockToken   = "lockT"
-	PayloadTypeUnlockToken = "unlockT"
+	TransactionTypeDefineFT    uint16 = 1
+	TransactionTypeDefineNFT   uint16 = 2
+	TransactionTypeMintFT      uint16 = 3
+	TransactionTypeMintNFT     uint16 = 4
+	TransactionTypeTransferFT  uint16 = 5
+	TransactionTypeTransferNFT uint16 = 6
+	TransactionTypeLockToken   uint16 = 7
+	TransactionTypeUnlockToken uint16 = 8
+	TransactionTypeSplitFT     uint16 = 9
+	TransactionTypeBurnFT      uint16 = 10
+	TransactionTypeJoinFT      uint16 = 11
+	TransactionTypeUpdateNFT   uint16 = 12
 )
 
 type (
@@ -41,20 +39,20 @@ type (
 
 	MintNonFungibleTokenAttributes struct {
 		_                   struct{}     `cbor:",toarray"`
-		OwnerPredicate      []byte       // the initial owner predicate of the new token
 		TypeID              types.UnitID // the type of the new token
 		Name                string       // the name of the new token
 		URI                 string       // the optional URI of an external resource associated with the new token
 		Data                []byte       // the optional data associated with the new token
+		OwnerPredicate      []byte       // the initial owner predicate of the new token
 		DataUpdatePredicate []byte       // the data update predicate of the new token
 		Nonce               uint64       // optional nonce
 	}
 
 	TransferNonFungibleTokenAttributes struct {
 		_                 struct{}     `cbor:",toarray"`
+		TypeID            types.UnitID // identifies the type of the token
 		NewOwnerPredicate []byte       // the new owner predicate of the token
 		Counter           uint64       // the transaction counter of this token
-		TypeID            types.UnitID // identifies the type of the token
 	}
 
 	UpdateNonFungibleTokenAttributes struct {
@@ -83,26 +81,26 @@ type (
 
 	MintFungibleTokenAttributes struct {
 		_              struct{}     `cbor:",toarray"`
-		OwnerPredicate []byte       // the initial owner predicate of the new token
 		TypeID         types.UnitID // the type of the new token
 		Value          uint64       // the value of the new token
+		OwnerPredicate []byte       // the initial owner predicate of the new token
 		Nonce          uint64       // optional nonce
 	}
 
 	TransferFungibleTokenAttributes struct {
 		_                 struct{}     `cbor:",toarray"`
-		NewOwnerPredicate []byte       // the initial owner predicate of the new token
-		Value             uint64       // the value to transfer
-		Counter           uint64       // the transaction counter of this token
 		TypeID            types.UnitID // identifies the type of the token
+		Value             uint64       // the value to transfer
+		NewOwnerPredicate []byte       // the initial owner predicate of the new token
+		Counter           uint64       // the transaction counter of this token
 	}
 
 	SplitFungibleTokenAttributes struct {
 		_                 struct{}     `cbor:",toarray"`
-		NewOwnerPredicate []byte       // the owner predicate of the new token
-		TargetValue       uint64       // the value of the new token
-		Counter           uint64       // the transaction counter of this token
 		TypeID            types.UnitID // identifies the type of the token
+		TargetValue       uint64       // the value of the new token
+		NewOwnerPredicate []byte       // the owner predicate of the new token
+		Counter           uint64       // the transaction counter of this token
 	}
 
 	BurnFungibleTokenAttributes struct {
@@ -115,10 +113,8 @@ type (
 	}
 
 	JoinFungibleTokenAttributes struct {
-		_                struct{}                   `cbor:",toarray"`
-		BurnTransactions []*types.TransactionRecord // the transactions that burned the source tokens
-		Proofs           []*types.TxProof           // block proofs for burn transactions
-		Counter          uint64                     // the transaction counter of this token
+		_               struct{}               `cbor:",toarray"`
+		BurnTokenProofs []*types.TxRecordProof // the transaction records and proofs that burned the source tokens
 	}
 
 	LockTokenAttributes struct {

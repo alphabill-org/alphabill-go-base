@@ -4,22 +4,22 @@ import (
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
-const DefaultSystemID types.SystemID = 0x00000001
+const DefaultSystemID types.SystemID = 1
 
 const (
-	PayloadTypeTransfer = "trans"
-	PayloadTypeSplit    = "split"
-	PayloadTypeTransDC  = "transDC"
-	PayloadTypeSwapDC   = "swapDC"
-	PayloadTypeLock     = "lock"
-	PayloadTypeUnlock   = "unlock"
+	TransactionTypeTransfer uint16 = 1
+	TransactionTypeSplit    uint16 = 2
+	TransactionTypeTransDC  uint16 = 3
+	TransactionTypeSwapDC   uint16 = 4
+	TransactionTypeLock     uint16 = 5
+	TransactionTypeUnlock   uint16 = 6
 )
 
 type (
 	TransferAttributes struct {
 		_                 struct{} `cbor:",toarray"`
-		NewOwnerPredicate []byte
 		TargetValue       uint64
+		NewOwnerPredicate []byte
 		Counter           uint64
 	}
 
@@ -37,17 +37,9 @@ type (
 		Counter     uint64
 	}
 
-	TargetUnit struct {
-		_              struct{} `cbor:",toarray"`
-		Amount         uint64
-		OwnerPredicate []byte
-	}
-
 	SwapDCAttributes struct {
-		_                struct{} `cbor:",toarray"`
-		DcTransfers      []*types.TransactionRecord
-		DcTransferProofs []*types.TxProof
-		TargetValue      uint64 // value added to target bill
+		_                  struct{}               `cbor:",toarray"`
+		DustTransferProofs []*types.TxRecordProof // the dust transfer records and proofs
 	}
 
 	LockAttributes struct {
@@ -59,5 +51,11 @@ type (
 	UnlockAttributes struct {
 		_       struct{} `cbor:",toarray"`
 		Counter uint64
+	}
+
+	TargetUnit struct {
+		_              struct{} `cbor:",toarray"`
+		Amount         uint64
+		OwnerPredicate []byte
 	}
 )

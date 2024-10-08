@@ -30,8 +30,9 @@ func (std *SystemTypeDescriptor) AddToHasher(h hash.Hash) {
 }
 
 type PartitionDescriptionRecord struct {
-	_                struct{} `cbor:",toarray"`
-	SystemIdentifier SystemID `json:"system_identifier,omitempty"`
+	_                 struct{}  `cbor:",toarray"`
+	NetworkIdentifier NetworkID `json:"network_identifier,omitempty"`
+	SystemIdentifier  SystemID  `json:"system_identifier,omitempty"`
 	// System Type Descriptor is only used (ie is not nil) when SystemIdentifier == 0
 	SystemDescriptor *SystemTypeDescriptor `json:"system_type_descriptor,omitempty"`
 	TypeIdLen        uint32                `json:"type_id_length"`
@@ -53,7 +54,9 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if pdr == nil {
 		return ErrSystemDescriptionIsNil
 	}
-
+	if pdr.NetworkIdentifier == 0 {
+		return fmt.Errorf("invalid network identifier: %d", pdr.NetworkIdentifier)
+	}
 	// we currently do not support custom System Type Descriptors so allow
 	// only non-zero System IDs
 	if pdr.SystemIdentifier == 0 {
@@ -79,7 +82,9 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 }
 
 func (pdr *PartitionDescriptionRecord) AddToHasher(h hash.Hash) {
-	buf := pdr.SystemIdentifier.Bytes() // SID.Bytes creates new slice on every call!
+	var buf []byte
+	buf = binary.BigEndian.AppendUint16(buf, uint16(pdr.NetworkIdentifier))
+	buf = binary.BigEndian.AppendUint32(buf, uint32(pdr.SystemIdentifier))
 	buf = binary.BigEndian.AppendUint32(buf, pdr.TypeIdLen)
 	buf = binary.BigEndian.AppendUint32(buf, pdr.UnitIdLen)
 	buf = binary.BigEndian.AppendUint64(buf, uint64(pdr.T2Timeout.Nanoseconds()))
@@ -95,6 +100,10 @@ func (pdr *PartitionDescriptionRecord) Hash(hashAlgorithm crypto.Hash) []byte {
 	hasher := hashAlgorithm.New()
 	pdr.AddToHasher(hasher)
 	return hasher.Sum(nil)
+}
+
+func (pdr *PartitionDescriptionRecord) GetNetworkIdentifier() NetworkID {
+	return pdr.NetworkIdentifier
 }
 
 func (pdr *PartitionDescriptionRecord) GetSystemIdentifier() SystemID {

@@ -3,8 +3,8 @@ package permissioned
 import "github.com/alphabill-org/alphabill-go-base/types"
 
 const (
-	PayloadTypeSetFeeCredit    = "setFC"
-	PayloadTypeDeleteFeeCredit = "delFC"
+	TransactionTypeSetFeeCredit    uint16 = 20
+	TransactionTypeDeleteFeeCredit uint16 = 21
 )
 
 type (
@@ -30,7 +30,8 @@ type (
 )
 
 func IsFeeCreditTx(tx *types.TransactionOrder) bool {
-	typeUrl := tx.PayloadType()
-	return typeUrl == PayloadTypeSetFeeCredit ||
-		typeUrl == PayloadTypeDeleteFeeCredit
+	if tx == nil {
+		return false
+	}
+	return tx.Type >= TransactionTypeSetFeeCredit && tx.Type <= TransactionTypeDeleteFeeCredit
 }

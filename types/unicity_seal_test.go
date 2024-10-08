@@ -269,3 +269,83 @@ func TestUnicitySeal_forwardCompatibility_notSupported(t *testing.T) {
 	res := &UnicitySeal{}
 	require.Error(t, Cbor.Unmarshal(data, res))
 }
+
+func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
+	t.Run("ValidData", func(t *testing.T) {
+		data, err := Cbor.MarshalTagged(UnicitySealTag, ABVersion(1), uint64(1), uint64(1), []byte{0xFF}, []byte{0xFF}, nil)
+		require.NoError(t, err)
+		seal := &UnicitySeal{}
+		err = seal.UnmarshalCBOR(data)
+		require.NoError(t, err)
+		require.Equal(t, ABVersion(1), seal.GetVersion())
+		require.Equal(t, uint64(1), seal.RootChainRoundNumber)
+		require.Equal(t, uint64(1), seal.Timestamp)
+		require.Equal(t, []byte{0xFF}, seal.PreviousHash)
+		require.Equal(t, []byte{0xFF}, seal.Hash)
+		require.Nil(t, seal.Signatures)
+	})
+
+	t.Run("InvalidTag", func(t *testing.T) {
+		data, err := Cbor.MarshalTagged(1000, ABVersion(1), uint64(1), uint64(1), []byte{0xFF}, []byte{0xFF}, nil)
+		require.NoError(t, err)
+		seal := &UnicitySeal{}
+		err = seal.UnmarshalCBOR(data)
+		require.ErrorContains(t, err, "invalid tag 1000, expected 1001")
+	})
+
+	t.Run("InvalidArrayLength", func(t *testing.T) {
+		data, err := Cbor.MarshalTagged(UnicitySealTag, ABVersion(1), uint64(1), uint64(1), []byte{0xFF}, []byte{0xFF})
+		require.NoError(t, err)
+		seal := &UnicitySeal{}
+		err = seal.UnmarshalCBOR(data)
+		require.ErrorContains(t, err, "invalid array length")
+	})
+
+	t.Run("InvalidVersion", func(t *testing.T) {
+		data, err := Cbor.MarshalTagged(UnicitySealTag, "42", uint64(1), uint64(1), []byte{0xFF}, []byte{0xFF}, nil)
+		require.NoError(t, err)
+		seal := &UnicitySeal{}
+		err = seal.UnmarshalCBOR(data)
+		require.ErrorContains(t, err, "unexpected type of version")
+	})
+
+	t.Run("InvalidRootRoundNumber", func(t *testing.T) {
+		data, err := Cbor.MarshalTagged(UnicitySealTag, ABVersion(1), "1", uint64(1), []byte{0xFF}, []byte{0xFF}, nil)
+		require.NoError(t, err)
+		seal := &UnicitySeal{}
+		err = seal.UnmarshalCBOR(data)
+		require.ErrorContains(t, err, "unexpected type of root round number")
+	})
+
+	t.Run("InvalidTimestamp", func(t *testing.T) {
+		data, err := Cbor.MarshalTagged(UnicitySealTag, ABVersion(1), 1, []byte{}, []byte{0xFF}, []byte{0xFF}, nil)
+		require.NoError(t, err)
+		seal := &UnicitySeal{}
+		err = seal.UnmarshalCBOR(data)
+		require.ErrorContains(t, err, "unexpected type of timestamp")
+	})
+
+	t.Run("InvalidPreviousHash", func(t *testing.T) {
+		data, err := Cbor.MarshalTagged(UnicitySealTag, ABVersion(1), 1, 1, 0xFF, []byte{0xFF}, nil)
+		require.NoError(t, err)
+		seal := &UnicitySeal{}
+		err = seal.UnmarshalCBOR(data)
+		require.ErrorContains(t, err, "invalid previous hash")
+	})
+
+	t.Run("InvalidHash", func(t *testing.T) {
+		data, err := Cbor.MarshalTagged(UnicitySealTag, ABVersion(1), 1, 1, []byte{0xFF}, 0xFF, nil)
+		require.NoError(t, err)
+		seal := &UnicitySeal{}
+		err = seal.UnmarshalCBOR(data)
+		require.ErrorContains(t, err, "invalid hash")
+	})
+
+	t.Run("InvalidSignatures", func(t *testing.T) {
+		data, err := Cbor.MarshalTagged(UnicitySealTag, ABVersion(1), 1, 1, []byte{0xFF}, []byte{0xFF}, "")
+		require.NoError(t, err)
+		seal := &UnicitySeal{}
+		err = seal.UnmarshalCBOR(data)
+		require.ErrorContains(t, err, "invalid signatures")
+	})
+}

@@ -121,6 +121,7 @@ func (x *InputRecord) Bytes() []byte {
 // NewRepeatIR - creates new repeat IR from current IR
 func (x *InputRecord) NewRepeatIR() *InputRecord {
 	return &InputRecord{
+		Version:         1,
 		PreviousHash:    bytes.Clone(x.PreviousHash),
 		Hash:            bytes.Clone(x.Hash),
 		BlockHash:       bytes.Clone(x.BlockHash),
