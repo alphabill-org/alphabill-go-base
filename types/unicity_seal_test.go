@@ -2,7 +2,6 @@ package types
 
 import (
 	gocrypto "crypto"
-	"fmt"
 	"testing"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
@@ -275,7 +274,6 @@ func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
 	t.Run("ValidData", func(t *testing.T) {
 		data, err := Cbor.MarshalTagged(UnicitySealTag, ABVersion(1), uint64(1), uint64(1), []byte{0xFF}, []byte{0xFF}, nil)
 		require.NoError(t, err)
-		fmt.Printf("data: %X\n", data)
 		seal := &UnicitySeal{}
 		err = seal.UnmarshalCBOR(data)
 		require.NoError(t, err)
@@ -292,8 +290,7 @@ func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
 		require.NoError(t, err)
 		seal := &UnicitySeal{}
 		err = seal.UnmarshalCBOR(data)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid tag")
+		require.ErrorContains(t, err, "invalid tag 1000, expected 1001")
 	})
 
 	t.Run("InvalidArrayLength", func(t *testing.T) {
@@ -301,8 +298,7 @@ func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
 		require.NoError(t, err)
 		seal := &UnicitySeal{}
 		err = seal.UnmarshalCBOR(data)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid array length")
+		require.ErrorContains(t, err, "invalid array length")
 	})
 
 	t.Run("InvalidVersion", func(t *testing.T) {
@@ -310,8 +306,7 @@ func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
 		require.NoError(t, err)
 		seal := &UnicitySeal{}
 		err = seal.UnmarshalCBOR(data)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unexpected type of version")
+		require.ErrorContains(t, err, "unexpected type of version")
 	})
 
 	t.Run("InvalidRootRoundNumber", func(t *testing.T) {
@@ -319,8 +314,7 @@ func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
 		require.NoError(t, err)
 		seal := &UnicitySeal{}
 		err = seal.UnmarshalCBOR(data)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unexpected type of root round number")
+		require.ErrorContains(t, err, "unexpected type of root round number")
 	})
 
 	t.Run("InvalidTimestamp", func(t *testing.T) {
@@ -328,8 +322,7 @@ func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
 		require.NoError(t, err)
 		seal := &UnicitySeal{}
 		err = seal.UnmarshalCBOR(data)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unexpected type of timestamp")
+		require.ErrorContains(t, err, "unexpected type of timestamp")
 	})
 
 	t.Run("InvalidPreviousHash", func(t *testing.T) {
@@ -337,8 +330,7 @@ func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
 		require.NoError(t, err)
 		seal := &UnicitySeal{}
 		err = seal.UnmarshalCBOR(data)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid previous hash")
+		require.ErrorContains(t, err, "invalid previous hash")
 	})
 
 	t.Run("InvalidHash", func(t *testing.T) {
@@ -346,8 +338,7 @@ func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
 		require.NoError(t, err)
 		seal := &UnicitySeal{}
 		err = seal.UnmarshalCBOR(data)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid hash")
+		require.ErrorContains(t, err, "invalid hash")
 	})
 
 	t.Run("InvalidSignatures", func(t *testing.T) {
@@ -355,7 +346,6 @@ func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
 		require.NoError(t, err)
 		seal := &UnicitySeal{}
 		err = seal.UnmarshalCBOR(data)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid signatures")
+		require.ErrorContains(t, err, "invalid signatures")
 	})
 }
