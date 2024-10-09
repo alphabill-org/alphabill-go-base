@@ -2,7 +2,6 @@ package types
 
 import (
 	"crypto"
-	"fmt"
 	"testing"
 	"time"
 
@@ -29,7 +28,6 @@ func TestBlock_GetBlockFees(t *testing.T) {
 	t.Run("InputRecord is nil", func(t *testing.T) {
 		uc, err := (&UnicityCertificate{InputRecord: &InputRecord{SumOfEarnedFees: 10}}).MarshalCBOR()
 		require.NoError(t, err)
-		fmt.Printf("uc: %X\n", uc)
 		b := &Block{UnicityCertificate: uc}
 		require.EqualValues(t, 10, b.GetBlockFees(), "GetBlockFees()")
 	})
