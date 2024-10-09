@@ -58,7 +58,7 @@ func (b *Block) CalculateBlockHash(algorithm crypto.Hash) (*InputRecord, error) 
 		return nil, ErrInputRecordIsNil
 	}
 	// calculate block hash
-	hash, err := b.Hash(algorithm, ir.Hash, ir.PreviousHash)
+	hash, err := BlockHash(algorithm, b.Header, b.Transactions, ir.Hash, ir.PreviousHash)
 	if err != nil {
 		return nil, fmt.Errorf("block hash calculation failed: %w", err)
 	}
@@ -70,10 +70,10 @@ func (b *Block) CalculateBlockHash(algorithm crypto.Hash) (*InputRecord, error) 
 	return ir, nil
 }
 
-// Hash returns the hash of the block. Hash of a block is computed as hash of block header fields and tree hash
+// BlockHash returns the hash of the block. Hash of a block is computed as hash of block header fields and tree hash
 // of transactions.
-func (b *Block) Hash(algorithm crypto.Hash, stateHash []byte, prevStateHash []byte) ([]byte, error) {
-	if err := b.Header.IsValid(); err != nil {
+func BlockHash(algorithm crypto.Hash, h *Header, txs []*TransactionRecord, stateHash []byte, prevStateHash []byte) ([]byte, error) {
+	if err := h.IsValid(); err != nil {
 		return nil, fmt.Errorf("invalid block: %w", err)
 	}
 
@@ -84,19 +84,19 @@ func (b *Block) Hash(algorithm crypto.Hash, stateHash []byte, prevStateHash []by
 		return nil, fmt.Errorf("invalid block: previous state hash is nil")
 	}
 	// 0H - if there are no transactions and state does not change
-	if len(b.Transactions) == 0 && bytes.Equal(prevStateHash, stateHash) {
+	if len(txs) == 0 && bytes.Equal(prevStateHash, stateHash) {
 		return make([]byte, algorithm.Size()), nil
 	}
 	// init transactions merkle root to 0H
 	var merkleRoot = make([]byte, algorithm.Size())
 	// calculate Merkle tree of transactions if any
-	if len(b.Transactions) > 0 {
+	if len(txs) > 0 {
 		// calculate merkle tree root hash from transactions
-		tree := mt.New(algorithm, b.Transactions)
+		tree := mt.New(algorithm, txs)
 		merkleRoot = tree.GetRootHash()
 	}
 	// header hash || UC.IR.h′ || UC.IR.h || 0H - block Merkle tree root 0H
-	headerHash := b.HeaderHash(algorithm)
+	headerHash := h.Hash(algorithm)
 	hasher := algorithm.New()
 	hasher.Write(headerHash)
 	hasher.Write(prevStateHash)
@@ -169,7 +169,7 @@ func (b *Block) IsValid(algorithm crypto.Hash, systemDescriptionHash []byte) err
 		return fmt.Errorf("unicity certificate validation failed: %w", err)
 	}
 	// match block hash to input record
-	hash, err := b.Hash(algorithm, uc.GetStateHash(), uc.GetPreviousStateHash())
+	hash, err := BlockHash(algorithm, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
 	if err != nil {
 		return fmt.Errorf("block hash calculation failed: %w", err)
 	}

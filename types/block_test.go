@@ -219,7 +219,7 @@ func TestBlock_IsValid(t *testing.T) {
 func TestBlock_Hash(t *testing.T) {
 	t.Run("missing header", func(t *testing.T) {
 		b := &Block{}
-		hash, err := b.Hash(crypto.SHA256, nil, nil)
+		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, nil, nil)
 		require.Nil(t, hash)
 		require.EqualError(t, err, "invalid block: block header is nil")
 	})
@@ -233,7 +233,7 @@ func TestBlock_Hash(t *testing.T) {
 			},
 			Transactions: make([]*TransactionRecord, 0),
 		}
-		hash, err := b.Hash(crypto.SHA256, uc.GetStateHash(), uc.GetPreviousStateHash())
+		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
 		require.Nil(t, hash)
 		require.EqualError(t, err, "invalid block: state hash is nil")
 	})
@@ -249,7 +249,7 @@ func TestBlock_Hash(t *testing.T) {
 			},
 			Transactions: make([]*TransactionRecord, 0),
 		}
-		hash, err := b.Hash(crypto.SHA256, uc.GetStateHash(), uc.GetPreviousStateHash())
+		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
 		require.Nil(t, hash)
 		require.EqualError(t, err, "invalid block: previous state hash is nil")
 	})
@@ -266,7 +266,7 @@ func TestBlock_Hash(t *testing.T) {
 			},
 			Transactions: make([]*TransactionRecord, 0),
 		}
-		hash, err := b.Hash(crypto.SHA256, uc.GetStateHash(), uc.GetPreviousStateHash())
+		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
 		require.NoError(t, err)
 		require.Equal(t, hash, make([]byte, 32))
 	})
@@ -284,7 +284,7 @@ func TestBlock_Hash(t *testing.T) {
 			},
 			Transactions: make([]*TransactionRecord, 0),
 		}
-		hash, err := b.Hash(crypto.SHA256, uc.GetStateHash(), uc.GetPreviousStateHash())
+		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
 		require.NoError(t, err)
 		require.NotNil(t, hash)
 		require.NotEqual(t, hash, make([]byte, 32))
