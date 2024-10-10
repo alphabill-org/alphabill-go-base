@@ -29,6 +29,7 @@ const (
 	RootTrustBaseTag
 	UnicityTreeCertificateTag
 	TransactionRecordTag
+	TransactionOrderTag
 )
 
 func ErrInvalidVersion(s Versioned) error {
