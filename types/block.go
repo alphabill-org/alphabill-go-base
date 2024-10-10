@@ -204,7 +204,7 @@ func (h *Header) GetVersion() ABVersion {
 	if h != nil && h.Version > 0 {
 		return h.Version
 	}
-	return 0
+	return 1
 }
 
 func (h *Header) MarshalCBOR() ([]byte, error) {
