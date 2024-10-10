@@ -20,7 +20,7 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       args
-		verifyFunc func(t *testing.T, tb *RootTrustBaseV0)
+		verifyFunc func(t *testing.T, tb *RootTrustBaseV1)
 		wantErrStr string
 	}{
 		{
@@ -46,7 +46,7 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 				},
 				unicityTreeRootHash: []byte{1},
 			},
-			verifyFunc: func(t *testing.T, tb *RootTrustBaseV0) {
+			verifyFunc: func(t *testing.T, tb *RootTrustBaseV1) {
 				// verify values
 				require.EqualValues(t, 1, tb.Epoch)
 				require.EqualValues(t, 1, tb.EpochStartRound)
@@ -90,7 +90,7 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 				unicityTreeRootHash: []byte{1},
 				opts:                []Option{WithQuorumThreshold(2)},
 			},
-			verifyFunc: func(t *testing.T, tb *RootTrustBaseV0) {
+			verifyFunc: func(t *testing.T, tb *RootTrustBaseV1) {
 				require.EqualValues(t, 2, tb.GetQuorumThreshold())
 				require.EqualValues(t, 1, tb.GetMaxFaultyNodes())
 			},

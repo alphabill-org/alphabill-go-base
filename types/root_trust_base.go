@@ -19,8 +19,9 @@ type (
 		GetMaxFaultyNodes() uint64
 	}
 
-	RootTrustBaseV0 struct {
+	RootTrustBaseV1 struct {
 		_                 struct{}             `cbor:",toarray"`
+		Version           ABVersion            `json:"version"`
 		Epoch             uint64               `json:"epoch"`             // current epoch number
 		EpochStartRound   uint64               `json:"epochStartRound"`   // root chain round number when the epoch begins
 		RootNodes         map[string]*NodeInfo `json:"rootNodes"`         // list of all root nodes for the current epoch
@@ -47,7 +48,7 @@ type (
 )
 
 // NewTrustBaseGenesis creates new unsigned root trust base with default genesis parameters.
-func NewTrustBaseGenesis(nodes []*NodeInfo, unicityTreeRootHash []byte, opts ...Option) (*RootTrustBaseV0, error) {
+func NewTrustBaseGenesis(nodes []*NodeInfo, unicityTreeRootHash []byte, opts ...Option) (*RootTrustBaseV1, error) {
 	if len(nodes) == 0 {
 		return nil, errors.New("nodes list is empty")
 	}
@@ -78,7 +79,7 @@ func NewTrustBaseGenesis(nodes []*NodeInfo, unicityTreeRootHash []byte, opts ...
 	if err != nil {
 		return nil, err
 	}
-	return &RootTrustBaseV0{
+	return &RootTrustBaseV1{Version: 1,
 		Epoch:             1,
 		EpochStartRound:   1,
 		RootNodes:         rootNodes,
@@ -91,8 +92,8 @@ func NewTrustBaseGenesis(nodes []*NodeInfo, unicityTreeRootHash []byte, opts ...
 }
 
 // NewTrustBaseFromFile loads trust base from file and caches verifiers.
-func NewTrustBaseFromFile(trustBaseFile string) (*RootTrustBaseV0, error) {
-	trustBase, err := util.ReadJsonFile(trustBaseFile, &RootTrustBaseV0{})
+func NewTrustBaseFromFile(trustBaseFile string) (*RootTrustBaseV1, error) {
+	trustBase, err := util.ReadJsonFile(trustBaseFile, &RootTrustBaseV1{})
 	if err != nil {
 		return nil, fmt.Errorf("loading root trust base file %s: %w", trustBaseFile, err)
 	}
@@ -138,7 +139,7 @@ func (n *NodeInfo) Bytes() []byte {
 }
 
 // Sign signs the trust base entry, storing the signature to Signatures map.
-func (r *RootTrustBaseV0) Sign(nodeID string, signer abcrypto.Signer) error {
+func (r *RootTrustBaseV1) Sign(nodeID string, signer abcrypto.Signer) error {
 	if nodeID == "" {
 		return errors.New("node identifier is empty")
 	}
@@ -154,7 +155,7 @@ func (r *RootTrustBaseV0) Sign(nodeID string, signer abcrypto.Signer) error {
 }
 
 // Hash hashes the entire structure including the signatures.
-func (r *RootTrustBaseV0) Hash(hashAlgo crypto.Hash) []byte {
+func (r *RootTrustBaseV1) Hash(hashAlgo crypto.Hash) []byte {
 	hasher := hashAlgo.New()
 	hasher.Write(r.SigBytes())
 
@@ -171,8 +172,9 @@ func (r *RootTrustBaseV0) Hash(hashAlgo crypto.Hash) []byte {
 }
 
 // SigBytes serializes all fields expect for the signatures field.
-func (r *RootTrustBaseV0) SigBytes() []byte {
+func (r *RootTrustBaseV1) SigBytes() []byte {
 	var b bytes.Buffer
+	b.Write(util.Uint32ToBytes(r.Version))
 	b.Write(util.Uint64ToBytes(r.Epoch))
 	b.Write(util.Uint64ToBytes(r.EpochStartRound))
 
@@ -196,7 +198,7 @@ func (r *RootTrustBaseV0) SigBytes() []byte {
 // VerifyQuorumSignatures verifies that the data is signed by enough root nodes so that quorum is reached,
 // returns error if quorum is not reached, also returns list of any signature verification errors,
 // regardless if quorum is reached or not.
-func (r *RootTrustBaseV0) VerifyQuorumSignatures(data []byte, signatures map[string][]byte) (error, []error) {
+func (r *RootTrustBaseV1) VerifyQuorumSignatures(data []byte, signatures map[string][]byte) (error, []error) {
 	// verify all signatures, calculate quorum
 	var quorum uint64
 	var verificationErrors []error
@@ -216,7 +218,7 @@ func (r *RootTrustBaseV0) VerifyQuorumSignatures(data []byte, signatures map[str
 
 // VerifySignature verifies that the data is signed by the given root validator,
 // returns the validator's stake if it is signed.
-func (r *RootTrustBaseV0) VerifySignature(data []byte, sig []byte, nodeID string) (uint64, error) {
+func (r *RootTrustBaseV1) VerifySignature(data []byte, sig []byte, nodeID string) (uint64, error) {
 	verifierNode, f := r.RootNodes[nodeID]
 	if !f {
 		return 0, fmt.Errorf("author '%s' is not part of the trust base", nodeID)
@@ -232,7 +234,7 @@ func (r *RootTrustBaseV0) VerifySignature(data []byte, sig []byte, nodeID string
 }
 
 // GetVerifiers returns the cached verifiers.
-func (r *RootTrustBaseV0) GetVerifiers() (map[string]abcrypto.Verifier, error) {
+func (r *RootTrustBaseV1) GetVerifiers() (map[string]abcrypto.Verifier, error) {
 	verifiers := make(map[string]abcrypto.Verifier, len(r.RootNodes))
 	for nodeID, rn := range r.RootNodes {
 		verifiers[nodeID] = rn.verifier
@@ -241,12 +243,12 @@ func (r *RootTrustBaseV0) GetVerifiers() (map[string]abcrypto.Verifier, error) {
 }
 
 // GetQuorumThreshold returns the quorum threshold for the latest trust base entry.
-func (r *RootTrustBaseV0) GetQuorumThreshold() uint64 {
+func (r *RootTrustBaseV1) GetQuorumThreshold() uint64 {
 	return r.QuorumThreshold
 }
 
 // GetMaxFaultyNodes returns max allowed faulty nodes, only works if one node == one vote.
-func (r *RootTrustBaseV0) GetMaxFaultyNodes() uint64 {
+func (r *RootTrustBaseV1) GetMaxFaultyNodes() uint64 {
 	return uint64(len(r.RootNodes)) - r.QuorumThreshold
 }
 
@@ -257,4 +259,27 @@ func newRootNodes(nodes []*NodeInfo) (map[string]*NodeInfo, error) {
 		nodeMap[nodeInfo.NodeID] = nodeInfo
 	}
 	return nodeMap, nil
+}
+
+func (r *RootTrustBaseV1) GetVersion() ABVersion {
+	if r == nil || r.Version == 0 {
+		return 1
+	}
+	return r.Version
+}
+
+func (r *RootTrustBaseV1) MarshalCBOR() ([]byte, error) {
+	type alias RootTrustBaseV1
+	if r.Version == 0 {
+		r.Version = r.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(RootTrustBaseTag, (*alias)(r))
+}
+
+func (r *RootTrustBaseV1) UnmarshalCBOR(data []byte) error {
+	type alias RootTrustBaseV1
+	if err := Cbor.Unmarshal(data, (*alias)(r)); err != nil {
+		return err
+	}
+	return nil
 }
