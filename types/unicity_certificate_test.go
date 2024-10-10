@@ -698,7 +698,8 @@ func TestUCHash(t *testing.T) {
 			RoundNumber:     6,
 			SumOfEarnedFees: 20,
 		},
-		UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
+		UnicityTreeCertificate: &UnicityTreeCertificate{
+			Version:                  1,
 			SystemIdentifier:         identifier,
 			PartitionDescriptionHash: []byte{1, 2, 3, 4},
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
@@ -723,6 +724,7 @@ func TestUCHash(t *testing.T) {
 		0, 0, 0, 0, 0, 0, 0, 6, // IR: round
 		0, 0, 0, 0, 0, 0, 0, 0, // IR: epoch
 		0, 0, 0, 0, 0, 0, 0, 20, // IR: sum of fees
+		0, 0, 0, 1, // UT: version
 		1, 1, 1, 1, // UT: identifier
 		1, 1, 1, 1, 1, 2, 3, // UT: siblings key+hash
 		1, 2, 3, 4, // UT: system description hash

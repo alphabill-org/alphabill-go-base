@@ -125,6 +125,9 @@ func (p *TxProof) IsValid() error {
 	if p == nil {
 		return errors.New("transaction proof is nil")
 	}
+	if p.Version == 0 {
+		return ErrInvalidVersion(p)
+	}
 	return nil
 }
 

@@ -64,12 +64,14 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 }
 
 func TestUnicityTreeCertificate_Serialize(t *testing.T) {
-	ut := &UnicityTreeCertificate{Version: 1,
+	ut := &UnicityTreeCertificate{
+		Version:                  1,
 		SystemIdentifier:         identifier,
 		HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
 		PartitionDescriptionHash: []byte{1, 2, 3, 4},
 	}
 	expectedBytes := []byte{
+		0, 0, 0, 1, // version
 		1, 1, 1, 1, //identifier
 		1, 1, 1, 1, 1, 2, 3, // siblings key+hash
 		1, 2, 3, 4, // system description hash
