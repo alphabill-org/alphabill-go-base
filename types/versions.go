@@ -27,6 +27,7 @@ const (
 	PartitionDescriptionRecordTag
 	BlockTag
 	RootTrustBaseTag
+	UnicityTreeCertificateTag
 )
 
 func ErrInvalidVersion(s Versioned) error {

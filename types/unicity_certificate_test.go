@@ -64,7 +64,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		uc := &UnicityCertificate{
 			Version:     1,
 			InputRecord: inputRecord,
-			UnicityTreeCertificate: &UnicityTreeCertificate{
+			UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
 				SystemIdentifier:         identifier,
 				PartitionDescriptionHash: zeroHash,
 				HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: dataHash}},
@@ -93,7 +93,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 				RoundNumber:     1,
 				SumOfEarnedFees: 20,
 			},
-			UnicityTreeCertificate: &UnicityTreeCertificate{
+			UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
 				SystemIdentifier:         identifier,
 				PartitionDescriptionHash: zeroHash,
 			},
@@ -124,7 +124,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		uc := &UnicityCertificate{
 			Version:     1,
 			InputRecord: inputRecord,
-			UnicityTreeCertificate: &UnicityTreeCertificate{
+			UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
 				SystemIdentifier:         identifier,
 				PartitionDescriptionHash: zeroHash,
 			},
@@ -163,7 +163,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := &UnicityCertificate{
 			Version:     1,
 			InputRecord: inputRecord,
-			UnicityTreeCertificate: &UnicityTreeCertificate{
+			UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
 				SystemIdentifier:         identifier,
 				PartitionDescriptionHash: zeroHash,
 			},
@@ -194,7 +194,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := &UnicityCertificate{
 			Version:     1,
 			InputRecord: inputRecord,
-			UnicityTreeCertificate: &UnicityTreeCertificate{
+			UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
 				SystemIdentifier:         identifier,
 				PartitionDescriptionHash: zeroHash,
 			},
@@ -698,7 +698,7 @@ func TestUCHash(t *testing.T) {
 			RoundNumber:     6,
 			SumOfEarnedFees: 20,
 		},
-		UnicityTreeCertificate: &UnicityTreeCertificate{
+		UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
 			SystemIdentifier:         identifier,
 			PartitionDescriptionHash: []byte{1, 2, 3, 4},
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},

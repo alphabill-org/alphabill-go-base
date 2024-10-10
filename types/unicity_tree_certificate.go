@@ -8,6 +8,7 @@ import (
 	"hash"
 
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
+	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var (
@@ -43,6 +44,9 @@ func (x *UnicityTreeCertificate) IsValid(systemIdentifier SystemID, systemDescri
 	if x == nil {
 		return ErrUnicityTreeCertificateIsNil
 	}
+	if x.Version == 0 {
+		return ErrInvalidVersion(x)
+	}
 	if x.SystemIdentifier != systemIdentifier {
 		return fmt.Errorf("invalid system identifier: expected %s, got %s", systemIdentifier, x.SystemIdentifier)
 	}
@@ -63,6 +67,7 @@ func (x *UnicityTreeCertificate) EvalAuthPath(inputRecord *InputRecord, hashAlgo
 }
 
 func (x *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
+	hasher.Write(util.Uint32ToBytes(x.Version))
 	hasher.Write(x.SystemIdentifier.Bytes())
 	for _, hashStep := range x.HashSteps {
 		hasher.Write(hashStep.Key)
@@ -86,4 +91,24 @@ func (x *UnicityTreeCertificate) FirstHashStep(inputRecord *InputRecord, hashAlg
 		Key:  x.SystemIdentifier.Bytes(),
 		Hash: leafHash,
 	}
+}
+
+func (x *UnicityTreeCertificate) GetVersion() ABVersion {
+	if x != nil && x.Version > 0 {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *UnicityTreeCertificate) MarshalCBOR() ([]byte, error) {
+	type alias UnicityTreeCertificate
+	if x.Version == 0 {
+		x.Version = x.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(UnicityTreeCertificateTag, (*alias)(x))
+}
+
+func (x *UnicityTreeCertificate) UnmarshalCBOR(data []byte) error {
+	type alias UnicityTreeCertificate
+	return Cbor.UnmarshalTaggedValue(UnicityTreeCertificateTag, data, (*alias)(x))
 }
