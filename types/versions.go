@@ -24,6 +24,7 @@ const (
 	InputRecordTag
 	TxProofTag
 	UnitStateProofTag
+	PartitionDescriptionRecordTag
 )
 
 func ErrInvalidVersion(s Versioned) error {

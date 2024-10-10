@@ -9,7 +9,7 @@ import (
 )
 
 func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
-	pdr := PartitionDescriptionRecord{
+	pdr := PartitionDescriptionRecord{Version: 1,
 		SystemIdentifier: 1,
 		TypeIdLen:        8,
 		UnitIdLen:        256,
@@ -33,7 +33,7 @@ func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
 
 func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 	validPDR := func() *PartitionDescriptionRecord {
-		return &PartitionDescriptionRecord{
+		return &PartitionDescriptionRecord{Version: 1,
 			NetworkIdentifier: 5,
 			SystemIdentifier:  1,
 			TypeIdLen:         8,
@@ -96,7 +96,7 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 
 func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 	t.Run("empty scheme", func(t *testing.T) {
-		pdr := &PartitionDescriptionRecord{
+		pdr := &PartitionDescriptionRecord{Version: 1,
 			SystemIdentifier: 1,
 			TypeIdLen:        8,
 			UnitIdLen:        256,
@@ -112,7 +112,7 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 	})
 
 	t.Run("non empty scheme", func(t *testing.T) {
-		pdr := &PartitionDescriptionRecord{
+		pdr := &PartitionDescriptionRecord{Version: 1,
 			SystemIdentifier: 1,
 			TypeIdLen:        8,
 			UnitIdLen:        256,
@@ -137,7 +137,7 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 	})
 
 	t.Run("shard id longer than unit id", func(t *testing.T) {
-		pdr := &PartitionDescriptionRecord{
+		pdr := &PartitionDescriptionRecord{Version: 1,
 			SystemIdentifier: 1,
 			TypeIdLen:        8,
 			UnitIdLen:        8,
@@ -154,7 +154,7 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 
 func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 	t.Run("unit ID length", func(t *testing.T) {
-		pdr := &PartitionDescriptionRecord{
+		pdr := &PartitionDescriptionRecord{Version: 1,
 			SystemIdentifier: 1,
 			TypeIdLen:        8,
 			UnitIdLen:        8,
@@ -172,7 +172,7 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 	})
 
 	t.Run("matching shard ID", func(t *testing.T) {
-		pdr := &PartitionDescriptionRecord{
+		pdr := &PartitionDescriptionRecord{Version: 1,
 			SystemIdentifier: 1,
 			TypeIdLen:        8,
 			UnitIdLen:        8,

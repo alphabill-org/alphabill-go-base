@@ -31,6 +31,7 @@ func (std *SystemTypeDescriptor) AddToHasher(h hash.Hash) {
 
 type PartitionDescriptionRecord struct {
 	_                 struct{}  `cbor:",toarray"`
+	Version           ABVersion `json:"version,omitempty"`
 	NetworkIdentifier NetworkID `json:"network_identifier,omitempty"`
 	SystemIdentifier  SystemID  `json:"system_identifier,omitempty"`
 	// System Type Descriptor is only used (ie is not nil) when SystemIdentifier == 0
@@ -53,6 +54,9 @@ type FeeCreditBill struct {
 func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if pdr == nil {
 		return ErrSystemDescriptionIsNil
+	}
+	if pdr.Version == 0 {
+		return ErrInvalidVersion(pdr)
 	}
 	if pdr.NetworkIdentifier == 0 {
 		return fmt.Errorf("invalid network identifier: %d", pdr.NetworkIdentifier)
@@ -83,6 +87,7 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 
 func (pdr *PartitionDescriptionRecord) AddToHasher(h hash.Hash) {
 	var buf []byte
+	buf = binary.BigEndian.AppendUint32(buf, pdr.Version)
 	buf = binary.BigEndian.AppendUint16(buf, uint16(pdr.NetworkIdentifier))
 	buf = binary.BigEndian.AppendUint32(buf, uint32(pdr.SystemIdentifier))
 	buf = binary.BigEndian.AppendUint32(buf, pdr.TypeIdLen)
@@ -149,4 +154,27 @@ func (pdr *PartitionDescriptionRecord) UnitIdValidator(sid ShardID) func(unitID 
 		}
 		return nil
 	}
+}
+
+func (pdr *PartitionDescriptionRecord) GetVersion() ABVersion {
+	if pdr == nil || pdr.Version == 0 {
+		return 1
+	}
+	return pdr.Version
+}
+
+func (pdr *PartitionDescriptionRecord) MarshalCBOR() ([]byte, error) {
+	type alias PartitionDescriptionRecord
+	if pdr.Version == 0 {
+		pdr.Version = pdr.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(PartitionDescriptionRecordTag, (*alias)(pdr))
+}
+
+func (pdr *PartitionDescriptionRecord) UnmarshalCBOR(data []byte) error {
+	type alias PartitionDescriptionRecord
+	if err := Cbor.Unmarshal(data, (*alias)(pdr)); err != nil {
+		return err
+	}
+	return nil
 }

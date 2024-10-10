@@ -112,7 +112,7 @@ func TestTxProofFunctions(t *testing.T) {
 }
 
 func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
-	sdrs := &PartitionDescriptionRecord{
+	sdrs := &PartitionDescriptionRecord{Version: 1,
 		SystemIdentifier: systemID,
 		T2Timeout:        2500 * time.Millisecond,
 	}
