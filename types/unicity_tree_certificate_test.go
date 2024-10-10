@@ -97,6 +97,7 @@ func createUnicityCertificate(
 	tree, err := imt.New(gocrypto.SHA256, []imt.LeafData{leaf})
 	require.NoError(t, err)
 	unicitySeal := &UnicitySeal{
+		Version:              1,
 		RootChainRoundNumber: 1,
 		Timestamp:            NewTimestamp(),
 		PreviousHash:         make([]byte, 32),
@@ -104,6 +105,7 @@ func createUnicityCertificate(
 	}
 	require.NoError(t, unicitySeal.Sign(rootID, signer))
 	return &UnicityCertificate{
+		Version:     1,
 		InputRecord: ir,
 		UnicityTreeCertificate: &UnicityTreeCertificate{
 			SystemIdentifier:         pdr.SystemIdentifier,

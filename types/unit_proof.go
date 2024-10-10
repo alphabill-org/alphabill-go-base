@@ -13,13 +13,14 @@ import (
 
 type (
 	UnitStateProof struct {
-		_                  struct{}            `cbor:",toarray"`
-		UnitID             UnitID              `json:"unitId"`
-		UnitValue          uint64              `json:"unitValue,string"`
-		UnitLedgerHash     Bytes               `json:"unitLedgerHash"`
-		UnitTreeCert       *UnitTreeCert       `json:"unitTreeCert"`
-		StateTreeCert      *StateTreeCert      `json:"stateTreeCert"`
-		UnicityCertificate *UnicityCertificate `json:"unicityCert"`
+		_                  struct{}       `cbor:",toarray"`
+		Version            ABVersion      `json:"version,omitempty"`
+		UnitID             UnitID         `json:"unitId"`
+		UnitValue          uint64         `json:"unitValue,string"`
+		UnitLedgerHash     Bytes          `json:"unitLedgerHash"`
+		UnitTreeCert       *UnitTreeCert  `json:"unitTreeCert"`
+		StateTreeCert      *StateTreeCert `json:"stateTreeCert"`
+		UnicityCertificate TaggedCBOR     `json:"unicityCert"`
 	}
 
 	UnitTreeCert struct {
@@ -63,6 +64,21 @@ type (
 	}
 )
 
+func (u *UnitStateProof) getUCv1() (*UnicityCertificate, error) {
+	if u == nil {
+		return nil, errors.New("unit state proof is nil")
+	}
+	if u.UnicityCertificate == nil {
+		return nil, ErrUnicityCertificateIsNil
+	}
+	uc := &UnicityCertificate{}
+	err := Cbor.Unmarshal(u.UnicityCertificate, uc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal unicity certificate: %w", err)
+	}
+	return uc, nil
+}
+
 func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *StateUnitData, ucv UnicityCertificateValidator) error {
 	if u == nil {
 		return errors.New("unit state proof is nil")
@@ -82,14 +98,18 @@ func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *St
 	if unitData == nil {
 		return errors.New("unit data is nil")
 	}
-	if err := ucv.Validate(u.UnicityCertificate); err != nil {
+	uc, err := u.getUCv1()
+	if err != nil {
+		return fmt.Errorf("failed to get unicity certificate: %w", err)
+	}
+	if err := ucv.Validate(uc); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 	hash := unitData.Hash(algorithm)
 	if !bytes.Equal(u.UnitTreeCert.UnitDataHash, hash) {
 		return errors.New("unit data hash does not match hash in unit tree")
 	}
-	ir := u.UnicityCertificate.InputRecord
+	ir := uc.InputRecord
 	hash, summary := u.CalculateSateTreeOutput(algorithm)
 	if !bytes.Equal(util.Uint64ToBytes(summary), ir.SummaryValue) {
 		return fmt.Errorf("invalid summary value: expected %X, got %X", ir.SummaryValue, util.Uint64ToBytes(summary))
@@ -162,4 +182,24 @@ func computeHash(algorithm crypto.Hash, id UnitID, logRoot []byte, summary uint6
 	hasher.Write(rightHash)
 	hasher.Write(util.Uint64ToBytes(rightSummary))
 	return hasher.Sum(nil)
+}
+
+func (u *UnitStateProof) GetVersion() ABVersion {
+	if u != nil && u.Version > 0 {
+		return u.Version
+	}
+	return 1
+}
+
+func (u *UnitStateProof) MarshalCBOR() ([]byte, error) {
+	type alias UnitStateProof
+	if u.Version == 0 {
+		u.Version = u.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(UnitStateProofTag, (*alias)(u))
+}
+
+func (u *UnitStateProof) UnmarshalCBOR(data []byte) error {
+	type alias UnitStateProof
+	return Cbor.UnmarshalTaggedValue(UnitStateProofTag, data, (*alias)(u))
 }
