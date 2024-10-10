@@ -30,16 +30,19 @@ type (
 	}
 )
 
-func (p *TxProof) getUCv1() *UnicityCertificate {
-	if p == nil || p.UnicityCertificate == nil {
-		return nil
+func (p *TxProof) getUCv1() (*UnicityCertificate, error) {
+	if p == nil {
+		return nil, errors.New("tx proof is nil")
+	}
+	if p.UnicityCertificate == nil {
+		return nil, ErrUnicityCertificateIsNil
 	}
 	uc := &UnicityCertificate{}
 	err := Cbor.Unmarshal(p.UnicityCertificate, uc)
 	if err != nil {
-		return nil // or panic?
+		return nil, fmt.Errorf("failed to unmarshal unicity certificate: %w", err)
 	}
-	return uc
+	return uc, nil
 }
 
 func NewTxRecordProof(block *Block, txIndex int, algorithm crypto.Hash) (*TxRecordProof, error) {
@@ -90,8 +93,14 @@ func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm
 		}
 	}
 	// TODO ch 2.8.7: Verify Transaction Proof: VerifyTxProof: System description must be an input parameter
-	uc := txProof.getUCv1()
-	sdrHash := txProof.GetUnicityTreeSystemDescriptionHash()
+	uc, err := txProof.getUCv1()
+	if err != nil {
+		return fmt.Errorf("failed to get unicity certificate: %w", err)
+	}
+	var sdrHash []byte
+	if uc.UnicityTreeCertificate != nil {
+		sdrHash = uc.UnicityTreeCertificate.PartitionDescriptionHash
+	}
 	if err := uc.Verify(tb, hashAlgorithm, txRecord.TransactionOrder.SystemID, sdrHash); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
@@ -110,14 +119,6 @@ func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm
 		return fmt.Errorf("proof block hash does not match to block hash in unicity certificate")
 	}
 	return nil
-}
-
-func (p *TxProof) GetUnicityTreeSystemDescriptionHash() []byte {
-	uc := p.getUCv1()
-	if uc == nil || uc.UnicityTreeCertificate == nil {
-		return nil
-	}
-	return uc.UnicityTreeCertificate.PartitionDescriptionHash
 }
 
 func (p *TxProof) IsValid() error {

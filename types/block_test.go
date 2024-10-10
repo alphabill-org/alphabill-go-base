@@ -13,15 +13,13 @@ import (
 func TestBlock_GetBlockFees(t *testing.T) {
 	t.Run("Block is nil", func(t *testing.T) {
 		var b *Block = nil
-		fees, err := b.GetBlockFees()
-		require.NoError(t, err)
-		require.EqualValues(t, 0, fees, "GetBlockFees()")
+		_, err := b.GetBlockFees()
+		require.EqualError(t, err, "block fees: block is nil")
 	})
 	t.Run("UC is nil", func(t *testing.T) {
 		b := &Block{}
-		fees, err := b.GetBlockFees()
-		require.NoError(t, err)
-		require.EqualValues(t, 0, fees, "GetBlockFees()")
+		_, err := b.GetBlockFees()
+		require.EqualError(t, err, "block fees: unicity certificate is nil")
 	})
 	t.Run("InputRecord is nil", func(t *testing.T) {
 		uc, err := (&UnicityCertificate{}).MarshalCBOR()
@@ -63,15 +61,13 @@ func TestBlock_GetProposerID(t *testing.T) {
 func TestBlock_GetRoundNumber(t *testing.T) {
 	t.Run("block is nil", func(t *testing.T) {
 		var b *Block = nil
-		rn, err := b.GetRoundNumber()
-		require.NoError(t, err)
-		require.EqualValues(t, rn, 0)
+		_, err := b.GetRoundNumber()
+		require.ErrorIs(t, err, errBlockIsNil)
 	})
 	t.Run("UC is nil", func(t *testing.T) {
 		b := &Block{}
-		rn, err := b.GetRoundNumber()
-		require.NoError(t, err)
-		require.EqualValues(t, 0, rn)
+		_, err := b.GetRoundNumber()
+		require.ErrorIs(t, err, ErrUnicityCertificateIsNil)
 	})
 	t.Run("InputRecord is nil", func(t *testing.T) {
 		uc, err := (&UnicityCertificate{}).MarshalCBOR()
@@ -140,7 +136,7 @@ func TestBlock_IsValid(t *testing.T) {
 			},
 			Transactions: make([]*TransactionRecord, 0),
 		}
-		require.EqualError(t, b.IsValid(crypto.SHA256, nil), "unicity certificate is nil")
+		require.EqualError(t, b.IsValid(crypto.SHA256, nil), "unicity certificate error: unicity certificate is nil")
 	})
 	t.Run("input record is nil", func(t *testing.T) {
 		uc, err := (&UnicityCertificate{}).MarshalCBOR()
@@ -489,7 +485,7 @@ func TestBlock_InputRecord(t *testing.T) {
 	t.Run("err: UC is nil", func(t *testing.T) {
 		b := &Block{}
 		got, err := b.InputRecord()
-		require.ErrorIs(t, err, ErrUCIsNil)
+		require.ErrorIs(t, err, ErrUnicityCertificateIsNil)
 		require.Nil(t, got)
 	})
 	t.Run("err: IR is nil", func(t *testing.T) {

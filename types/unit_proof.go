@@ -64,16 +64,19 @@ type (
 	}
 )
 
-func (u *UnitStateProof) getUCv1() *UnicityCertificate {
-	if u == nil || u.UnicityCertificate == nil {
-		return nil
+func (u *UnitStateProof) getUCv1() (*UnicityCertificate, error) {
+	if u == nil {
+		return nil, errors.New("unit state proof is nil")
 	}
-	uc := new(UnicityCertificate)
+	if u.UnicityCertificate == nil {
+		return nil, ErrUnicityCertificateIsNil
+	}
+	uc := &UnicityCertificate{}
 	err := Cbor.Unmarshal(u.UnicityCertificate, uc)
 	if err != nil {
-		return nil // or panic?
+		return nil, fmt.Errorf("failed to unmarshal unicity certificate: %w", err)
 	}
-	return uc
+	return uc, nil
 }
 
 func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *StateUnitData, ucv UnicityCertificateValidator) error {
@@ -95,7 +98,10 @@ func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *St
 	if unitData == nil {
 		return errors.New("unit data is nil")
 	}
-	uc := u.getUCv1()
+	uc, err := u.getUCv1()
+	if err != nil {
+		return fmt.Errorf("failed to get unicity certificate: %w", err)
+	}
 	if err := ucv.Validate(uc); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}

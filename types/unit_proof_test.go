@@ -94,7 +94,8 @@ func TestVerifyUnitStateProof(t *testing.T) {
 		}
 		data := &StateUnitData{}
 		proof.UnitTreeCert.UnitDataHash = data.Hash(crypto.SHA256)
-		uc := proof.getUCv1()
+		uc, err := proof.getUCv1()
+		require.NoError(t, err)
 		uc.InputRecord = &InputRecord{SummaryValue: []byte{1}}
 		proof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
@@ -109,7 +110,8 @@ func TestVerifyUnitStateProof(t *testing.T) {
 		}
 		data := &StateUnitData{}
 		proof.UnitTreeCert.UnitDataHash = data.Hash(crypto.SHA256)
-		uc := proof.getUCv1()
+		uc, err := proof.getUCv1()
+		require.NoError(t, err)
 		uc.InputRecord = &InputRecord{SummaryValue: []byte{0, 0, 0, 0, 0, 0, 0, 0}}
 		proof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
@@ -125,7 +127,8 @@ func TestVerifyUnitStateProof(t *testing.T) {
 		data := &StateUnitData{}
 		proof.UnitTreeCert.UnitDataHash = data.Hash(crypto.SHA256)
 
-		uc := proof.getUCv1()
+		uc, err := proof.getUCv1()
+		require.NoError(t, err)
 		uc.InputRecord = &InputRecord{SummaryValue: []byte{0, 0, 0, 0, 0, 0, 0, 0}}
 		hash, _ := hexutil.Decode("0xD89E72519019E9A93B1A3BE8C1E9593EC347E239DEC0C1AD73071055C144796C")
 		uc.InputRecord.Hash = hash

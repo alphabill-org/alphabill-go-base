@@ -36,8 +36,11 @@ type (
 )
 
 func (b *Block) getUCv1() (*UnicityCertificate, error) {
-	if b == nil || b.UnicityCertificate == nil {
-		return nil, nil
+	if b == nil {
+		return nil, errBlockIsNil
+	}
+	if b.UnicityCertificate == nil {
+		return nil, ErrUnicityCertificateIsNil
 	}
 	uc := &UnicityCertificate{}
 	err := Cbor.Unmarshal(b.UnicityCertificate, uc)
@@ -52,9 +55,6 @@ func (b *Block) CalculateBlockHash(algorithm crypto.Hash) (*InputRecord, error) 
 	uc, err := b.getUCv1()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get unicity certificate: %w", err)
-	}
-	if uc == nil {
-		return nil, ErrUnicityCertificateIsNil
 	}
 	ir := uc.InputRecord
 	if ir == nil {
@@ -131,10 +131,7 @@ func (b *Block) GetRoundNumber() (uint64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("block round number: %w", err)
 	}
-	if uc != nil {
-		return uc.GetRoundNumber(), nil
-	}
-	return 0, nil
+	return uc.GetRoundNumber(), nil
 }
 
 func (b *Block) GetBlockFees() (uint64, error) {
@@ -142,10 +139,7 @@ func (b *Block) GetBlockFees() (uint64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("block fees: %w", err)
 	}
-	if uc != nil {
-		return uc.GetFeeSum(), nil
-	}
-	return 0, nil
+	return uc.GetFeeSum(), nil
 }
 
 func (b *Block) InputRecord() (*InputRecord, error) {
@@ -155,9 +149,6 @@ func (b *Block) InputRecord() (*InputRecord, error) {
 	uc, err := b.getUCv1()
 	if err != nil {
 		return nil, fmt.Errorf("block input record: %w", err)
-	}
-	if uc == nil {
-		return nil, ErrUCIsNil
 	}
 	if uc.InputRecord == nil {
 		return nil, ErrInputRecordIsNil
@@ -178,9 +169,6 @@ func (b *Block) IsValid(algorithm crypto.Hash, systemDescriptionHash []byte) err
 	uc, err := b.getUCv1()
 	if err != nil {
 		return fmt.Errorf("unicity certificate error: %w", err)
-	}
-	if uc == nil {
-		return fmt.Errorf("unicity certificate is nil")
 	}
 	if err := uc.IsValid(algorithm, b.Header.SystemID, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity certificate validation failed: %w", err)

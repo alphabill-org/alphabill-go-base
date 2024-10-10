@@ -90,7 +90,8 @@ func TestTxProofFunctions(t *testing.T) {
 		require.NoError(t, err)
 
 		tb := NewTrustBase(t, verifier)
-		uc := proof.TxProof.getUCv1()
+		uc, err := proof.TxProof.getUCv1()
+		require.NoError(t, err)
 		uc.UnicityTreeCertificate.SystemIdentifier = SystemID(1)
 		proof.TxProof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
