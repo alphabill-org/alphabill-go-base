@@ -17,9 +17,10 @@ type (
 	// TxProof is a transaction execution proof.
 	TxProof struct {
 		_                  struct{} `cbor:",toarray"`
+		Version            ABVersion
 		BlockHeaderHash    []byte
 		Chain              []*GenericChainItem
-		UnicityCertificate *UnicityCertificate
+		UnicityCertificate TaggedCBOR
 	}
 
 	GenericChainItem struct {
@@ -28,6 +29,21 @@ type (
 		Left bool
 	}
 )
+
+func (p *TxProof) getUCv1() (*UnicityCertificate, error) {
+	if p == nil {
+		return nil, errors.New("tx proof is nil")
+	}
+	if p.UnicityCertificate == nil {
+		return nil, ErrUnicityCertificateIsNil
+	}
+	uc := &UnicityCertificate{}
+	err := Cbor.Unmarshal(p.UnicityCertificate, uc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal unicity certificate: %w", err)
+	}
+	return uc, nil
+}
 
 func NewTxRecordProof(block *Block, txIndex int, algorithm crypto.Hash) (*TxRecordProof, error) {
 	if block == nil {
@@ -52,6 +68,7 @@ func NewTxRecordProof(block *Block, txIndex int, algorithm crypto.Hash) (*TxReco
 	return &TxRecordProof{
 		TxRecord: block.Transactions[txIndex],
 		TxProof: &TxProof{
+			Version:            1,
 			BlockHeaderHash:    headerHash,
 			Chain:              items,
 			UnicityCertificate: block.UnicityCertificate,
@@ -76,32 +93,32 @@ func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm
 		}
 	}
 	// TODO ch 2.8.7: Verify Transaction Proof: VerifyTxProof: System description must be an input parameter
-	sdrHash := txProof.GetUnicityTreeSystemDescriptionHash()
-	if err := txProof.UnicityCertificate.Verify(tb, hashAlgorithm, txRecord.TransactionOrder.SystemID, sdrHash); err != nil {
+	uc, err := txProof.getUCv1()
+	if err != nil {
+		return fmt.Errorf("failed to get unicity certificate: %w", err)
+	}
+	var sdrHash []byte
+	if uc.UnicityTreeCertificate != nil {
+		sdrHash = uc.UnicityTreeCertificate.PartitionDescriptionHash
+	}
+	if err := uc.Verify(tb, hashAlgorithm, txRecord.TransactionOrder.SystemID, sdrHash); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 	// h ← plain_tree_output(C, H(P))
 	rootHash := mt.EvalMerklePath(merklePath, txRecord, hashAlgorithm)
 	hasher := hashAlgorithm.New()
 	hasher.Write(txProof.BlockHeaderHash)
-	hasher.Write(txProof.UnicityCertificate.InputRecord.PreviousHash)
-	hasher.Write(txProof.UnicityCertificate.InputRecord.Hash)
+	hasher.Write(uc.InputRecord.PreviousHash)
+	hasher.Write(uc.InputRecord.Hash)
 	hasher.Write(rootHash)
 	//h ← H(h_h,h)
 	blockHash := hasher.Sum(nil)
 
 	//UC.IR.hB = h
-	if !bytes.Equal(blockHash, txProof.UnicityCertificate.InputRecord.BlockHash) {
+	if !bytes.Equal(blockHash, uc.InputRecord.BlockHash) {
 		return fmt.Errorf("proof block hash does not match to block hash in unicity certificate")
 	}
 	return nil
-}
-
-func (p *TxProof) GetUnicityTreeSystemDescriptionHash() []byte {
-	if p == nil || p.UnicityCertificate == nil || p.UnicityCertificate.UnicityTreeCertificate == nil {
-		return nil
-	}
-	return p.UnicityCertificate.UnicityTreeCertificate.PartitionDescriptionHash
 }
 
 func (p *TxProof) IsValid() error {
@@ -109,4 +126,24 @@ func (p *TxProof) IsValid() error {
 		return errors.New("transaction proof is nil")
 	}
 	return nil
+}
+
+func (p *TxProof) GetVersion() ABVersion {
+	if p != nil && p.Version > 0 {
+		return p.Version
+	}
+	return 1
+}
+
+func (p *TxProof) MarshalCBOR() ([]byte, error) {
+	type alias TxProof
+	if p.Version == 0 {
+		p.Version = p.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(TxProofTag, (*alias)(p))
+}
+
+func (p *TxProof) UnmarshalCBOR(data []byte) error {
+	type alias TxProof
+	return Cbor.UnmarshalTaggedValue(TxProofTag, data, (*alias)(p))
 }

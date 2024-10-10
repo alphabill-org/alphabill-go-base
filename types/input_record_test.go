@@ -10,6 +10,7 @@ import (
 )
 
 var ir = &InputRecord{
+	Version:         1,
 	PreviousHash:    []byte{0, 0, 1},
 	Hash:            []byte{0, 0, 2},
 	BlockHash:       []byte{0, 0, 3},
@@ -22,6 +23,7 @@ var ir = &InputRecord{
 func TestInputRecord_IsValid(t *testing.T) {
 	t.Run("previous hash is nil", func(t *testing.T) {
 		testIR := &InputRecord{
+			Version:      1,
 			PreviousHash: nil,
 			Hash:         zeroHash,
 			BlockHash:    zeroHash,
@@ -31,6 +33,7 @@ func TestInputRecord_IsValid(t *testing.T) {
 	})
 	t.Run("hash is nil", func(t *testing.T) {
 		testIR := &InputRecord{
+			Version:      1,
 			PreviousHash: zeroHash,
 			Hash:         nil,
 			BlockHash:    zeroHash,
@@ -40,6 +43,7 @@ func TestInputRecord_IsValid(t *testing.T) {
 	})
 	t.Run("block hash is nil", func(t *testing.T) {
 		testIR := &InputRecord{
+			Version:      1,
 			PreviousHash: zeroHash,
 			Hash:         zeroHash,
 			BlockHash:    nil,
@@ -49,6 +53,7 @@ func TestInputRecord_IsValid(t *testing.T) {
 	})
 	t.Run("summary value hash is nil", func(t *testing.T) {
 		testIR := &InputRecord{
+			Version:      1,
 			PreviousHash: zeroHash,
 			Hash:         zeroHash,
 			BlockHash:    zeroHash,
@@ -58,6 +63,7 @@ func TestInputRecord_IsValid(t *testing.T) {
 	})
 	t.Run("state changes, but block hash is nil", func(t *testing.T) {
 		testIR := &InputRecord{
+			Version:         1,
 			PreviousHash:    zeroHash,
 			Hash:            []byte{1, 2, 3},
 			BlockHash:       zeroHash,
@@ -69,6 +75,7 @@ func TestInputRecord_IsValid(t *testing.T) {
 	})
 	t.Run("state does not change, but block hash is not 0H", func(t *testing.T) {
 		testIR := &InputRecord{
+			Version:         1,
 			PreviousHash:    zeroHash,
 			Hash:            zeroHash,
 			BlockHash:       []byte{1, 2, 3},
@@ -80,6 +87,7 @@ func TestInputRecord_IsValid(t *testing.T) {
 	})
 	t.Run("valid input record", func(t *testing.T) {
 		testIR := &InputRecord{
+			Version:      1,
 			PreviousHash: zeroHash,
 			Hash:         zeroHash,
 			BlockHash:    zeroHash,
@@ -99,7 +107,7 @@ func TestInputRecord_AddToHasher(t *testing.T) {
 	hasher := sha256.New()
 	ir.AddToHasher(hasher)
 	hash := hasher.Sum(nil)
-	require.Equal(t, []byte{0xf9, 0x8a, 0x74, 0xa4, 0x31, 0x2a, 0x7e, 0xb8, 0x8d, 0x89, 0x2f, 0x45, 0xd4, 0x4d, 0x6d, 0x13, 0x44, 0xb0, 0xdb, 0x63, 0xcc, 0x2e, 0xb6, 0xff, 0xd7, 0x5e, 0x5e, 0x5a, 0xfe, 0x1e, 0xe7, 0xfc}, hash)
+	require.Equal(t, []byte{0x28, 0xb6, 0x55, 0xb7, 0x60, 0xa7, 0x33, 0x9a, 0x1a, 0x97, 0x88, 0xa, 0x52, 0x17, 0xae, 0x79, 0x87, 0x9, 0xbf, 0x29, 0xd2, 0x89, 0x9c, 0xb7, 0x46, 0x7a, 0x8e, 0xc2, 0xa4, 0x16, 0xd4, 0xe9}, hash)
 }
 
 func Test_EqualIR(t *testing.T) {

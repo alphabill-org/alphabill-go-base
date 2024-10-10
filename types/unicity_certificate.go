@@ -5,12 +5,15 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
+
+	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var ErrUnicityCertificateIsNil = errors.New("unicity certificate is nil")
 
 type UnicityCertificate struct {
 	_                      struct{}                `cbor:",toarray"`
+	Version                ABVersion               `json:"version,omitempty"`
 	InputRecord            *InputRecord            `json:"input_record,omitempty"`
 	UnicityTreeCertificate *UnicityTreeCertificate `json:"unicity_tree_certificate,omitempty"`
 	UnicitySeal            *UnicitySeal            `json:"unicity_seal,omitempty"`
@@ -19,6 +22,9 @@ type UnicityCertificate struct {
 func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
 	if x == nil {
 		return ErrUnicityCertificateIsNil
+	}
+	if x.Version == 0 {
+		return ErrInvalidVersion(x)
 	}
 	if err := x.InputRecord.IsValid(); err != nil {
 		return fmt.Errorf("input record error: %w", err)
@@ -49,6 +55,7 @@ func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, sys
 
 func (x *UnicityCertificate) Hash(hash crypto.Hash) []byte {
 	hasher := hash.New()
+	hasher.Write(util.Uint32ToBytes(x.Version))
 	if x.InputRecord != nil {
 		x.InputRecord.AddToHasher(hasher)
 	}
@@ -179,4 +186,24 @@ func (x *UnicityCertificate) IsRepeat(prevUC *UnicityCertificate) bool {
 func isRepeat(prevUC, newUC *UnicityCertificate) bool {
 	return EqualIR(prevUC.InputRecord, newUC.InputRecord) &&
 		prevUC.UnicitySeal.RootChainRoundNumber < newUC.UnicitySeal.RootChainRoundNumber
+}
+
+func (x *UnicityCertificate) GetVersion() ABVersion {
+	if x != nil && x.Version > 0 {
+		return x.Version
+	}
+	return 1
+}
+
+func (x *UnicityCertificate) MarshalCBOR() ([]byte, error) {
+	type alias UnicityCertificate
+	if x.Version == 0 {
+		x.Version = x.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(UnicityCertificateTag, (*alias)(x))
+}
+
+func (x *UnicityCertificate) UnmarshalCBOR(data []byte) error {
+	type alias UnicityCertificate
+	return Cbor.UnmarshalTaggedValue(UnicityCertificateTag, data, (*alias)(x))
 }

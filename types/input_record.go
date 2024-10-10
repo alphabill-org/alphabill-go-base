@@ -20,14 +20,15 @@ var (
 
 // Shard input record (IR) of a shard of a partition.
 type InputRecord struct {
-	_               struct{} `cbor:",toarray"`
-	PreviousHash    []byte   `json:"previous_hash,omitempty"`      // previously certified state hash
-	Hash            []byte   `json:"hash,omitempty"`               // state hash to be certified
-	BlockHash       []byte   `json:"block_hash,omitempty"`         // hash of the block
-	SummaryValue    []byte   `json:"summary_value,omitempty"`      // summary value to certified
-	RoundNumber     uint64   `json:"round_number,omitempty"`       // shard's round number
-	Epoch           uint64   `json:"epoch,omitempty"`              // shard’s epoch number
-	SumOfEarnedFees uint64   `json:"sum_of_earned_fees,omitempty"` // sum of the actual fees over all transaction records in the block
+	_               struct{}  `cbor:",toarray"`
+	Version         ABVersion `json:"version,omitempty"`
+	PreviousHash    []byte    `json:"previous_hash,omitempty"`      // previously certified state hash
+	Hash            []byte    `json:"hash,omitempty"`               // state hash to be certified
+	BlockHash       []byte    `json:"block_hash,omitempty"`         // hash of the block
+	SummaryValue    []byte    `json:"summary_value,omitempty"`      // summary value to certified
+	RoundNumber     uint64    `json:"round_number,omitempty"`       // shard's round number
+	Epoch           uint64    `json:"epoch,omitempty"`              // shard’s epoch number
+	SumOfEarnedFees uint64    `json:"sum_of_earned_fees,omitempty"` // sum of the actual fees over all transaction records in the block
 }
 
 func isZeroHash(hash []byte) bool {
@@ -72,6 +73,9 @@ func (x *InputRecord) IsValid() error {
 	if x == nil {
 		return ErrInputRecordIsNil
 	}
+	if x.Version == 0 {
+		return ErrInvalidVersion(x)
+	}
 	if x.Hash == nil {
 		return ErrHashIsNil
 	}
@@ -103,6 +107,7 @@ func (x *InputRecord) AddToHasher(hasher hash.Hash) {
 
 func (x *InputRecord) Bytes() []byte {
 	var b bytes.Buffer
+	b.Write(util.Uint32ToBytes(x.Version))
 	b.Write(x.PreviousHash)
 	b.Write(x.Hash)
 	b.Write(x.BlockHash)
@@ -116,6 +121,7 @@ func (x *InputRecord) Bytes() []byte {
 // NewRepeatIR - creates new repeat IR from current IR
 func (x *InputRecord) NewRepeatIR() *InputRecord {
 	return &InputRecord{
+		Version:         1,
 		PreviousHash:    bytes.Clone(x.PreviousHash),
 		Hash:            bytes.Clone(x.Hash),
 		BlockHash:       bytes.Clone(x.BlockHash),
@@ -132,4 +138,24 @@ func (x *InputRecord) String() string {
 	}
 	return fmt.Sprintf("H: %X H': %X Bh: %X round: %d epoch: %d fees: %d summary: %X",
 		x.Hash, x.PreviousHash, x.BlockHash, x.RoundNumber, x.Epoch, x.SumOfEarnedFees, x.SummaryValue)
+}
+
+func (x *InputRecord) GetVersion() ABVersion {
+	if x != nil && x.Version > 0 {
+		return x.Version
+	}
+	return 1
+}
+
+func (x *InputRecord) MarshalCBOR() ([]byte, error) {
+	type alias InputRecord
+	if x.Version == 0 {
+		x.Version = x.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(InputRecordTag, (*alias)(x))
+}
+
+func (x *InputRecord) UnmarshalCBOR(data []byte) error {
+	type alias InputRecord
+	return Cbor.UnmarshalTaggedValue(InputRecordTag, data, (*alias)(x))
 }

@@ -90,7 +90,11 @@ func TestTxProofFunctions(t *testing.T) {
 		require.NoError(t, err)
 
 		tb := NewTrustBase(t, verifier)
-		proof.TxProof.UnicityCertificate.UnicityTreeCertificate.SystemIdentifier = SystemID(1)
+		uc, err := proof.TxProof.getUCv1()
+		require.NoError(t, err)
+		uc.UnicityTreeCertificate.SystemIdentifier = SystemID(1)
+		proof.TxProof.UnicityCertificate, err = uc.MarshalCBOR()
+		require.NoError(t, err)
 		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256),
 			"invalid unicity certificate: unicity certificate validation failed: unicity tree certificate validation failed: invalid system identifier: expected 01000001, got 00000001")
 	})
@@ -113,6 +117,7 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 		T2Timeout:        2500 * time.Millisecond,
 	}
 	inputRecord := &InputRecord{
+		Version:         1,
 		PreviousHash:    []byte{0, 0, 1},
 		Hash:            []byte{0, 0, 2},
 		SummaryValue:    []byte{0, 0, 4},
@@ -121,21 +126,21 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 	}
 	txr1 := createTransactionRecord(createTransactionOrder(t), 1)
 	txr2 := createTransactionRecord(createTransactionOrder(t), 1)
+	uc, err := (&UnicityCertificate{Version: 1, InputRecord: inputRecord}).MarshalCBOR()
+	require.NoError(t, err)
 	block := &Block{
 		Header: &Header{
 			SystemID:          systemID,
 			ProposerID:        "proposer123",
 			PreviousBlockHash: []byte{1, 2, 3},
 		},
-		Transactions: []*TransactionRecord{txr1, txr2},
-		UnicityCertificate: &UnicityCertificate{
-			InputRecord: inputRecord,
-		},
+		Transactions:       []*TransactionRecord{txr1, txr2},
+		UnicityCertificate: uc,
 	}
 	// calculate block hash
-	blockhash, err := block.Hash(crypto.SHA256)
+	inputRecord, err = block.CalculateBlockHash(crypto.SHA256)
 	require.NoError(t, err)
-	inputRecord.BlockHash = blockhash
-	block.UnicityCertificate = createUnicityCertificate(t, id, signer, inputRecord, sdrs)
+	block.UnicityCertificate, err = createUnicityCertificate(t, id, signer, inputRecord, sdrs).MarshalCBOR()
+	require.NoError(t, err)
 	return block
 }

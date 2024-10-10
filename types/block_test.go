@@ -13,21 +13,29 @@ import (
 func TestBlock_GetBlockFees(t *testing.T) {
 	t.Run("Block is nil", func(t *testing.T) {
 		var b *Block = nil
-		require.EqualValues(t, 0, b.GetBlockFees(), "GetBlockFees()")
+		_, err := b.GetBlockFees()
+		require.EqualError(t, err, "block fees: block is nil")
 	})
 	t.Run("UC is nil", func(t *testing.T) {
 		b := &Block{}
-		require.EqualValues(t, 0, b.GetBlockFees(), "GetBlockFees()")
+		_, err := b.GetBlockFees()
+		require.EqualError(t, err, "block fees: unicity certificate is nil")
 	})
 	t.Run("InputRecord is nil", func(t *testing.T) {
-		b := &Block{UnicityCertificate: &UnicityCertificate{}}
-		require.EqualValues(t, 0, b.GetBlockFees(), "GetBlockFees()")
+		uc, err := (&UnicityCertificate{}).MarshalCBOR()
+		require.NoError(t, err)
+		b := &Block{UnicityCertificate: uc}
+		fees, err := b.GetBlockFees()
+		require.NoError(t, err)
+		require.EqualValues(t, 0, fees, "GetBlockFees()")
 	})
 	t.Run("InputRecord is nil", func(t *testing.T) {
-		b := &Block{UnicityCertificate: &UnicityCertificate{
-			InputRecord: &InputRecord{SumOfEarnedFees: 10},
-		}}
-		require.EqualValues(t, 10, b.GetBlockFees(), "GetBlockFees()")
+		uc, err := (&UnicityCertificate{InputRecord: &InputRecord{SumOfEarnedFees: 10}}).MarshalCBOR()
+		require.NoError(t, err)
+		b := &Block{UnicityCertificate: uc}
+		fees, err := b.GetBlockFees()
+		require.NoError(t, err)
+		require.EqualValues(t, 10, fees, "GetBlockFees()")
 	})
 }
 
@@ -53,21 +61,29 @@ func TestBlock_GetProposerID(t *testing.T) {
 func TestBlock_GetRoundNumber(t *testing.T) {
 	t.Run("block is nil", func(t *testing.T) {
 		var b *Block = nil
-		require.EqualValues(t, 0, b.GetRoundNumber())
+		_, err := b.GetRoundNumber()
+		require.ErrorIs(t, err, errBlockIsNil)
 	})
 	t.Run("UC is nil", func(t *testing.T) {
 		b := &Block{}
-		require.EqualValues(t, 0, b.GetRoundNumber())
+		_, err := b.GetRoundNumber()
+		require.ErrorIs(t, err, ErrUnicityCertificateIsNil)
 	})
 	t.Run("InputRecord is nil", func(t *testing.T) {
-		b := &Block{UnicityCertificate: &UnicityCertificate{}}
-		require.EqualValues(t, 0, b.GetRoundNumber())
+		uc, err := (&UnicityCertificate{}).MarshalCBOR()
+		require.NoError(t, err)
+		b := &Block{UnicityCertificate: uc}
+		rn, err := b.GetRoundNumber()
+		require.NoError(t, err)
+		require.EqualValues(t, 0, rn)
 	})
 	t.Run("InputRecord is nil", func(t *testing.T) {
-		b := &Block{UnicityCertificate: &UnicityCertificate{
-			InputRecord: &InputRecord{RoundNumber: 10},
-		}}
-		require.EqualValues(t, 10, b.GetRoundNumber())
+		uc, err := (&UnicityCertificate{InputRecord: &InputRecord{RoundNumber: 10}}).MarshalCBOR()
+		require.NoError(t, err)
+		b := &Block{UnicityCertificate: uc}
+		rn, err := b.GetRoundNumber()
+		require.NoError(t, err)
+		require.EqualValues(t, 10, rn)
 	})
 }
 
@@ -120,9 +136,11 @@ func TestBlock_IsValid(t *testing.T) {
 			},
 			Transactions: make([]*TransactionRecord, 0),
 		}
-		require.EqualError(t, b.IsValid(crypto.SHA256, nil), "unicity certificate is nil")
+		require.EqualError(t, b.IsValid(crypto.SHA256, nil), "unicity certificate error: unicity certificate is nil")
 	})
 	t.Run("input record is nil", func(t *testing.T) {
+		uc, err := (&UnicityCertificate{}).MarshalCBOR()
+		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
 				SystemID:          SystemID(1),
@@ -130,7 +148,7 @@ func TestBlock_IsValid(t *testing.T) {
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
 			Transactions:       make([]*TransactionRecord, 0),
-			UnicityCertificate: &UnicityCertificate{},
+			UnicityCertificate: uc,
 		}
 		require.EqualError(t, b.IsValid(crypto.SHA256, nil), "unicity certificate validation failed: input record error: input record is nil")
 	})
@@ -141,6 +159,7 @@ func TestBlock_IsValid(t *testing.T) {
 			T2Timeout:        2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			SummaryValue:    []byte{0, 0, 4},
@@ -149,22 +168,23 @@ func TestBlock_IsValid(t *testing.T) {
 		}
 		txr1 := createTransactionRecord(createTransactionOrder(t), 1)
 		txr2 := createTransactionRecord(createTransactionOrder(t), 2)
+		uc, err := (&UnicityCertificate{InputRecord: inputRecord}).MarshalCBOR()
+		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
 				SystemID:          systemID,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
-			Transactions: []*TransactionRecord{txr1, txr2},
-			UnicityCertificate: &UnicityCertificate{
-				InputRecord: inputRecord,
-			},
+			Transactions:       []*TransactionRecord{txr1, txr2},
+			UnicityCertificate: uc,
 		}
 		// calculate block hash
-		blockhash, err := b.Hash(crypto.SHA256)
+		inputRecord, err = b.CalculateBlockHash(crypto.SHA256)
 		require.NoError(t, err)
-		inputRecord.BlockHash = blockhash
-		b.UnicityCertificate = createUnicityCertificate(t, "test", signer, inputRecord, sdrs)
+		uc, err = createUnicityCertificate(t, "test", signer, inputRecord, sdrs).MarshalCBOR()
+		require.NoError(t, err)
+		b.UnicityCertificate = uc
 		require.NoError(t, b.IsValid(crypto.SHA256, sdrs.Hash(crypto.SHA256)))
 	})
 	t.Run("invalid block hash", func(t *testing.T) {
@@ -174,6 +194,7 @@ func TestBlock_IsValid(t *testing.T) {
 			T2Timeout:        2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
+			Version:         1,
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			SummaryValue:    []byte{0, 0, 4},
@@ -182,22 +203,23 @@ func TestBlock_IsValid(t *testing.T) {
 		}
 		txr1 := createTransactionRecord(createTransactionOrder(t), 1)
 		txr2 := createTransactionRecord(createTransactionOrder(t), 2)
+		uc, err := (&UnicityCertificate{InputRecord: inputRecord}).MarshalCBOR()
+		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
 				SystemID:          systemID,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
-			Transactions: []*TransactionRecord{txr1, txr2},
-			UnicityCertificate: &UnicityCertificate{
-				InputRecord: inputRecord,
-			},
+			Transactions:       []*TransactionRecord{txr1, txr2},
+			UnicityCertificate: uc,
 		}
 		// calculate block hash
-		blockhash, err := b.Hash(crypto.SHA256)
+		inputRecord, err = b.CalculateBlockHash(crypto.SHA256)
 		require.NoError(t, err)
-		inputRecord.BlockHash = blockhash
-		b.UnicityCertificate = createUnicityCertificate(t, "test", signer, inputRecord, sdrs)
+		uc, err = createUnicityCertificate(t, "test", signer, inputRecord, sdrs).MarshalCBOR()
+		require.NoError(t, err)
+		b.UnicityCertificate = uc
 		// remove a tx from block and make sure that the validation fails
 		b.Transactions = b.Transactions[1:]
 		require.EqualError(t, b.IsValid(crypto.SHA256, sdrs.Hash(crypto.SHA256)), "block hash does not match to the block hash in the unicity certificate input record")
@@ -207,11 +229,91 @@ func TestBlock_IsValid(t *testing.T) {
 func TestBlock_Hash(t *testing.T) {
 	t.Run("missing header", func(t *testing.T) {
 		b := &Block{}
-		hash, err := b.Hash(crypto.SHA256)
+		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, nil, nil)
 		require.Nil(t, hash)
 		require.EqualError(t, err, "invalid block: block header is nil")
 	})
 	t.Run("state hash is missing", func(t *testing.T) {
+		uc := &UnicityCertificate{}
+		b := &Block{
+			Header: &Header{
+				SystemID:          SystemID(1),
+				ProposerID:        "test",
+				PreviousBlockHash: []byte{1, 2, 3},
+			},
+			Transactions: make([]*TransactionRecord, 0),
+		}
+		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
+		require.Nil(t, hash)
+		require.EqualError(t, err, "invalid block: state hash is nil")
+	})
+	t.Run("previous state hash is missing", func(t *testing.T) {
+		uc := &UnicityCertificate{InputRecord: &InputRecord{
+			Hash: []byte{1, 1, 1},
+		}}
+		b := &Block{
+			Header: &Header{
+				SystemID:          SystemID(1),
+				ProposerID:        "test",
+				PreviousBlockHash: []byte{1, 2, 3},
+			},
+			Transactions: make([]*TransactionRecord, 0),
+		}
+		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
+		require.Nil(t, hash)
+		require.EqualError(t, err, "invalid block: previous state hash is nil")
+	})
+	t.Run("hash - ok, empty block", func(t *testing.T) {
+		uc := &UnicityCertificate{InputRecord: &InputRecord{
+			Hash:         []byte{1, 1, 1},
+			PreviousHash: []byte{1, 1, 1},
+		}}
+		b := &Block{
+			Header: &Header{
+				SystemID:          SystemID(1),
+				ProposerID:        "test",
+				PreviousBlockHash: []byte{1, 2, 3},
+			},
+			Transactions: make([]*TransactionRecord, 0),
+		}
+		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
+		require.NoError(t, err)
+		require.Equal(t, hash, make([]byte, 32))
+	})
+
+	t.Run("hash - ok", func(t *testing.T) {
+		uc := &UnicityCertificate{InputRecord: &InputRecord{
+			Hash:         []byte{1, 1, 1},
+			PreviousHash: []byte{2, 2, 2},
+		}}
+		b := &Block{
+			Header: &Header{
+				SystemID:          SystemID(1),
+				ProposerID:        "test",
+				PreviousBlockHash: []byte{1, 2, 3},
+			},
+			Transactions: make([]*TransactionRecord, 0),
+		}
+		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
+		require.NoError(t, err)
+		require.NotNil(t, hash)
+		require.NotEqual(t, hash, make([]byte, 32))
+	})
+}
+
+func TestBlock_CalculateBlockHash(t *testing.T) {
+	t.Run("missing ir", func(t *testing.T) {
+		uc, err := (&UnicityCertificate{}).MarshalCBOR()
+		b := &Block{
+			UnicityCertificate: uc,
+		}
+		hash, err := b.CalculateBlockHash(crypto.SHA256)
+		require.Nil(t, hash)
+		require.EqualError(t, err, "input record is nil")
+	})
+	t.Run("state hash is missing", func(t *testing.T) {
+		uc, err := (&UnicityCertificate{InputRecord: &InputRecord{}}).MarshalCBOR()
+		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
 				SystemID:          SystemID(1),
@@ -219,68 +321,69 @@ func TestBlock_Hash(t *testing.T) {
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
 			Transactions:       make([]*TransactionRecord, 0),
-			UnicityCertificate: &UnicityCertificate{},
+			UnicityCertificate: uc,
 		}
-		hash, err := b.Hash(crypto.SHA256)
+		hash, err := b.CalculateBlockHash(crypto.SHA256)
 		require.Nil(t, hash)
-		require.EqualError(t, err, "invalid block: state hash is nil")
+		require.EqualError(t, err, "block hash calculation failed: invalid block: state hash is nil")
 	})
 	t.Run("previous state hash is missing", func(t *testing.T) {
-		b := &Block{
-			Header: &Header{
-				SystemID:          SystemID(1),
-				ProposerID:        "test",
-				PreviousBlockHash: []byte{1, 2, 3},
-			},
-			Transactions: make([]*TransactionRecord, 0),
-			UnicityCertificate: &UnicityCertificate{
-				InputRecord: &InputRecord{
-					Hash: []byte{1, 1, 1},
-				},
-			},
-		}
-		hash, err := b.Hash(crypto.SHA256)
-		require.Nil(t, hash)
-		require.EqualError(t, err, "invalid block: previous state hash is nil")
-	})
-	t.Run("previous state hash is missing", func(t *testing.T) {
-		b := &Block{
-			Header: &Header{
-				SystemID:          SystemID(1),
-				ProposerID:        "test",
-				PreviousBlockHash: []byte{1, 2, 3},
-			},
-			Transactions: make([]*TransactionRecord, 0),
-			UnicityCertificate: &UnicityCertificate{
-				InputRecord: &InputRecord{
-					Hash:         []byte{1, 1, 1},
-					PreviousHash: []byte{1, 1, 1},
-				},
-			},
-		}
-		hash, err := b.Hash(crypto.SHA256)
+		uc, err := (&UnicityCertificate{InputRecord: &InputRecord{
+			Hash: []byte{1, 1, 1},
+		}}).MarshalCBOR()
 		require.NoError(t, err)
-		require.Equal(t, hash, make([]byte, 32))
+		b := &Block{
+			Header: &Header{
+				SystemID:          SystemID(1),
+				ProposerID:        "test",
+				PreviousBlockHash: []byte{1, 2, 3},
+			},
+			Transactions:       make([]*TransactionRecord, 0),
+			UnicityCertificate: uc,
+		}
+		hash, err := b.CalculateBlockHash(crypto.SHA256)
+		require.Nil(t, hash)
+		require.EqualError(t, err, "block hash calculation failed: invalid block: previous state hash is nil")
+	})
+	t.Run("hash - ok, empty block", func(t *testing.T) {
+		uc, err := (&UnicityCertificate{InputRecord: &InputRecord{
+			Hash:         []byte{1, 1, 1},
+			PreviousHash: []byte{1, 1, 1},
+		}}).MarshalCBOR()
+		require.NoError(t, err)
+		b := &Block{
+			Header: &Header{
+				SystemID:          SystemID(1),
+				ProposerID:        "test",
+				PreviousBlockHash: []byte{1, 2, 3},
+			},
+			Transactions:       make([]*TransactionRecord, 0),
+			UnicityCertificate: uc,
+		}
+		ir, err := b.CalculateBlockHash(crypto.SHA256)
+		require.NoError(t, err)
+		require.Equal(t, ir.BlockHash, make([]byte, 32))
 	})
 
 	t.Run("hash - ok", func(t *testing.T) {
+		uc, err := (&UnicityCertificate{InputRecord: &InputRecord{
+			Hash:         []byte{1, 1, 1},
+			PreviousHash: []byte{2, 2, 2},
+		}}).MarshalCBOR()
+		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
 				SystemID:          SystemID(1),
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
-			Transactions: make([]*TransactionRecord, 0),
-			UnicityCertificate: &UnicityCertificate{
-				InputRecord: &InputRecord{
-					Hash:         []byte{1, 1, 1},
-					PreviousHash: []byte{2, 2, 2},
-				},
-			},
+			Transactions:       make([]*TransactionRecord, 0),
+			UnicityCertificate: uc,
 		}
-		hash, err := b.Hash(crypto.SHA256)
+		ir, err := b.CalculateBlockHash(crypto.SHA256)
 		require.NoError(t, err)
-		require.NotNil(t, hash)
+		require.NotNil(t, ir.BlockHash)
+		require.NotEqual(t, ir.BlockHash, make([]byte, 32))
 	})
 }
 
@@ -382,22 +485,24 @@ func TestBlock_InputRecord(t *testing.T) {
 	t.Run("err: UC is nil", func(t *testing.T) {
 		b := &Block{}
 		got, err := b.InputRecord()
-		require.ErrorIs(t, err, ErrUCIsNil)
+		require.ErrorIs(t, err, ErrUnicityCertificateIsNil)
 		require.Nil(t, got)
 	})
 	t.Run("err: IR is nil", func(t *testing.T) {
+		uc, err := (&UnicityCertificate{}).MarshalCBOR()
+		require.NoError(t, err)
 		b := &Block{
-			UnicityCertificate: &UnicityCertificate{},
+			UnicityCertificate: uc,
 		}
 		got, err := b.InputRecord()
 		require.ErrorIs(t, err, ErrInputRecordIsNil)
 		require.Nil(t, got)
 	})
 	t.Run("ok", func(t *testing.T) {
+		uc, err := (&UnicityCertificate{InputRecord: &InputRecord{}}).MarshalCBOR()
+		require.NoError(t, err)
 		b := &Block{
-			UnicityCertificate: &UnicityCertificate{
-				InputRecord: &InputRecord{},
-			},
+			UnicityCertificate: uc,
 		}
 		got, err := b.InputRecord()
 		require.NoError(t, err)

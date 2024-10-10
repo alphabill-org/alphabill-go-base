@@ -20,8 +20,13 @@ const (
 	ConsensusParamsTag
 	GenesisPartitionRecordTag
 	PartitionNodeTag
+	UnicityCertificateTag
+	InputRecordTag
+	TxProofTag
+	UnitStateProofTag
 )
 
 func ErrInvalidVersion(s Versioned) error {
-	return fmt.Errorf("invalid version %d (type %T)", s.GetVersion(), s)
+	// since s.GetVersion() might return a default value instead of an actual one, no need to print it
+	return fmt.Errorf("invalid version (type %T)", s)
 }
