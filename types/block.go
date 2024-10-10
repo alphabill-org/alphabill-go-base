@@ -35,21 +35,24 @@ type (
 	}
 )
 
-func (b *Block) getUCv1() *UnicityCertificate {
+func (b *Block) getUCv1() (*UnicityCertificate, error) {
 	if b == nil || b.UnicityCertificate == nil {
-		return nil
+		return nil, nil
 	}
 	uc := &UnicityCertificate{}
 	err := Cbor.Unmarshal(b.UnicityCertificate, uc)
 	if err != nil {
-		return nil // or panic?
+		return nil, fmt.Errorf("failed to unmarshal unicity certificate: %w", err)
 	}
-	return uc
+	return uc, nil
 }
 
 // CalculateBlockHash calculates the block hash, updates UC and returns the updated input record with the block hash.
 func (b *Block) CalculateBlockHash(algorithm crypto.Hash) (*InputRecord, error) {
-	uc := b.getUCv1()
+	uc, err := b.getUCv1()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get unicity certificate: %w", err)
+	}
 	if uc == nil {
 		return nil, ErrUnicityCertificateIsNil
 	}
@@ -123,25 +126,36 @@ func (b *Block) Size() (bs uint64, _ error) {
 	return bs, nil
 }
 
-func (b *Block) GetRoundNumber() uint64 {
-	if b != nil {
-		return b.getUCv1().GetRoundNumber()
+func (b *Block) GetRoundNumber() (uint64, error) {
+	uc, err := b.getUCv1()
+	if err != nil {
+		return 0, fmt.Errorf("block round number: %w", err)
 	}
-	return 0
+	if uc != nil {
+		return uc.GetRoundNumber(), nil
+	}
+	return 0, nil
 }
 
-func (b *Block) GetBlockFees() uint64 {
-	if b != nil {
-		return b.getUCv1().GetFeeSum()
+func (b *Block) GetBlockFees() (uint64, error) {
+	uc, err := b.getUCv1()
+	if err != nil {
+		return 0, fmt.Errorf("block fees: %w", err)
 	}
-	return 0
+	if uc != nil {
+		return uc.GetFeeSum(), nil
+	}
+	return 0, nil
 }
 
 func (b *Block) InputRecord() (*InputRecord, error) {
 	if b == nil {
 		return nil, errBlockIsNil
 	}
-	uc := b.getUCv1()
+	uc, err := b.getUCv1()
+	if err != nil {
+		return nil, fmt.Errorf("block input record: %w", err)
+	}
 	if uc == nil {
 		return nil, ErrUCIsNil
 	}
@@ -161,7 +175,10 @@ func (b *Block) IsValid(algorithm crypto.Hash, systemDescriptionHash []byte) err
 	if b.Transactions == nil {
 		return errTransactionsIsNil
 	}
-	uc := b.getUCv1()
+	uc, err := b.getUCv1()
+	if err != nil {
+		return fmt.Errorf("unicity certificate error: %w", err)
+	}
 	if uc == nil {
 		return fmt.Errorf("unicity certificate is nil")
 	}

@@ -13,23 +13,31 @@ import (
 func TestBlock_GetBlockFees(t *testing.T) {
 	t.Run("Block is nil", func(t *testing.T) {
 		var b *Block = nil
-		require.EqualValues(t, 0, b.GetBlockFees(), "GetBlockFees()")
+		fees, err := b.GetBlockFees()
+		require.NoError(t, err)
+		require.EqualValues(t, 0, fees, "GetBlockFees()")
 	})
 	t.Run("UC is nil", func(t *testing.T) {
 		b := &Block{}
-		require.EqualValues(t, 0, b.GetBlockFees(), "GetBlockFees()")
+		fees, err := b.GetBlockFees()
+		require.NoError(t, err)
+		require.EqualValues(t, 0, fees, "GetBlockFees()")
 	})
 	t.Run("InputRecord is nil", func(t *testing.T) {
 		uc, err := (&UnicityCertificate{}).MarshalCBOR()
 		require.NoError(t, err)
 		b := &Block{UnicityCertificate: uc}
-		require.EqualValues(t, 0, b.GetBlockFees(), "GetBlockFees()")
+		fees, err := b.GetBlockFees()
+		require.NoError(t, err)
+		require.EqualValues(t, 0, fees, "GetBlockFees()")
 	})
 	t.Run("InputRecord is nil", func(t *testing.T) {
 		uc, err := (&UnicityCertificate{InputRecord: &InputRecord{SumOfEarnedFees: 10}}).MarshalCBOR()
 		require.NoError(t, err)
 		b := &Block{UnicityCertificate: uc}
-		require.EqualValues(t, 10, b.GetBlockFees(), "GetBlockFees()")
+		fees, err := b.GetBlockFees()
+		require.NoError(t, err)
+		require.EqualValues(t, 10, fees, "GetBlockFees()")
 	})
 }
 
@@ -55,23 +63,31 @@ func TestBlock_GetProposerID(t *testing.T) {
 func TestBlock_GetRoundNumber(t *testing.T) {
 	t.Run("block is nil", func(t *testing.T) {
 		var b *Block = nil
-		require.EqualValues(t, 0, b.GetRoundNumber())
+		rn, err := b.GetRoundNumber()
+		require.NoError(t, err)
+		require.EqualValues(t, rn, 0)
 	})
 	t.Run("UC is nil", func(t *testing.T) {
 		b := &Block{}
-		require.EqualValues(t, 0, b.GetRoundNumber())
+		rn, err := b.GetRoundNumber()
+		require.NoError(t, err)
+		require.EqualValues(t, 0, rn)
 	})
 	t.Run("InputRecord is nil", func(t *testing.T) {
 		uc, err := (&UnicityCertificate{}).MarshalCBOR()
 		require.NoError(t, err)
 		b := &Block{UnicityCertificate: uc}
-		require.EqualValues(t, 0, b.GetRoundNumber())
+		rn, err := b.GetRoundNumber()
+		require.NoError(t, err)
+		require.EqualValues(t, 0, rn)
 	})
 	t.Run("InputRecord is nil", func(t *testing.T) {
 		uc, err := (&UnicityCertificate{InputRecord: &InputRecord{RoundNumber: 10}}).MarshalCBOR()
 		require.NoError(t, err)
 		b := &Block{UnicityCertificate: uc}
-		require.EqualValues(t, 10, b.GetRoundNumber())
+		rn, err := b.GetRoundNumber()
+		require.NoError(t, err)
+		require.EqualValues(t, 10, rn)
 	})
 }
 
