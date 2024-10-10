@@ -25,6 +25,7 @@ const (
 	TxProofTag
 	UnitStateProofTag
 	PartitionDescriptionRecordTag
+	BlockTag
 )
 
 func ErrInvalidVersion(s Versioned) error {

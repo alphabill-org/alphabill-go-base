@@ -129,7 +129,7 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 	uc, err := (&UnicityCertificate{Version: 1, InputRecord: inputRecord}).MarshalCBOR()
 	require.NoError(t, err)
 	block := &Block{
-		Header: &Header{
+		Header: &Header{Version: 1,
 			SystemID:          systemID,
 			ProposerID:        "proposer123",
 			PreviousBlockHash: []byte{1, 2, 3},

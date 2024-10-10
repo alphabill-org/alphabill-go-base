@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
+	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var (
@@ -28,6 +29,7 @@ type (
 
 	Header struct {
 		_                 struct{} `cbor:",toarray"`
+		Version           ABVersion
 		SystemID          SystemID
 		ShardID           ShardID
 		ProposerID        string
@@ -198,11 +200,35 @@ func (b *Block) SystemID() SystemID {
 	return b.Header.SystemID
 }
 
+func (h *Header) GetVersion() ABVersion {
+	if h != nil && h.Version > 0 {
+		return h.Version
+	}
+	return 0
+}
+
+func (h *Header) MarshalCBOR() ([]byte, error) {
+	type alias Header
+	if h.Version == 0 {
+		h.Version = h.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(BlockTag, (*alias)(h))
+}
+
+func (h *Header) UnmarshalCBOR(data []byte) error {
+	type alias Header
+	if err := Cbor.Unmarshal(data, (*alias)(h)); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (h *Header) Hash(algorithm crypto.Hash) []byte {
 	if h == nil {
 		return nil
 	}
 	hasher := algorithm.New()
+	hasher.Write(util.Uint32ToBytes(h.Version))
 	hasher.Write(h.SystemID.Bytes())
 	h.ShardID.AddToHasher(hasher)
 	hasher.Write(h.PreviousBlockHash)
@@ -213,6 +239,9 @@ func (h *Header) Hash(algorithm crypto.Hash) []byte {
 func (h *Header) IsValid() error {
 	if h == nil {
 		return errBlockHeaderIsNil
+	}
+	if h.Version == 0 {
+		return ErrInvalidVersion(h)
 	}
 	if h.SystemID == 0 {
 		return errSystemIDIsNil
