@@ -24,7 +24,7 @@ func TestTransactionRecordFunctions(t *testing.T) {
 		SuccessIndicator:  TxStatusSuccessful,
 		ProcessingDetails: processingDetailsCBOR,
 	}
-	txr := &TransactionRecord{
+	txr := &TransactionRecord{Version: 1,
 		TransactionOrder: txo,
 		ServerMetadata:   serverMetadata,
 	}
@@ -51,7 +51,7 @@ func TestTransactionRecordFunctions(t *testing.T) {
 }
 
 func createTransactionRecord(tx *TransactionOrder, fee uint64) *TransactionRecord {
-	return &TransactionRecord{
+	return &TransactionRecord{Version: 1,
 		TransactionOrder: tx,
 		ServerMetadata: &ServerMetadata{
 			ActualFee:        fee,

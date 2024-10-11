@@ -19,7 +19,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		require.ErrorIs(t, uct.IsValid(SystemID(2), test.RandomBytes(32)), ErrUnicityTreeCertificateIsNil)
 	})
 	t.Run("invalid system identifier", func(t *testing.T) {
-		uct := &UnicityTreeCertificate{
+		uct := &UnicityTreeCertificate{Version: 1,
 			SystemIdentifier:         identifier,
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
 			PartitionDescriptionHash: zeroHash,
@@ -28,7 +28,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 			"invalid system identifier: expected 01010100, got 01010101")
 	})
 	t.Run("invalid system description hash", func(t *testing.T) {
-		uct := &UnicityTreeCertificate{
+		uct := &UnicityTreeCertificate{Version: 1,
 			SystemIdentifier:         identifier,
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
 			PartitionDescriptionHash: []byte{1, 1, 1, 1},
@@ -54,7 +54,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		hasher := gocrypto.SHA256.New()
 		leaf.AddToHasher(hasher)
 		require.Equal(t, identifier.Bytes(), leaf.Key())
-		var uct = &UnicityTreeCertificate{
+		var uct = &UnicityTreeCertificate{Version: 1,
 			SystemIdentifier:         identifier,
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: hasher.Sum(nil)}},
 			PartitionDescriptionHash: sdrh,
@@ -65,11 +65,13 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 
 func TestUnicityTreeCertificate_Serialize(t *testing.T) {
 	ut := &UnicityTreeCertificate{
+		Version:                  1,
 		SystemIdentifier:         identifier,
 		HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
 		PartitionDescriptionHash: []byte{1, 2, 3, 4},
 	}
 	expectedBytes := []byte{
+		0, 0, 0, 1, // version
 		1, 1, 1, 1, //identifier
 		1, 1, 1, 1, 1, 2, 3, // siblings key+hash
 		1, 2, 3, 4, // system description hash
@@ -107,7 +109,7 @@ func createUnicityCertificate(
 	return &UnicityCertificate{
 		Version:     1,
 		InputRecord: ir,
-		UnicityTreeCertificate: &UnicityTreeCertificate{
+		UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
 			SystemIdentifier:         pdr.SystemIdentifier,
 			PartitionDescriptionHash: leaf.PartitionDescriptionHash,
 		},

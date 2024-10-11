@@ -55,31 +55,31 @@ func TestTxProofFunctions(t *testing.T) {
 	t.Run("Test tx record is nil", func(t *testing.T) {
 		_, verifier := testsig.CreateSignerAndVerifier(t)
 		tb := NewTrustBase(t, verifier)
-		proof := &TxRecordProof{TxProof: &TxProof{}}
+		proof := &TxRecordProof{TxProof: &TxProof{Version: 1}}
 		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "transaction record is nil")
 	})
 
 	t.Run("Test tx has failed", func(t *testing.T) {
 		_, verifier := testsig.CreateSignerAndVerifier(t)
 		tb := NewTrustBase(t, verifier)
-		txr := &TransactionRecord{ServerMetadata: &ServerMetadata{SuccessIndicator: TxStatusFailed}, TransactionOrder: &TransactionOrder{}}
-		proof := &TxRecordProof{TxRecord: txr, TxProof: &TxProof{}}
+		txr := &TransactionRecord{Version: 1, ServerMetadata: &ServerMetadata{SuccessIndicator: TxStatusFailed}, TransactionOrder: &TransactionOrder{Version: 1}}
+		proof := &TxRecordProof{TxRecord: txr, TxProof: &TxProof{Version: 1}}
 		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "transaction failed")
 	})
 
 	t.Run("Test tx out of gas", func(t *testing.T) {
 		_, verifier := testsig.CreateSignerAndVerifier(t)
 		tb := NewTrustBase(t, verifier)
-		txr := &TransactionRecord{ServerMetadata: &ServerMetadata{SuccessIndicator: TxErrOutOfGas}, TransactionOrder: &TransactionOrder{}}
-		proof := &TxRecordProof{TxRecord: txr, TxProof: &TxProof{}}
+		txr := &TransactionRecord{Version: 1, ServerMetadata: &ServerMetadata{SuccessIndicator: TxErrOutOfGas}, TransactionOrder: &TransactionOrder{Version: 1}}
+		proof := &TxRecordProof{TxRecord: txr, TxProof: &TxProof{Version: 1}}
 		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "transaction failed")
 	})
 
 	t.Run("Test tx order is nil", func(t *testing.T) {
 		_, verifier := testsig.CreateSignerAndVerifier(t)
 		tb := NewTrustBase(t, verifier)
-		txr := &TransactionRecord{ServerMetadata: &ServerMetadata{SuccessIndicator: TxStatusSuccessful}}
-		proof := &TxRecordProof{TxRecord: txr, TxProof: &TxProof{}}
+		txr := &TransactionRecord{Version: 1, ServerMetadata: &ServerMetadata{SuccessIndicator: TxStatusSuccessful}}
+		proof := &TxRecordProof{TxRecord: txr, TxProof: &TxProof{Version: 1}}
 		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "transaction order is nil")
 	})
 
@@ -112,7 +112,7 @@ func TestTxProofFunctions(t *testing.T) {
 }
 
 func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
-	sdrs := &PartitionDescriptionRecord{
+	sdrs := &PartitionDescriptionRecord{Version: 1,
 		SystemIdentifier: systemID,
 		T2Timeout:        2500 * time.Millisecond,
 	}
@@ -129,7 +129,7 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 	uc, err := (&UnicityCertificate{Version: 1, InputRecord: inputRecord}).MarshalCBOR()
 	require.NoError(t, err)
 	block := &Block{
-		Header: &Header{
+		Header: &Header{Version: 1,
 			SystemID:          systemID,
 			ProposerID:        "proposer123",
 			PreviousBlockHash: []byte{1, 2, 3},

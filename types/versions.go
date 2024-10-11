@@ -24,6 +24,12 @@ const (
 	InputRecordTag
 	TxProofTag
 	UnitStateProofTag
+	PartitionDescriptionRecordTag
+	BlockTag
+	RootTrustBaseTag
+	UnicityTreeCertificateTag
+	TransactionRecordTag
+	TransactionOrderTag
 )
 
 func ErrInvalidVersion(s Versioned) error {

@@ -69,7 +69,7 @@ func TestMarshalPayload(t *testing.T) {
 }
 
 func TestMarshalNilValuesInPayload(t *testing.T) {
-	txo := &TransactionOrder{
+	txo := &TransactionOrder{Version: 1,
 		Payload: Payload{
 			NetworkID:      0,
 			SystemID:       0,
@@ -105,7 +105,7 @@ func TestUnmarshalPayload(t *testing.T) {
 	require.Equal(t, UnitID(unitID), payload.UnitID)
 	require.Equal(t, transactionType, payload.Type)
 
-	txo := TransactionOrder{Payload: payload}
+	txo := TransactionOrder{Version: 1, Payload: payload}
 	var attributes *testAttributes
 	require.NoError(t, txo.UnmarshalAttributes(&attributes))
 	require.Equal(t, newOwnerPredicate, attributes.NewOwnerPredicate)
@@ -139,7 +139,7 @@ func TestHasStateLock(t *testing.T) {
 	var txo *TransactionOrder
 	require.False(t, txo.HasStateLock())
 
-	txo = &TransactionOrder{}
+	txo = &TransactionOrder{Version: 1}
 	require.False(t, txo.HasStateLock())
 
 	txo.StateLock = &StateLock{}
@@ -148,7 +148,7 @@ func TestHasStateLock(t *testing.T) {
 
 func Test_Payload_SetAttributes(t *testing.T) {
 	expectedAttributes := &testAttributes{NewOwnerPredicate: []byte{9, 3, 5, 2, 6}, TargetValue: 59, Counter: 123}
-	txo := TransactionOrder{}
+	txo := TransactionOrder{Version: 1}
 	require.NoError(t, txo.SetAttributes(expectedAttributes))
 
 	actualAttributes := &testAttributes{}
@@ -182,7 +182,7 @@ func createTransactionOrder(t *testing.T) *TransactionOrder {
 	attr := &testAttributes{NewOwnerPredicate: newOwnerPredicate, TargetValue: targetValue, Counter: counter}
 	attrBytes, err := Cbor.Marshal(attr)
 	require.NoError(t, err)
-	return &TransactionOrder{Payload: Payload{
+	return &TransactionOrder{Version: 1, Payload: Payload{
 		NetworkID:  1,
 		SystemID:   systemID,
 		UnitID:     unitID,

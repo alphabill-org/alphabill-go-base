@@ -23,6 +23,7 @@ type (
 	// that is added to the block.
 	TransactionRecord struct {
 		_                struct{} `cbor:",toarray"`
+		Version          ABVersion
 		TransactionOrder *TransactionOrder
 		ServerMetadata   *ServerMetadata
 	}
@@ -44,14 +45,12 @@ type (
 )
 
 func (t *TransactionRecord) Hash(algorithm crypto.Hash) []byte {
-	bytes, err := t.Bytes()
+	res, err := HashCBOR(t, algorithm)
 	if err != nil {
 		// TODO
 		panic(err)
 	}
-	hasher := algorithm.New()
-	hasher.Write(bytes)
-	return hasher.Sum(nil)
+	return res
 }
 
 func (t *TransactionRecord) Bytes() ([]byte, error) {
@@ -113,6 +112,9 @@ func (t *TransactionRecord) IsValid() error {
 	if t == nil {
 		return ErrTransactionRecordIsNil
 	}
+	if t.Version == 0 {
+		return ErrInvalidVersion(t)
+	}
 	if t.TransactionOrder == nil {
 		return ErrTransactionOrderIsNil
 	}
@@ -120,6 +122,26 @@ func (t *TransactionRecord) IsValid() error {
 		return ErrServerMetadataIsNil
 	}
 	return nil
+}
+
+func (t *TransactionRecord) GetVersion() ABVersion {
+	if t == nil || t.Version == 0 {
+		return 1
+	}
+	return t.Version
+}
+
+func (t *TransactionRecord) MarshalCBOR() ([]byte, error) {
+	type alias TransactionRecord
+	if t.Version == 0 {
+		t.Version = t.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(TransactionRecordTag, (*alias)(t))
+}
+
+func (t *TransactionRecord) UnmarshalCBOR(data []byte) error {
+	type alias TransactionRecord
+	return Cbor.UnmarshalTaggedValue(TransactionRecordTag, data, (*alias)(t))
 }
 
 func (sm *ServerMetadata) GetActualFee() uint64 {
