@@ -166,8 +166,8 @@ func TestBlock_IsValid(t *testing.T) {
 			RoundNumber:     1,
 			SumOfEarnedFees: 2,
 		}
-		txr1 := createTransactionRecord(createTransactionOrder(t), 1)
-		txr2 := createTransactionRecord(createTransactionOrder(t), 2)
+		txr1 := createTransactionRecord(t, createTransactionOrder(t), 1)
+		txr2 := createTransactionRecord(t, createTransactionOrder(t), 2)
 		uc, err := (&UnicityCertificate{InputRecord: inputRecord}).MarshalCBOR()
 		require.NoError(t, err)
 		b := &Block{
@@ -201,8 +201,8 @@ func TestBlock_IsValid(t *testing.T) {
 			RoundNumber:     1,
 			SumOfEarnedFees: 2,
 		}
-		txr1 := createTransactionRecord(createTransactionOrder(t), 1)
-		txr2 := createTransactionRecord(createTransactionOrder(t), 2)
+		txr1 := createTransactionRecord(t, createTransactionOrder(t), 1)
+		txr2 := createTransactionRecord(t, createTransactionOrder(t), 2)
 		uc, err := (&UnicityCertificate{InputRecord: inputRecord}).MarshalCBOR()
 		require.NoError(t, err)
 		b := &Block{
@@ -394,7 +394,7 @@ func TestBlock_Size(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 0, size)
 
-	txr := createTransactionRecord(createTransactionOrder(t), 1)
+	txr := createTransactionRecord(t, createTransactionOrder(t), 1)
 	buf, err := txr.Bytes()
 	require.NoError(t, err)
 	txSize := len(buf)

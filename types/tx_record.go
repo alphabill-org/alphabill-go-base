@@ -5,7 +5,10 @@ import (
 	"errors"
 )
 
-var ErrOutOfGas = errors.New("out of gas")
+var (
+	ErrTxRecordProofIsNil = errors.New("transaction record proof is nil")
+	ErrOutOfGas           = errors.New("out of gas")
+)
 
 const (
 	// TxStatusFailed is the status code of a transaction if execution failed.
@@ -17,14 +20,15 @@ const (
 )
 
 type (
-	TxStatus uint64
+	TransactionOrderCBOR = TaggedCBOR
+	TxStatus             uint64
 
 	// TransactionRecord is a transaction order with "server-side" metadata added to it. TransactionRecord is a structure
 	// that is added to the block.
 	TransactionRecord struct {
 		_                struct{} `cbor:",toarray"`
 		Version          ABVersion
-		TransactionOrder *TransactionOrder
+		TransactionOrder TransactionOrderCBOR
 		ServerMetadata   *ServerMetadata
 	}
 
@@ -82,23 +86,30 @@ func (t *TransactionRecord) IsSuccessful() bool {
 	return t.TxStatus() == TxStatusSuccessful
 }
 
-func (t *TransactionRecord) NetworkID() NetworkID {
-	return t.GetTransactionOrder().GetNetworkID()
-}
+//func (t *TransactionRecord) NetworkID() NetworkID {
+//	return t.GetTransactionOrderV1().GetNetworkID()
+//}
+//
+//func (t *TransactionRecord) SystemID() SystemID {
+//	return t.GetTransactionOrderV1().GetSystemID()
+//}
+//
+//func (t *TransactionRecord) UnitID() UnitID {
+//	return t.GetTransactionOrderV1().GetUnitID()
+//}
 
-func (t *TransactionRecord) SystemID() SystemID {
-	return t.GetTransactionOrder().GetSystemID()
-}
-
-func (t *TransactionRecord) UnitID() UnitID {
-	return t.GetTransactionOrder().GetUnitID()
-}
-
-func (t *TransactionRecord) GetTransactionOrder() *TransactionOrder {
+func (t *TransactionRecord) GetTransactionOrderV1() (*TransactionOrder, error) {
 	if t == nil {
-		return nil
+		return nil, ErrTransactionRecordIsNil
 	}
-	return t.TransactionOrder
+	if t.TransactionOrder == nil {
+		return nil, ErrTransactionOrderIsNil
+	}
+	txoV1 := &TransactionOrder{}
+	if err := txoV1.UnmarshalCBOR(t.TransactionOrder); err != nil {
+		return nil, err
+	}
+	return txoV1, nil
 }
 
 func (t *TransactionRecord) TargetUnits() []UnitID {
@@ -206,29 +217,29 @@ func (t *TxRecordProof) IsValid() error {
 	return nil
 }
 
-func (t *TxRecordProof) NetworkID() NetworkID {
-	if t == nil {
-		return 0
-	}
-	return t.TxRecord.NetworkID()
-}
+//func (t *TxRecordProof) NetworkID() NetworkID {
+//	if t == nil {
+//		return 0
+//	}
+//	return t.TxRecord.NetworkID()
+//}
+//
+//func (t *TxRecordProof) SystemID() SystemID {
+//	if t == nil {
+//		return 0
+//	}
+//	return t.TxRecord.SystemID()
+//}
 
-func (t *TxRecordProof) SystemID() SystemID {
-	if t == nil {
-		return 0
-	}
-	return t.TxRecord.SystemID()
-}
+//func (t *TxRecordProof) UnitID() UnitID {
+//	return t.GetTransactionOrderV1().GetUnitID()
+//}
 
-func (t *TxRecordProof) UnitID() UnitID {
-	return t.TransactionOrder().GetUnitID()
-}
-
-func (t *TxRecordProof) TransactionOrder() *TransactionOrder {
+func (t *TxRecordProof) GetTransactionOrderV1() (*TransactionOrder, error) {
 	if t == nil {
-		return nil
+		return nil, ErrTxRecordProofIsNil
 	}
-	return t.TxRecord.GetTransactionOrder()
+	return t.TxRecord.GetTransactionOrderV1()
 }
 
 func (t *TxRecordProof) ActualFee() uint64 {
@@ -245,18 +256,18 @@ func (t *TxRecordProof) TxStatus() TxStatus {
 	return t.TxRecord.TxStatus()
 }
 
-func (t *TxRecordProof) Timeout() uint64 {
-	return t.TransactionOrder().Timeout()
-}
-
-func (t *TxRecordProof) FeeCreditRecordID() []byte {
-	return t.TransactionOrder().FeeCreditRecordID()
-}
-
-func (t *TxRecordProof) MaxFee() uint64 {
-	return t.TransactionOrder().MaxFee()
-}
-
-func (t *TxRecordProof) ReferenceNumber() []byte {
-	return t.TransactionOrder().ReferenceNumber()
-}
+//func (t *TxRecordProof) Timeout() uint64 {
+//	return t.GetTransactionOrderV1().Timeout()
+//}
+//
+//func (t *TxRecordProof) FeeCreditRecordID() []byte {
+//	return t.GetTransactionOrderV1().FeeCreditRecordID()
+//}
+//
+//func (t *TxRecordProof) MaxFee() uint64 {
+//	return t.GetTransactionOrderV1().MaxFee()
+//}
+//
+//func (t *TxRecordProof) ReferenceNumber() []byte {
+//	return t.GetTransactionOrderV1().ReferenceNumber()
+//}
