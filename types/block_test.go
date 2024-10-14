@@ -304,6 +304,7 @@ func TestBlock_Hash(t *testing.T) {
 func TestBlock_CalculateBlockHash(t *testing.T) {
 	t.Run("missing ir", func(t *testing.T) {
 		uc, err := (&UnicityCertificate{}).MarshalCBOR()
+		require.NoError(t, err)
 		b := &Block{
 			UnicityCertificate: uc,
 		}

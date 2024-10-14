@@ -3,8 +3,10 @@ package types
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"hash"
+	"iter"
 	"slices"
 )
 
@@ -146,4 +148,46 @@ func (sh ShardingScheme) AddToHasher(h hash.Hash) {
 	for _, v := range sh {
 		v.AddToHasher(h)
 	}
+}
+
+/*
+All returns iterator over all shard IDs in the sharding scheme.
+
+For a single shard scheme (empty list) single empty shard ID is returned.
+*/
+func (sh ShardingScheme) All() iter.Seq[ShardID] {
+	if len(sh) == 0 {
+		return func(yield func(ShardID) bool) { yield(ShardID{}) }
+	}
+
+	return func(yield func(ShardID) bool) {
+		for _, id := range sh {
+			if !yield(id) {
+				return
+			}
+		}
+	}
+}
+
+func (sh ShardingScheme) IsValid() error {
+	// single shard scheme is denoted by empty slice, there is no valid case with single item
+	if len(sh) == 1 {
+		return fmt.Errorf("scheme can't contain single shard, got %q", sh[0])
+	}
+
+	for idxA, idA := range sh {
+		if idA.length == 0 {
+			return errors.New("scheme may not contain empty shard ID")
+		}
+		isPrefixOf := idA.Comparator()
+		for idxB, idB := range sh {
+			if idA.length <= idB.length && idxA != idxB {
+				if isPrefixOf(idB.bits) {
+					return fmt.Errorf("scheme is not prefix-free: %s is prefix of %s", idA, idB)
+				}
+			}
+		}
+	}
+
+	return nil
 }
