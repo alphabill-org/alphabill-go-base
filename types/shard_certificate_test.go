@@ -158,7 +158,8 @@ func Test_ShardTreeCertificate_ComputeCertificate(t *testing.T) {
 		cert, err := tree.Certificate(ShardID{})
 		require.NoError(t, err)
 		require.NoError(t, cert.IsValid())
-		rh := cert.ComputeCertificate(in[0].IR, in[0].TRHash, crypto.SHA256)
+		rh, err := cert.ComputeCertificateHash(in[0].IR, in[0].TRHash, crypto.SHA256)
+		require.NoError(t, err)
 		require.Equal(t, tree.RootHash(), rh)
 	})
 
@@ -180,7 +181,8 @@ func Test_ShardTreeCertificate_ComputeCertificate(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, cert.IsValid())
 			data := findSTInput(t, in, id)
-			rh := cert.ComputeCertificate(data.IR, data.TRHash, crypto.SHA256)
+			rh, err := cert.ComputeCertificateHash(data.IR, data.TRHash, crypto.SHA256)
+			require.NoError(t, err)
 			require.Equal(t, tree.RootHash(), rh, "shard %s cert %v", id, cert)
 		}
 	})

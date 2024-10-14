@@ -4,6 +4,8 @@ import (
 	"crypto"
 	"fmt"
 	"slices"
+
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 )
 
 type ShardTreeCertificate struct {
@@ -12,7 +14,7 @@ type ShardTreeCertificate struct {
 	SiblingHashes [][]byte
 }
 
-func (cert *ShardTreeCertificate) IsValid() error {
+func (cert ShardTreeCertificate) IsValid() error {
 	if cnt := uint(len(cert.SiblingHashes)); cnt != cert.Shard.Length() {
 		return fmt.Errorf("shard ID is %d bits but got %d sibling hashes", cert.Shard.Length(), cnt)
 	}
@@ -20,7 +22,7 @@ func (cert *ShardTreeCertificate) IsValid() error {
 }
 
 /*
-ComputeCertificate implements the "Compute Shard Tree Certificate" algorithm.
+ComputeCertificateHash implements the "Compute Shard Tree Certificate" algorithm.
 Input:
 
 	IR - input record of the shard
@@ -28,11 +30,17 @@ Input:
 
 Output: Root hash
 */
-func (cert ShardTreeCertificate) ComputeCertificate(IR *InputRecord, TRHash []byte, algo crypto.Hash) []byte {
-	h := algo.New()
-	h.Write(IR.Bytes())
+func (cert ShardTreeCertificate) ComputeCertificateHash(IR *InputRecord, TRHash []byte, algo crypto.Hash) ([]byte, error) {
+	h, err := abhash.New(algo.New(), Cbor.GetEncoder)
+	if err != nil {
+		return nil, fmt.Errorf("creating hasher: %w", err)
+	}
+	h.Write(IR)
 	h.Write(TRHash)
-	rootHash := h.Sum(nil)
+	rootHash, err := h.Sum()
+	if err != nil {
+		return nil, fmt.Errorf("calculating initial root hash: %w", err)
+	}
 
 	bits := cert.Shard.bits
 	byteIdx, bitIdx := cert.Shard.length/8, cert.Shard.length%8
@@ -51,14 +59,16 @@ func (cert ShardTreeCertificate) ComputeCertificate(IR *InputRecord, TRHash []by
 			h.Write(sibHash)
 			h.Write(rootHash)
 		}
-		rootHash = h.Sum(nil)
+		if rootHash, err = h.Sum(); err != nil {
+			return nil, err
+		}
 
 		if bitIdx++; bitIdx == 8 {
 			byteIdx--
 			bitIdx = 0
 		}
 	}
-	return rootHash
+	return rootHash, nil
 }
 
 /*
@@ -81,12 +91,17 @@ func CreateShardTree(scheme ShardingScheme, states []ShardTreeInput, algo crypto
 	}
 
 	tree := ShardTree{}
-	h := algo.New()
+	h, err := abhash.New(algo.New(), Cbor.GetEncoder)
+	if err != nil {
+		return nil, fmt.Errorf("creating hasher: %w", err)
+	}
 	for _, v := range states {
 		h.Reset()
-		h.Write(v.IR.Bytes())
+		h.Write(v.IR)
 		h.Write(v.TRHash)
-		tree[v.Shard.Key()] = h.Sum(nil)
+		if tree[v.Shard.Key()], err = h.Sum(); err != nil {
+			return nil, fmt.Errorf("calculating hash for shard %s: %w", v.Shard, err)
+		}
 	}
 
 	// we now must have leaf in the tree for each shard in the scheme
@@ -114,19 +129,31 @@ generate generates non-leaf nodes of the tree. This may be called only
 when all the "leaf nodes" have been created as otherwise it would cause
 infinite recursion.
 */
-func (tree ShardTree) generate(algo crypto.Hash, id ShardID) []byte {
+func (tree ShardTree) generate(algo crypto.Hash, id ShardID) (shardHash []byte, _ error) {
 	shardKey := id.Key()
 	if dh, ok := tree[shardKey]; ok {
-		return dh
+		return dh, nil
 	}
 
+	h, err := abhash.New(algo.New(), Cbor.GetEncoder)
+	if err != nil {
+		return nil, fmt.Errorf("creating hasher: %w", err)
+	}
 	id0, id1 := id.Split()
-	h := algo.New()
-	h.Write(tree.generate(algo, id0))
-	h.Write(tree.generate(algo, id1))
-	dh := h.Sum(nil)
-	tree[shardKey] = dh
-	return dh
+
+	if shardHash, err = tree.generate(algo, id0); err != nil {
+		return nil, err
+	}
+	h.Write(shardHash)
+
+	if shardHash, err = tree.generate(algo, id1); err != nil {
+		return nil, err
+	}
+	h.Write(shardHash)
+
+	shardHash, err = h.Sum()
+	tree[shardKey] = shardHash
+	return shardHash, err
 }
 
 var rootHashKey = ShardID{}.Key()
@@ -147,7 +174,7 @@ func (tree ShardTree) siblingHashes(shardID ShardID) [][]byte {
 
 	r := make([][]byte, 0, id.length)
 	for ; id.length > 0; id.length-- {
-		bits[byteIdx] ^= (1 << bitIdx)
+		bits[byteIdx] ^= 1 << bitIdx
 		r = append(r, tree[id.Key()])
 		if bitIdx++; bitIdx == 8 {
 			byteIdx--
