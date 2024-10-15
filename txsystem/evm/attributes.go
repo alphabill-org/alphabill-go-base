@@ -49,19 +49,20 @@ func (t *TxAttributes) ToAddr() *common.Address {
 // AsMessage returns the Alphabill transaction as a ethereum core.Message.
 func (t *TxAttributes) AsMessage(gasPrice *big.Int, fake bool) *core.Message {
 	msg := &core.Message{
-		Nonce:             t.Nonce,
-		GasLimit:          t.Gas,
-		GasPrice:          gasPrice,
-		GasFeeCap:         gasPrice,      // gas price is constant, meaning max fee is the same as gas unit price
-		GasTipCap:         big.NewInt(0), // only used in London system, no supported for AB
-		To:                t.ToAddr(),
-		From:              t.FromAddr(),
-		Value:             t.Value,
-		Data:              t.Data,
-		AccessList:        ethtypes.AccessList{},
-		BlobGasFeeCap:     nil, // todo: investigate
-		BlobHashes:        nil, // todo: investigate
-		SkipAccountChecks: fake,
+		Nonce:            t.Nonce,
+		GasLimit:         t.Gas,
+		GasPrice:         gasPrice,
+		GasFeeCap:        gasPrice,      // gas price is constant, meaning max fee is the same as gas unit price
+		GasTipCap:        big.NewInt(0), // only used in London system, no supported for AB
+		To:               t.ToAddr(),
+		From:             t.FromAddr(),
+		Value:            t.Value,
+		Data:             t.Data,
+		AccessList:       ethtypes.AccessList{},
+		BlobGasFeeCap:    nil, // todo: investigate
+		BlobHashes:       nil, // todo: investigate
+		SkipNonceChecks:  fake,
+		SkipFromEOACheck: fake,
 	}
 	return msg
 }

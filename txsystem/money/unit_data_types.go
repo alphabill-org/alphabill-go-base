@@ -1,6 +1,7 @@
 package money
 
 import (
+	"bytes"
 	"fmt"
 	"hash"
 
@@ -11,11 +12,11 @@ import (
 var _ types.UnitData = (*BillData)(nil)
 
 type BillData struct {
-	_       struct{} `cbor:",toarray"`
-	V       uint64   `json:"value,string"`      // The monetary value of this bill
-	T       uint64   `json:"lastUpdate,string"` // The round number of the last transaction with the bill
-	Counter uint64   `json:"counter,string"`    // The transaction counter of this bill
-	Locked  uint64   `json:"locked,string"`     // locked status of the bill, non-zero value means locked
+	_              struct{} `cbor:",toarray"`
+	Value          uint64   `json:"value,string"`   // The monetary value of this bill
+	OwnerPredicate []byte   `json:"ownerPredicate"` // The owner predicate of this bill
+	Locked         uint64   `json:"locked,string"`  // The lock status of this bill (non-zero value means locked)
+	Counter        uint64   `json:"counter,string"` // The transaction counter of this bill
 }
 
 func NewUnitData(unitID types.UnitID) (types.UnitData, error) {
@@ -28,6 +29,13 @@ func NewUnitData(unitID types.UnitID) (types.UnitData, error) {
 	return nil, fmt.Errorf("unknown unit type in UnitID %s", unitID)
 }
 
+func NewBillData(value uint64, ownerPredicate []byte) *BillData {
+	return &BillData{
+		Value:          value,
+		OwnerPredicate: ownerPredicate,
+	}
+}
+
 func (b *BillData) Write(hasher hash.Hash) error {
 	res, err := types.Cbor.Marshal(b)
 	if err != nil {
@@ -38,18 +46,22 @@ func (b *BillData) Write(hasher hash.Hash) error {
 }
 
 func (b *BillData) SummaryValueInput() uint64 {
-	return b.V
+	return b.Value
 }
 
 func (b *BillData) Copy() types.UnitData {
 	return &BillData{
-		V:       b.V,
-		T:       b.T,
-		Counter: b.Counter,
-		Locked:  b.Locked,
+		Value:          b.Value,
+		OwnerPredicate: bytes.Clone(b.OwnerPredicate),
+		Locked:         b.Locked,
+		Counter:        b.Counter,
 	}
 }
 
 func (b *BillData) IsLocked() bool {
 	return b.Locked != 0
+}
+
+func (b *BillData) Owner() []byte {
+	return b.OwnerPredicate
 }
