@@ -3,30 +3,22 @@ package hash
 import (
 	"fmt"
 	"hash"
-	"io"
 
 	"github.com/fxamacker/cbor/v2"
 )
 
-type EncoderFactory func(w io.Writer) (*cbor.Encoder, error)
-
 /*
-New creates "hash calculator" using given hash function and encoder.
-Values written to the hash are encoded by the encoder before hashing.
+New creates "hash calculator" using given hash function.
+Values written to the hash are encoded as CBOR before hashing.
 */
-func New(h hash.Hash, encCtor EncoderFactory) (*Hash, error) {
-	enc, err := encCtor(h)
-	if err != nil {
-		return nil, fmt.Errorf("creating encoder: %w", err)
-	}
-	return &Hash{h: h, enc: enc, encCtor: encCtor}, nil
+func New(h hash.Hash) *Hash {
+	return &Hash{h: h, enc: encoderMode.NewEncoder(h)}
 }
 
 type Hash struct {
-	h       hash.Hash
-	enc     *cbor.Encoder
-	encCtor EncoderFactory
-	err     error
+	h   hash.Hash
+	enc *cbor.Encoder
+	err error
 }
 
 /*
@@ -40,7 +32,7 @@ func (h *Hash) Write(v any) {
 }
 
 /*
-Write adds the argument as is (ie raw bytes, without encoding) to the hash.
+Write adds the argument as is (ie raw bytes, without additional encoding) to the hash.
 */
 func (h *Hash) WriteRaw(d []byte) {
 	if h.err != nil {
@@ -51,9 +43,24 @@ func (h *Hash) WriteRaw(d []byte) {
 
 func (h *Hash) Reset() {
 	h.h.Reset()
-	h.enc, h.err = h.encCtor(h.h)
+	h.enc = encoderMode.NewEncoder(h.h)
 }
 
+/*
+Sum returns the hash value calculated and first error (if any) that happened
+during the hashing (in case of non-nil error the hash value is not valid).
+*/
 func (h Hash) Sum() ([]byte, error) {
 	return h.h.Sum(nil), h.err
+}
+
+var encoderMode cbor.EncMode
+
+func init() {
+	// it is extremely unlikely that building encoder mode from options
+	// provided by the CBOR library fails (ie memory corruption...)
+	var err error
+	if encoderMode, err = cbor.CoreDetEncOptions().EncMode(); err != nil {
+		panic(fmt.Errorf("initializing CBOR encoder mode: %w", err))
+	}
 }

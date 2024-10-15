@@ -31,10 +31,7 @@ Input:
 Output: Root hash
 */
 func (cert ShardTreeCertificate) ComputeCertificateHash(IR *InputRecord, TRHash []byte, algo crypto.Hash) ([]byte, error) {
-	h, err := abhash.New(algo.New(), Cbor.GetEncoder)
-	if err != nil {
-		return nil, fmt.Errorf("creating hasher: %w", err)
-	}
+	h := abhash.New(algo.New())
 	h.Write(IR)
 	h.Write(TRHash)
 	rootHash, err := h.Sum()
@@ -86,15 +83,13 @@ type ShardTreeInput struct {
 func CreateShardTree(scheme ShardingScheme, states []ShardTreeInput, algo crypto.Hash) (ShardTree, error) {
 	// this might be quite expensive check! Most of the places which create the tree should have
 	// valid scheme (ie already validated) so make it callers responsibility and remove from here?
-	if err := scheme.IsValid(); err != nil {
+	err := scheme.IsValid()
+	if err != nil {
 		return nil, fmt.Errorf("invalid sharding scheme: %w", err)
 	}
 
 	tree := ShardTree{}
-	h, err := abhash.New(algo.New(), Cbor.GetEncoder)
-	if err != nil {
-		return nil, fmt.Errorf("creating hasher: %w", err)
-	}
+	h := abhash.New(algo.New())
 	for _, v := range states {
 		h.Reset()
 		h.Write(v.IR)
@@ -117,7 +112,9 @@ func CreateShardTree(scheme ShardingScheme, states []ShardTreeInput, algo crypto
 	}
 
 	if cnt > 1 {
-		tree.generate(algo, ShardID{})
+		if _, err = tree.generate(algo, ShardID{}); err != nil {
+			return nil, fmt.Errorf("generating shard tree: %w", err)
+		}
 	}
 	return tree, nil
 }
@@ -129,16 +126,13 @@ generate generates non-leaf nodes of the tree. This may be called only
 when all the "leaf nodes" have been created as otherwise it would cause
 infinite recursion.
 */
-func (tree ShardTree) generate(algo crypto.Hash, id ShardID) (shardHash []byte, _ error) {
+func (tree ShardTree) generate(algo crypto.Hash, id ShardID) (shardHash []byte, err error) {
 	shardKey := id.Key()
 	if dh, ok := tree[shardKey]; ok {
 		return dh, nil
 	}
 
-	h, err := abhash.New(algo.New(), Cbor.GetEncoder)
-	if err != nil {
-		return nil, fmt.Errorf("creating hasher: %w", err)
-	}
+	h := abhash.New(algo.New())
 	id0, id1 := id.Split()
 
 	if shardHash, err = tree.generate(algo, id0); err != nil {
