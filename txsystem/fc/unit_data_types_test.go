@@ -11,10 +11,11 @@ import (
 
 func TestFCR_HashIsCalculatedCorrectly(t *testing.T) {
 	fcr := &FeeCreditRecord{
-		Balance: 1,
-		Counter: 10,
-		Timeout: 2,
-		Locked:  3,
+		Balance:        1,
+		OwnerPredicate: []byte{1, 2, 3},
+		Counter:        10,
+		Timeout:        2,
+		Locked:         3,
 	}
 	// calculate actual hash
 	hasher := crypto.SHA256.New()
@@ -28,6 +29,7 @@ func TestFCR_HashIsCalculatedCorrectly(t *testing.T) {
 	hasher.Write(res)
 	expectedHash := hasher.Sum(nil)
 	require.Equal(t, expectedHash, actualHash)
+
 	// check all fields serialized
 	var fcrFromSerialized FeeCreditRecord
 	require.NoError(t, types.Cbor.Unmarshal(res, &fcrFromSerialized))

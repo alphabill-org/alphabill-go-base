@@ -1,6 +1,7 @@
 package fc
 
 import (
+	"bytes"
 	"fmt"
 	"hash"
 
@@ -13,11 +14,20 @@ var _ types.UnitData = (*FeeCreditRecord)(nil)
 // Holds fee credit balance for individual users,
 // not to be confused with fee credit bills which contain aggregate fees for a given partition.
 type FeeCreditRecord struct {
-	_       struct{} `cbor:",toarray"`
-	Balance uint64   `json:"balance,string"` // current balance
-	Counter uint64   `json:"counter,string"` // transaction counter; incremented with each “addFC”, "closeFC", "lockFC" or "unlockFC" transaction; spending fee credit does not change this value
-	Timeout uint64   `json:"timeout,string"` // the earliest round number when this record may be “garbage collected” if the balance goes to zero
-	Locked  uint64   `json:"locked,string"`  // lock status of the fee credit record, non-zero value means locked; locked free credit does not prevent spending the fee credit
+	_              struct{} `cbor:",toarray"`
+	Balance        uint64   `json:"balance,string"` // current balance
+	OwnerPredicate []byte   `json:"ownerPredicate"` // the owner predicate of this fee credit record
+	Locked         uint64   `json:"locked,string"`  // the lock status of the fee credit record (non-zero value means locked); locked free credit does not prevent spending the fee credit
+	Counter        uint64   `json:"counter,string"` // transaction counter; incremented with each “addFC”, "closeFC", "lockFC" or "unlockFC" transaction; spending fee credit does not change this value
+	Timeout        uint64   `json:"timeout,string"` // the earliest round number when this record may be deleted if the balance goes to zero
+}
+
+func NewFeeCreditRecord(balance uint64, ownerPredicate []byte, timeout uint64) *FeeCreditRecord {
+	return &FeeCreditRecord{
+		Balance:        balance,
+		OwnerPredicate: ownerPredicate,
+		Timeout:        timeout,
+	}
 }
 
 func (b *FeeCreditRecord) Write(hasher hash.Hash) error {
@@ -35,10 +45,11 @@ func (b *FeeCreditRecord) SummaryValueInput() uint64 {
 
 func (b *FeeCreditRecord) Copy() types.UnitData {
 	return &FeeCreditRecord{
-		Balance: b.Balance,
-		Counter: b.Counter,
-		Timeout: b.Timeout,
-		Locked:  b.Locked,
+		Balance:        b.Balance,
+		OwnerPredicate: bytes.Clone(b.OwnerPredicate),
+		Locked:         b.Locked,
+		Counter:        b.Counter,
+		Timeout:        b.Timeout,
 	}
 }
 
@@ -51,4 +62,8 @@ func (b *FeeCreditRecord) GetCounter() uint64 {
 
 func (b *FeeCreditRecord) IsLocked() bool {
 	return b.Locked != 0
+}
+
+func (b *FeeCreditRecord) Owner() []byte {
+	return b.OwnerPredicate
 }

@@ -33,3 +33,7 @@ func (b *VarData) Copy() types.UnitData {
 		EpochNumber: b.EpochNumber,
 	}
 }
+
+func (b *VarData) Owner() []byte {
+	return nil
+}
