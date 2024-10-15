@@ -17,7 +17,7 @@ func Sum256(data []byte) []byte {
 	return hsh[:]
 }
 
-// Sum hashes together arbitary data units
+// Sum hashes together arbitrary data units
 func Sum(hashAlgorithm crypto.Hash, hashes ...[]byte) []byte {
 	hasher := hashAlgorithm.New()
 	for _, hash := range hashes {

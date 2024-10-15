@@ -1,6 +1,7 @@
 package types
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -309,5 +310,62 @@ func Test_ShardID_Key(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, idB.UnmarshalCBOR(buf))
 		require.Equal(t, idA1.Key(), idB.Key())
+	})
+}
+
+func Test_ShardingScheme_All(t *testing.T) {
+	var sc ShardingScheme
+	var emptyID ShardID
+	require.Equal(t, []ShardID{emptyID}, slices.Collect(sc.All()))
+
+	id0, id1 := emptyID.Split()
+	sc = append(sc, id0, id1)
+	require.Equal(t, []ShardID{id0, id1}, slices.Collect(sc.All()))
+}
+
+func Test_ShardingScheme_IsValid(t *testing.T) {
+	t.Run("invalid", func(t *testing.T) {
+		emptyID := ShardID{}
+		id0, id1 := emptyID.Split()
+		id00, id01 := id0.Split()
+		var testCases = []struct {
+			scheme ShardingScheme
+			errMsg string
+		}{
+			{scheme: ShardingScheme{emptyID}, errMsg: `scheme can't contain single shard, got ""`},
+			{scheme: ShardingScheme{id1}, errMsg: `scheme can't contain single shard, got "1"`},
+			{scheme: ShardingScheme{id0, id1, id1}, errMsg: `scheme is not prefix-free: 1 is prefix of 1`},
+			{scheme: ShardingScheme{id00, id01, id0}, errMsg: `scheme is not prefix-free: 0 is prefix of 00`},
+			{scheme: ShardingScheme{id0, id1, emptyID}, errMsg: `scheme may not contain empty shard ID`},
+		}
+
+		for i, tc := range testCases {
+			err := tc.scheme.IsValid()
+			if err == nil {
+				t.Errorf("[%d] expected error\n%s\nfor scheme %v", i, tc.errMsg, tc.scheme)
+				continue
+			}
+			if err.Error() != tc.errMsg {
+				t.Errorf("[%d] expected error\n%s\ngot\n%v", i, tc.errMsg, err)
+			}
+		}
+	})
+
+	t.Run("valid", func(t *testing.T) {
+		emptyID := ShardID{}
+		id0, id1 := emptyID.Split()
+		id00, id01 := id0.Split()
+		var testCases = []ShardingScheme{
+			{},
+			{id0, id1},
+			{id00, id01},
+			{id00, id01, id1},
+		}
+
+		for i, tc := range testCases {
+			if err := tc.IsValid(); err != nil {
+				t.Errorf("[%d] unexpected error: %v", i, err)
+			}
+		}
 	})
 }
