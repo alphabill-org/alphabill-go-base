@@ -40,24 +40,24 @@ type FungibleTokenTypeData struct {
 
 type NonFungibleTokenData struct {
 	_                   struct{}     `cbor:",toarray"`
-	TypeID              types.UnitID `json:"typeID"`              // the type of the token
-	Name                string       `json:"name"`                // the optional long name of the token
-	URI                 string       `json:"uri"`                 // uri is the optional URI of an external resource associated with the token
-	Data                []byte       `json:"data"`                // data is the optional data associated with the token.
+	TypeID              types.UnitID `json:"typeID"`              // the type of this token
+	Name                string       `json:"name"`                // the optional long name of this token
+	URI                 string       `json:"uri"`                 // the optional URI of an external resource associated with this token
+	Data                []byte       `json:"data"`                // the optional data associated with this token
+	OwnerPredicate      []byte       `json:"ownerPredicate"`      // the owner predicate of this token
 	DataUpdatePredicate []byte       `json:"dataUpdatePredicate"` // the data update predicate;
-	T                   uint64       `json:"lastUpdate,string"`   // the round number of the last transaction with this token;
-	Counter             uint64       `json:"counter,string"`      // the transaction counter for this token
-	Locked              uint64       `json:"locked,string"`       // locked status of the bill, non-zero value means locked
+	Locked              uint64       `json:"locked,string"`       // the lock status of this token (non-zero value means locked)
+	Counter             uint64       `json:"counter,string"`      // the transaction counter of this token
 }
 
 type FungibleTokenData struct {
-	_         struct{}     `cbor:",toarray"`
-	TokenType types.UnitID `json:"tokenType"`         // the type of the token
-	Value     uint64       `json:"value,string"`      // the value of the token
-	T         uint64       `json:"lastUpdate,string"` // the partition round number of the last transaction with this token
-	Counter   uint64       `json:"counter,string"`    // the transaction counter for this token
-	T1        uint64       `json:"t1,string"`         // the minimum lifetime of this token
-	Locked    uint64       `json:"locked,string"`     // locked status of the bill, non-zero value means locked
+	_              struct{}     `cbor:",toarray"`
+	TokenType      types.UnitID `json:"tokenType"`      // the type of this token
+	Value          uint64       `json:"value,string"`   // the value of this token
+	OwnerPredicate []byte       `json:"ownerPredicate"` // the owner predicate of this token
+	Locked         uint64       `json:"locked,string"`  // the lock status of this token (non-zero value means locked)
+	Counter        uint64       `json:"counter,string"` // the transaction counter of this token
+	Timeout        uint64       `json:"timeout,string"` // the earliest round number when this token may be deleted if the balance goes to zero
 }
 
 func NewFungibleTokenTypeData(attr *DefineFungibleTokenAttributes) types.UnitData {
@@ -86,27 +86,23 @@ func NewNonFungibleTokenTypeData(attr *DefineNonFungibleTokenAttributes) types.U
 	}
 }
 
-func NewNonFungibleTokenData(typeID types.UnitID, attr *MintNonFungibleTokenAttributes, blockNumber, counter uint64) types.UnitData {
+func NewNonFungibleTokenData(typeID types.UnitID, attr *MintNonFungibleTokenAttributes) types.UnitData {
 	return &NonFungibleTokenData{
 		TypeID:              typeID,
 		Name:                attr.Name,
 		URI:                 attr.URI,
 		Data:                attr.Data,
+		OwnerPredicate:      attr.OwnerPredicate,
 		DataUpdatePredicate: attr.DataUpdatePredicate,
-		T:                   blockNumber,
-		Counter:             counter,
-		Locked:              0,
 	}
 }
 
-func NewFungibleTokenData(typeID types.UnitID, value, blockNumber, counter, timeout uint64) types.UnitData {
+func NewFungibleTokenData(typeID types.UnitID, value uint64, ownerPredicate []byte, timeout uint64) types.UnitData {
 	return &FungibleTokenData{
-		TokenType: typeID,
-		Value:     value,
-		T:         blockNumber,
-		Counter:   counter,
-		T1:        timeout,
-		Locked:    0,
+		TokenType:      typeID,
+		Value:          value,
+		OwnerPredicate: ownerPredicate,
+		Timeout:        timeout,
 	}
 }
 
@@ -139,6 +135,10 @@ func (n *NonFungibleTokenTypeData) Copy() types.UnitData {
 	}
 }
 
+func (n *NonFungibleTokenTypeData) Owner() []byte {
+	return nil
+}
+
 func (n *NonFungibleTokenData) Write(hasher hash.Hash) error {
 	res, err := types.Cbor.Marshal(n)
 	if err != nil {
@@ -161,10 +161,10 @@ func (n *NonFungibleTokenData) Copy() types.UnitData {
 		Name:                strings.Clone(n.Name),
 		URI:                 strings.Clone(n.URI),
 		Data:                bytes.Clone(n.Data),
+		OwnerPredicate:      bytes.Clone(n.OwnerPredicate),
 		DataUpdatePredicate: bytes.Clone(n.DataUpdatePredicate),
-		T:                   n.T,
-		Counter:             n.Counter,
 		Locked:              n.Locked,
+		Counter:             n.Counter,
 	}
 }
 
@@ -174,6 +174,10 @@ func (n *NonFungibleTokenData) GetCounter() uint64 {
 
 func (n *NonFungibleTokenData) IsLocked() uint64 {
 	return n.Locked
+}
+
+func (n *NonFungibleTokenData) Owner() []byte {
+	return n.OwnerPredicate
 }
 
 func (f *FungibleTokenTypeData) Write(hasher hash.Hash) error {
@@ -205,6 +209,10 @@ func (f *FungibleTokenTypeData) Copy() types.UnitData {
 	}
 }
 
+func (f *FungibleTokenTypeData) Owner() []byte {
+	return nil
+}
+
 func (f *FungibleTokenData) Write(hasher hash.Hash) error {
 	res, err := types.Cbor.Marshal(f)
 	if err != nil {
@@ -223,12 +231,12 @@ func (f *FungibleTokenData) Copy() types.UnitData {
 		return nil
 	}
 	return &FungibleTokenData{
-		TokenType: bytes.Clone(f.TokenType),
-		Value:     f.Value,
-		T:         f.T,
-		Counter:   f.Counter,
-		T1:        f.T1,
-		Locked:    f.Locked,
+		TokenType:      bytes.Clone(f.TokenType),
+		Value:          f.Value,
+		OwnerPredicate: bytes.Clone(f.OwnerPredicate),
+		Locked:         f.Locked,
+		Counter:        f.Counter,
+		Timeout:        f.Timeout,
 	}
 }
 
@@ -238,4 +246,8 @@ func (f *FungibleTokenData) GetCounter() uint64 {
 
 func (f *FungibleTokenData) IsLocked() uint64 {
 	return f.Locked
+}
+
+func (f *FungibleTokenData) Owner() []byte {
+	return f.OwnerPredicate
 }
