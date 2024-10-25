@@ -140,7 +140,7 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 	// calculate block hash
 	inputRecord, err = block.CalculateBlockHash(crypto.SHA256)
 	require.NoError(t, err)
-	block.UnicityCertificate, err = createUnicityCertificate(t, id, signer, inputRecord, sdrs).MarshalCBOR()
+	block.UnicityCertificate, err = createUnicityCertificate(t, id, signer, inputRecord, make([]byte, 32), sdrs).MarshalCBOR()
 	require.NoError(t, err)
 	return block
 }

@@ -86,6 +86,7 @@ func createUnicityCertificate(
 	rootID string,
 	signer crypto.Signer,
 	ir *InputRecord,
+	trHash []byte,
 	pdr *PartitionDescriptionRecord,
 ) *UnicityCertificate {
 	t.Helper()
@@ -107,6 +108,7 @@ func createUnicityCertificate(
 	return &UnicityCertificate{
 		Version:     1,
 		InputRecord: ir,
+		TRHash:      trHash,
 		UnicityTreeCertificate: &UnicityTreeCertificate{
 			SystemIdentifier:         pdr.SystemIdentifier,
 			PartitionDescriptionHash: leaf.PartitionDescriptionHash,
