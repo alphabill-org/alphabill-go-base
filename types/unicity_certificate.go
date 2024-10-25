@@ -13,10 +13,11 @@ var ErrUnicityCertificateIsNil = errors.New("unicity certificate is nil")
 
 type UnicityCertificate struct {
 	_                      struct{}                `cbor:",toarray"`
-	Version                ABVersion               `json:"version,omitempty"`
-	InputRecord            *InputRecord            `json:"input_record,omitempty"`
-	UnicityTreeCertificate *UnicityTreeCertificate `json:"unicity_tree_certificate,omitempty"`
-	UnicitySeal            *UnicitySeal            `json:"unicity_seal,omitempty"`
+	Version                ABVersion               `json:"version"`
+	InputRecord            *InputRecord            `json:"input_record"`
+	TRHash                 []byte                  `json:"tr_hash"` // hash of the TechnicalRecord
+	UnicityTreeCertificate *UnicityTreeCertificate `json:"unicity_tree_certificate"`
+	UnicitySeal            *UnicitySeal            `json:"unicity_seal"`
 }
 
 func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
@@ -28,6 +29,9 @@ func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier Sys
 	}
 	if err := x.InputRecord.IsValid(); err != nil {
 		return fmt.Errorf("input record error: %w", err)
+	}
+	if n := len(x.TRHash); n != 32 {
+		return fmt.Errorf("invalid TRHash: expected 32 bytes, got %d bytes", n)
 	}
 	if err := x.UnicityTreeCertificate.IsValid(systemIdentifier, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity tree certificate validation failed: %w", err)
@@ -59,6 +63,7 @@ func (x *UnicityCertificate) Hash(hash crypto.Hash) []byte {
 	if x.InputRecord != nil {
 		x.InputRecord.AddToHasher(hasher)
 	}
+	hasher.Write(x.TRHash)
 	if x.UnicityTreeCertificate != nil {
 		x.UnicityTreeCertificate.AddToHasher(hasher)
 	}

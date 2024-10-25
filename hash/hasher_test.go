@@ -28,7 +28,7 @@ func Test_Hash(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, h1, h2)
 
-		// change tha value and hash again - must get different hash value
+		// change the value and hash again - must get different hash value
 		v.ID++
 		h.Reset()
 		h.Write(v)
