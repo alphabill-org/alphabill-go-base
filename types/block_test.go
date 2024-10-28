@@ -182,7 +182,7 @@ func TestBlock_IsValid(t *testing.T) {
 		// calculate block hash
 		inputRecord, err = b.CalculateBlockHash(crypto.SHA256)
 		require.NoError(t, err)
-		uc, err = createUnicityCertificate(t, "test", signer, inputRecord, sdrs).MarshalCBOR()
+		uc, err = createUnicityCertificate(t, "test", signer, inputRecord, make([]byte, 32), sdrs).MarshalCBOR()
 		require.NoError(t, err)
 		b.UnicityCertificate = uc
 		require.NoError(t, b.IsValid(crypto.SHA256, sdrs.Hash(crypto.SHA256)))
@@ -217,7 +217,7 @@ func TestBlock_IsValid(t *testing.T) {
 		// calculate block hash
 		inputRecord, err = b.CalculateBlockHash(crypto.SHA256)
 		require.NoError(t, err)
-		uc, err = createUnicityCertificate(t, "test", signer, inputRecord, sdrs).MarshalCBOR()
+		uc, err = createUnicityCertificate(t, "test", signer, inputRecord, make([]byte, 32), sdrs).MarshalCBOR()
 		require.NoError(t, err)
 		b.UnicityCertificate = uc
 		// remove a tx from block and make sure that the validation fails
