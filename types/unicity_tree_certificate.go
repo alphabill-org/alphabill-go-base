@@ -19,13 +19,13 @@ var (
 type UnicityTreeCertificate struct {
 	_                        struct{}        `cbor:",toarray"`
 	Version                  ABVersion       `json:"version"`
-	SystemIdentifier         SystemID        `json:"systemIdentifier"`
+	PartitionID              PartitionID     `json:"partitionIdentifier"`
 	HashSteps                []*imt.PathItem `json:"hashSteps"`
 	PartitionDescriptionHash []byte          `json:"partitionDescriptionHash"`
 }
 
 type UnicityTreeData struct {
-	SystemIdentifier         SystemID
+	partitionID              PartitionID
 	InputRecord              *InputRecord
 	PartitionDescriptionHash []byte
 }
@@ -36,15 +36,15 @@ func (t *UnicityTreeData) AddToHasher(hasher hash.Hash) {
 }
 
 func (t *UnicityTreeData) Key() []byte {
-	return t.SystemIdentifier.Bytes()
+	return t.partitionID.Bytes()
 }
 
-func (x *UnicityTreeCertificate) IsValid(systemIdentifier SystemID, systemDescriptionHash []byte) error {
+func (x *UnicityTreeCertificate) IsValid(partitionID PartitionID, systemDescriptionHash []byte) error {
 	if x == nil {
 		return ErrUnicityTreeCertificateIsNil
 	}
-	if x.SystemIdentifier != systemIdentifier {
-		return fmt.Errorf("invalid system identifier: expected %s, got %s", systemIdentifier, x.SystemIdentifier)
+	if x.PartitionID != partitionID {
+		return fmt.Errorf("invalid partition identifier: expected %s, got %s", partitionID, x.PartitionID)
 	}
 	if !bytes.Equal(systemDescriptionHash, x.PartitionDescriptionHash) {
 		return fmt.Errorf("invalid system description hash: expected %X, got %X", systemDescriptionHash, x.PartitionDescriptionHash)
@@ -59,11 +59,11 @@ func (x *UnicityTreeCertificate) EvalAuthPath(inputRecord *InputRecord, hashAlgo
 	hashSteps = append(hashSteps, x.HashSteps...)
 
 	// calculate root hash from the merkle path
-	return imt.IndexTreeOutput(hashSteps, x.SystemIdentifier.Bytes(), hashAlgorithm)
+	return imt.IndexTreeOutput(hashSteps, x.PartitionID.Bytes(), hashAlgorithm)
 }
 
 func (x *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
-	hasher.Write(x.SystemIdentifier.Bytes())
+	hasher.Write(x.PartitionID.Bytes())
 	for _, hashStep := range x.HashSteps {
 		hasher.Write(hashStep.Key)
 		hasher.Write(hashStep.Hash)
@@ -74,7 +74,7 @@ func (x *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
 // FirstHashStep restores the first hash step that was left out as an optimization
 func (x *UnicityTreeCertificate) FirstHashStep(inputRecord *InputRecord, hashAlgorithm crypto.Hash) *imt.PathItem {
 	leaf := UnicityTreeData{
-		SystemIdentifier:         x.SystemIdentifier,
+		partitionID:              x.PartitionID,
 		InputRecord:              inputRecord,
 		PartitionDescriptionHash: x.PartitionDescriptionHash,
 	}
@@ -83,7 +83,7 @@ func (x *UnicityTreeCertificate) FirstHashStep(inputRecord *InputRecord, hashAlg
 	leafHash := hasher.Sum(nil)
 
 	return &imt.PathItem{
-		Key:  x.SystemIdentifier.Bytes(),
+		Key:  x.PartitionID.Bytes(),
 		Hash: leafHash,
 	}
 }

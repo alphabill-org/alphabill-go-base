@@ -29,7 +29,7 @@ type (
 	Payload struct {
 		_              struct{} `cbor:",toarray"`
 		NetworkID      NetworkID
-		SystemID       SystemID
+		PartitionID    PartitionID
 		UnitID         UnitID
 		Type           uint16
 		Attributes     RawCBOR // transaction type specific attributes
@@ -175,11 +175,11 @@ func (t *TransactionOrder) GetNetworkID() NetworkID {
 	return t.NetworkID
 }
 
-func (t *TransactionOrder) GetSystemID() SystemID {
+func (t *TransactionOrder) GetPartitionID() PartitionID {
 	if t == nil {
 		return 0
 	}
-	return t.SystemID
+	return t.PartitionID
 }
 
 func (t *TransactionOrder) GetUnitID() UnitID {

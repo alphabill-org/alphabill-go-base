@@ -87,24 +87,24 @@ func TestBlock_GetRoundNumber(t *testing.T) {
 	})
 }
 
-func TestBlock_SystemID(t *testing.T) {
+func TestBlock_PartitionID(t *testing.T) {
 	t.Run("Block is nil", func(t *testing.T) {
 		var b *Block = nil
-		require.EqualValues(t, 0, b.SystemID())
+		require.EqualValues(t, 0, b.PartitionID())
 	})
 	t.Run("Header is nil", func(t *testing.T) {
 		b := &Block{}
-		require.EqualValues(t, 0, b.SystemID())
+		require.EqualValues(t, 0, b.PartitionID())
 	})
-	t.Run("SystemID not set", func(t *testing.T) {
+	t.Run("PartitionID not set", func(t *testing.T) {
 		b := &Block{Header: &Header{}}
-		require.EqualValues(t, 0, b.SystemID())
+		require.EqualValues(t, 0, b.PartitionID())
 	})
-	t.Run("SystemID equal", func(t *testing.T) {
+	t.Run("PartitionID equal", func(t *testing.T) {
 		b := &Block{Header: &Header{
-			SystemID: SystemID(5),
+			PartitionID: 5,
 		}}
-		require.Equal(t, SystemID(5), b.SystemID())
+		require.Equal(t, PartitionID(5), b.PartitionID())
 	})
 }
 
@@ -120,7 +120,7 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("Transactions is nil", func(t *testing.T) {
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -130,7 +130,7 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("UC is nil", func(t *testing.T) {
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -143,7 +143,7 @@ func TestBlock_IsValid(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -155,8 +155,8 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("valid block", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		sdrs := &PartitionDescriptionRecord{
-			SystemIdentifier: systemID,
-			T2Timeout:        2500 * time.Millisecond,
+			PartitionIdentifier: systemID,
+			T2Timeout:           2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
 			Version:         1,
@@ -172,7 +172,7 @@ func TestBlock_IsValid(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
-				SystemID:          systemID,
+				PartitionID:       systemID,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -190,8 +190,8 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("invalid block hash", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		sdrs := &PartitionDescriptionRecord{
-			SystemIdentifier: systemID,
-			T2Timeout:        2500 * time.Millisecond,
+			PartitionIdentifier: systemID,
+			T2Timeout:           2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
 			Version:         1,
@@ -207,7 +207,7 @@ func TestBlock_IsValid(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
-				SystemID:          systemID,
+				PartitionID:       systemID,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -237,7 +237,7 @@ func TestBlock_Hash(t *testing.T) {
 		uc := &UnicityCertificate{}
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -253,7 +253,7 @@ func TestBlock_Hash(t *testing.T) {
 		}}
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -270,7 +270,7 @@ func TestBlock_Hash(t *testing.T) {
 		}}
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -288,7 +288,7 @@ func TestBlock_Hash(t *testing.T) {
 		}}
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -317,7 +317,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -335,7 +335,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -354,7 +354,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -374,7 +374,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
-				SystemID:          SystemID(1),
+				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -422,26 +422,26 @@ func TestHeader_IsValid(t *testing.T) {
 		var h *Header = nil
 		require.EqualError(t, h.IsValid(), "block header is nil")
 	})
-	t.Run("system identifier is nil", func(t *testing.T) {
+	t.Run("partition identifier is nil", func(t *testing.T) {
 		h := &Header{}
-		require.EqualError(t, h.IsValid(), "system identifier is unassigned")
+		require.EqualError(t, h.IsValid(), "partition identifier is unassigned")
 	})
 	t.Run("previous block hash is nil", func(t *testing.T) {
 		h := &Header{
-			SystemID: SystemID(2),
+			PartitionID: 2,
 		}
 		require.EqualError(t, h.IsValid(), "previous block hash is nil")
 	})
 	t.Run("proposer is missing", func(t *testing.T) {
 		h := &Header{
-			SystemID:          SystemID(2),
+			PartitionID:       2,
 			PreviousBlockHash: []byte{1, 2, 3},
 		}
 		require.EqualError(t, h.IsValid(), "block proposer node identifier is missing")
 	})
 	t.Run("valid", func(t *testing.T) {
 		h := &Header{
-			SystemID:          SystemID(2),
+			PartitionID:       2,
 			PreviousBlockHash: []byte{1, 2, 3},
 			ProposerID:        "test",
 		}
@@ -451,7 +451,7 @@ func TestHeader_IsValid(t *testing.T) {
 
 func TestHeader_Hash(t *testing.T) {
 	hdr := Header{
-		SystemID:          SystemID(2),
+		PartitionID:       2,
 		ShardID:           ShardID{bits: []byte{0b1110_0000}, length: 3},
 		ProposerID:        "test",
 		PreviousBlockHash: []byte{2, 2, 2},

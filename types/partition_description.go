@@ -30,11 +30,11 @@ func (std *SystemTypeDescriptor) AddToHasher(h hash.Hash) {
 }
 
 type PartitionDescriptionRecord struct {
-	_                 struct{}  `cbor:",toarray"`
-	NetworkIdentifier NetworkID `json:"networkIdentifier"`
-	SystemIdentifier  SystemID  `json:"systemIdentifier"`
-	// System Type Descriptor is only used (ie is not nil) when SystemIdentifier == 0
-	SystemDescriptor *SystemTypeDescriptor `json:"systemTypeDescriptor"`
+	_                   struct{}    `cbor:",toarray"`
+	NetworkIdentifier   NetworkID   `json:"networkIdentifier"`
+	PartitionIdentifier PartitionID `json:"partitionIdentifier"`
+	// System Type Descriptor is only used (ie is not nil) when PartitionIdentifier == 0
+	SystemDescriptor *SystemTypeDescriptor `json:"systemTypeDescriptor,omitempty"`
 	TypeIdLen        uint32                `json:"typeIdLength"`
 	UnitIdLen        uint32                `json:"unitIdLength"`
 	Shards           ShardingScheme        `json:"shardingScheme"`
@@ -59,8 +59,8 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	}
 	// we currently do not support custom System Type Descriptors so allow
 	// only non-zero System IDs
-	if pdr.SystemIdentifier == 0 {
-		return fmt.Errorf("invalid system identifier: %s", pdr.SystemIdentifier)
+	if pdr.PartitionIdentifier == 0 {
+		return fmt.Errorf("invalid partition identifier: %s", pdr.PartitionIdentifier)
 	}
 	if pdr.SystemDescriptor != nil {
 		return errors.New("custom SystemDescriptor is not supported")
@@ -84,7 +84,7 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 func (pdr *PartitionDescriptionRecord) AddToHasher(h hash.Hash) {
 	var buf []byte
 	buf = binary.BigEndian.AppendUint16(buf, uint16(pdr.NetworkIdentifier))
-	buf = binary.BigEndian.AppendUint32(buf, uint32(pdr.SystemIdentifier))
+	buf = binary.BigEndian.AppendUint32(buf, uint32(pdr.PartitionIdentifier))
 	buf = binary.BigEndian.AppendUint32(buf, pdr.TypeIdLen)
 	buf = binary.BigEndian.AppendUint32(buf, pdr.UnitIdLen)
 	buf = binary.BigEndian.AppendUint64(buf, uint64(pdr.T2Timeout.Nanoseconds()))
@@ -106,8 +106,8 @@ func (pdr *PartitionDescriptionRecord) GetNetworkIdentifier() NetworkID {
 	return pdr.NetworkIdentifier
 }
 
-func (pdr *PartitionDescriptionRecord) GetSystemIdentifier() SystemID {
-	return pdr.SystemIdentifier
+func (pdr *PartitionDescriptionRecord) GetPartitionID() PartitionID {
+	return pdr.PartitionIdentifier
 }
 
 /*

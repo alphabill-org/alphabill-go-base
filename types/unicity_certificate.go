@@ -20,7 +20,7 @@ type UnicityCertificate struct {
 	UnicitySeal            *UnicitySeal            `json:"unicity_seal"`
 }
 
-func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
+func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, partitionID PartitionID, systemDescriptionHash []byte) error {
 	if x == nil {
 		return ErrUnicityCertificateIsNil
 	}
@@ -33,7 +33,7 @@ func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier Sys
 	if n := len(x.TRHash); n != 32 {
 		return fmt.Errorf("invalid TRHash: expected 32 bytes, got %d bytes", n)
 	}
-	if err := x.UnicityTreeCertificate.IsValid(systemIdentifier, systemDescriptionHash); err != nil {
+	if err := x.UnicityTreeCertificate.IsValid(partitionID, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity tree certificate validation failed: %w", err)
 	}
 	if err := x.UnicitySeal.IsValid(); err != nil {
@@ -47,8 +47,8 @@ func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, systemIdentifier Sys
 	return nil
 }
 
-func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, systemIdentifier SystemID, systemDescriptionHash []byte) error {
-	if err := x.IsValid(algorithm, systemIdentifier, systemDescriptionHash); err != nil {
+func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, partitionID PartitionID, systemDescriptionHash []byte) error {
+	if err := x.IsValid(algorithm, partitionID, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity certificate validation failed: %w", err)
 	}
 	if err := x.UnicitySeal.Verify(tb); err != nil {

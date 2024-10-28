@@ -92,11 +92,11 @@ func TestTxProofFunctions(t *testing.T) {
 		tb := NewTrustBase(t, verifier)
 		uc, err := proof.TxProof.getUCv1()
 		require.NoError(t, err)
-		uc.UnicityTreeCertificate.SystemIdentifier = SystemID(1)
+		uc.UnicityTreeCertificate.PartitionID = 1
 		proof.TxProof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
 		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256),
-			"invalid unicity certificate: unicity certificate validation failed: unicity tree certificate validation failed: invalid system identifier: expected 01000001, got 00000001")
+			"invalid unicity certificate: unicity certificate validation failed: unicity tree certificate validation failed: invalid partition identifier: expected 01000001, got 00000001")
 	})
 
 	t.Run("Test VerifyTxProof error, invalid block hash", func(t *testing.T) {
@@ -113,8 +113,8 @@ func TestTxProofFunctions(t *testing.T) {
 
 func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 	sdrs := &PartitionDescriptionRecord{
-		SystemIdentifier: systemID,
-		T2Timeout:        2500 * time.Millisecond,
+		PartitionIdentifier: systemID,
+		T2Timeout:           2500 * time.Millisecond,
 	}
 	inputRecord := &InputRecord{
 		Version:         1,
@@ -130,7 +130,7 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 	require.NoError(t, err)
 	block := &Block{
 		Header: &Header{
-			SystemID:          systemID,
+			PartitionID:       systemID,
 			ProposerID:        "proposer123",
 			PreviousBlockHash: []byte{1, 2, 3},
 		},
