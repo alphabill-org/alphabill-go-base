@@ -29,20 +29,20 @@ var (
 type SignatureMap map[string][]byte
 type UnicitySeal struct {
 	_                    struct{}     `cbor:",toarray"`
-	Version              ABVersion    `json:"version,omitempty"`
-	RootChainRoundNumber uint64       `json:"rootChainRoundNumber,omitempty"`
-	Timestamp            uint64       `json:"timestamp,omitempty"`
-	PreviousHash         []byte       `json:"previousHash,omitempty"`
-	Hash                 []byte       `json:"hash,omitempty"`
-	Signatures           SignatureMap `json:"signatures,omitempty"`
+	Version              ABVersion    `json:"version"`
+	RootChainRoundNumber uint64       `json:"rootChainRoundNumber"`
+	Timestamp            uint64       `json:"timestamp"`
+	PreviousHash         []byte       `json:"previousHash"`
+	Hash                 []byte       `json:"hash"`
+	Signatures           SignatureMap `json:"signatures"`
 }
 
 // Signatures are serialized as alphabetically sorted CBOR array
 type signaturesCBOR []*signature
 type signature struct {
 	_         struct{} `cbor:",toarray"`
-	NodeID    string   `json:"nodeId,omitempty"`
-	Signature []byte   `json:"signature,omitempty"`
+	NodeID    string   `json:"nodeId"`
+	Signature []byte   `json:"signature"`
 }
 
 func (s SignatureMap) MarshalCBOR() ([]byte, error) {

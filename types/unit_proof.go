@@ -15,7 +15,7 @@ import (
 type (
 	UnitStateProof struct {
 		_                  struct{}       `cbor:",toarray"`
-		Version            ABVersion      `json:"version,omitempty"`
+		Version            ABVersion      `json:"version"`
 		UnitID             UnitID         `json:"unitId"`
 		UnitValue          uint64         `json:"unitValue,string"`
 		UnitLedgerHash     hex.Bytes      `json:"unitLedgerHash"`

@@ -31,23 +31,23 @@ func (std *SystemTypeDescriptor) AddToHasher(h hash.Hash) {
 
 type PartitionDescriptionRecord struct {
 	_                 struct{}  `cbor:",toarray"`
-	NetworkIdentifier NetworkID `json:"networkIdentifier,omitempty"`
-	SystemIdentifier  SystemID  `json:"systemIdentifier,omitempty"`
+	NetworkIdentifier NetworkID `json:"networkIdentifier"`
+	SystemIdentifier  SystemID  `json:"systemIdentifier"`
 	// System Type Descriptor is only used (ie is not nil) when SystemIdentifier == 0
-	SystemDescriptor *SystemTypeDescriptor `json:"systemTypeDescriptor,omitempty"`
+	SystemDescriptor *SystemTypeDescriptor `json:"systemTypeDescriptor"`
 	TypeIdLen        uint32                `json:"typeIdLength"`
 	UnitIdLen        uint32                `json:"unitIdLength"`
 	Shards           ShardingScheme        `json:"shardingScheme"`
-	SummaryTrustBase []byte                `json:"summaryTrustBase,omitempty"`
+	SummaryTrustBase []byte                `json:"summaryTrustBase"`
 	T2Timeout        time.Duration         `json:"t2timeout"`
-	FeeCreditBill    *FeeCreditBill        `json:"feeCreditBill,omitempty"`
+	FeeCreditBill    *FeeCreditBill        `json:"feeCreditBill"`
 	//todo: Transaction cost function
 }
 
 type FeeCreditBill struct {
 	_              struct{}       `cbor:",toarray"`
-	UnitID         UnitID         `json:"unitId,omitempty"`
-	OwnerPredicate PredicateBytes `json:"ownerPredicate,omitempty"`
+	UnitID         UnitID         `json:"unitId"`
+	OwnerPredicate PredicateBytes `json:"ownerPredicate"`
 }
 
 func (pdr *PartitionDescriptionRecord) IsValid() error {

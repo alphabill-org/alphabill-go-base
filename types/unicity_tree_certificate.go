@@ -18,10 +18,10 @@ var (
 
 type UnicityTreeCertificate struct {
 	_                        struct{}        `cbor:",toarray"`
-	Version                  ABVersion       `json:"version,omitempty"`
-	SystemIdentifier         SystemID        `json:"systemIdentifier,omitempty"`
-	HashSteps                []*imt.PathItem `json:"hashSteps,omitempty"`
-	PartitionDescriptionHash []byte          `json:"partitionDescriptionHash,omitempty"`
+	Version                  ABVersion       `json:"version"`
+	SystemIdentifier         SystemID        `json:"systemIdentifier"`
+	HashSteps                []*imt.PathItem `json:"hashSteps"`
+	PartitionDescriptionHash []byte          `json:"partitionDescriptionHash"`
 }
 
 type UnicityTreeData struct {
