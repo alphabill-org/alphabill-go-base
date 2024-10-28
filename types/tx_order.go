@@ -4,6 +4,8 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
+
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 var (
@@ -49,7 +51,7 @@ type (
 		ReferenceNumber   []byte
 	}
 
-	PredicateBytes = Bytes
+	PredicateBytes = hex.Bytes
 
 	StateLockProofSigData struct {
 		_ struct{} `cbor:",toarray"`

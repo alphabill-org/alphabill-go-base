@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/stretchr/testify/require"
 )
 
@@ -92,9 +93,9 @@ func TestCborHandler_Unmarshal(t *testing.T) {
 	})
 
 	t.Run("Unmarshal wrong type", func(t *testing.T) {
-		var got Bytes
+		var got hex.Bytes
 		err := Cbor.Unmarshal(validCbor, &got)
-		require.ErrorContains(t, err, "cbor: cannot unmarshal map into Go value of type types.Bytes")
+		require.ErrorContains(t, err, "cbor: cannot unmarshal map into Go value of type hex.Bytes")
 		require.Nil(t, got)
 	})
 }

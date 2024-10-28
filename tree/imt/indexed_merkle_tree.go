@@ -5,6 +5,8 @@ import (
 	"crypto"
 	"fmt"
 	"hash"
+
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 const (
@@ -26,8 +28,8 @@ type (
 	}
 	// PathItem helper struct for proof extraction, contains Hash and Key of node
 	PathItem struct {
-		Key  []byte
-		Hash []byte
+		Key  hex.Bytes `json:"key"`
+		Hash hex.Bytes `json:"hash"`
 	}
 
 	pair struct {

@@ -30,9 +30,9 @@ type SignatureMap map[string][]byte
 type UnicitySeal struct {
 	_                    struct{}     `cbor:",toarray"`
 	Version              ABVersion    `json:"version,omitempty"`
-	RootChainRoundNumber uint64       `json:"root_chain_round_number,omitempty"`
+	RootChainRoundNumber uint64       `json:"rootChainRoundNumber,omitempty"`
 	Timestamp            uint64       `json:"timestamp,omitempty"`
-	PreviousHash         []byte       `json:"previous_hash,omitempty"`
+	PreviousHash         []byte       `json:"previousHash,omitempty"`
 	Hash                 []byte       `json:"hash,omitempty"`
 	Signatures           SignatureMap `json:"signatures,omitempty"`
 }
@@ -41,7 +41,7 @@ type UnicitySeal struct {
 type signaturesCBOR []*signature
 type signature struct {
 	_         struct{} `cbor:",toarray"`
-	NodeID    string   `json:"node_id,omitempty"`
+	NodeID    string   `json:"nodeId,omitempty"`
 	Signature []byte   `json:"signature,omitempty"`
 }
 

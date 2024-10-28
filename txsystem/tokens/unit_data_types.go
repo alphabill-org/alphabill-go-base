@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/alphabill-org/alphabill-go-base/types"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 var _ types.UnitData = (*NonFungibleTokenTypeData)(nil)
@@ -20,10 +21,10 @@ type NonFungibleTokenTypeData struct {
 	Name                     string       `json:"name"`
 	Icon                     *Icon        `json:"icon"`
 	ParentTypeID             types.UnitID `json:"parentTypeId"`             // identifies the parent type that this type derives from; nil indicates there is no parent type
-	SubTypeCreationPredicate []byte       `json:"subTypeCreationPredicate"` // the predicate clause that controls defining new subtypes of this type
-	TokenMintingPredicate    []byte       `json:"tokenMintingPredicate"`    // the predicate clause that controls minting new tokens of this type
-	TokenTypeOwnerPredicate  []byte       `json:"tokenTypeOwnerPredicate"`  // the predicate clause that all tokens of this type (and of subtypes of this type) inherit into their owner predicates
-	DataUpdatePredicate      []byte       `json:"dataUpdatePredicate"`      // the predicate clause that all tokens of this type (and of subtypes of this type) inherit into their data update predicates
+	SubTypeCreationPredicate hex.Bytes    `json:"subTypeCreationPredicate"` // the predicate clause that controls defining new subtypes of this type
+	TokenMintingPredicate    hex.Bytes    `json:"tokenMintingPredicate"`    // the predicate clause that controls minting new tokens of this type
+	TokenTypeOwnerPredicate  hex.Bytes    `json:"tokenTypeOwnerPredicate"`  // the predicate clause that all tokens of this type (and of subtypes of this type) inherit into their owner predicates
+	DataUpdatePredicate      hex.Bytes    `json:"dataUpdatePredicate"`      // the predicate clause that all tokens of this type (and of subtypes of this type) inherit into their data update predicates
 }
 
 type FungibleTokenTypeData struct {
@@ -33,9 +34,9 @@ type FungibleTokenTypeData struct {
 	Icon                     *Icon        `json:"icon"`
 	ParentTypeID             types.UnitID `json:"parentTypeId"`             // identifies the parent type that this type derives from; nil indicates there is no parent type
 	DecimalPlaces            uint32       `json:"decimalPlaces"`            // is the number of decimal places to display for values of tokens of this type
-	SubTypeCreationPredicate []byte       `json:"subTypeCreationPredicate"` // the predicate clause that controls defining new subtypes of this type
-	TokenMintingPredicate    []byte       `json:"tokenMintingPredicate"`    // the predicate clause that controls minting new tokens of this type
-	TokenTypeOwnerPredicate  []byte       `json:"tokenTypeOwnerPredicate"`  // the predicate clause that all tokens of this type (and of subtypes of this type) inherit into their owner predicates
+	SubTypeCreationPredicate hex.Bytes    `json:"subTypeCreationPredicate"` // the predicate clause that controls defining new subtypes of this type
+	TokenMintingPredicate    hex.Bytes    `json:"tokenMintingPredicate"`    // the predicate clause that controls minting new tokens of this type
+	TokenTypeOwnerPredicate  hex.Bytes    `json:"tokenTypeOwnerPredicate"`  // the predicate clause that all tokens of this type (and of subtypes of this type) inherit into their owner predicates
 }
 
 type NonFungibleTokenData struct {
@@ -43,9 +44,9 @@ type NonFungibleTokenData struct {
 	TypeID              types.UnitID `json:"typeID"`              // the type of this token
 	Name                string       `json:"name"`                // the optional long name of this token
 	URI                 string       `json:"uri"`                 // the optional URI of an external resource associated with this token
-	Data                []byte       `json:"data"`                // the optional data associated with this token
-	OwnerPredicate      []byte       `json:"ownerPredicate"`      // the owner predicate of this token
-	DataUpdatePredicate []byte       `json:"dataUpdatePredicate"` // the data update predicate;
+	Data                hex.Bytes    `json:"data"`                // the optional data associated with this token
+	OwnerPredicate      hex.Bytes    `json:"ownerPredicate"`      // the owner predicate of this token
+	DataUpdatePredicate hex.Bytes    `json:"dataUpdatePredicate"` // the data update predicate;
 	Locked              uint64       `json:"locked,string"`       // the lock status of this token (non-zero value means locked)
 	Counter             uint64       `json:"counter,string"`      // the transaction counter of this token
 }
@@ -54,7 +55,7 @@ type FungibleTokenData struct {
 	_              struct{}     `cbor:",toarray"`
 	TokenType      types.UnitID `json:"tokenType"`      // the type of this token
 	Value          uint64       `json:"value,string"`   // the value of this token
-	OwnerPredicate []byte       `json:"ownerPredicate"` // the owner predicate of this token
+	OwnerPredicate hex.Bytes    `json:"ownerPredicate"` // the owner predicate of this token
 	Locked         uint64       `json:"locked,string"`  // the lock status of this token (non-zero value means locked)
 	Counter        uint64       `json:"counter,string"` // the transaction counter of this token
 	Timeout        uint64       `json:"timeout,string"` // the earliest round number when this token may be deleted if the balance goes to zero

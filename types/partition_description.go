@@ -31,23 +31,23 @@ func (std *SystemTypeDescriptor) AddToHasher(h hash.Hash) {
 
 type PartitionDescriptionRecord struct {
 	_                 struct{}  `cbor:",toarray"`
-	NetworkIdentifier NetworkID `json:"network_identifier,omitempty"`
-	SystemIdentifier  SystemID  `json:"system_identifier,omitempty"`
+	NetworkIdentifier NetworkID `json:"networkIdentifier,omitempty"`
+	SystemIdentifier  SystemID  `json:"systemIdentifier,omitempty"`
 	// System Type Descriptor is only used (ie is not nil) when SystemIdentifier == 0
-	SystemDescriptor *SystemTypeDescriptor `json:"system_type_descriptor,omitempty"`
-	TypeIdLen        uint32                `json:"type_id_length"`
-	UnitIdLen        uint32                `json:"unit_id_length"`
-	Shards           ShardingScheme        `json:"sharding_scheme"`
-	SummaryTrustBase []byte                `json:"summary_trust_base,omitempty"`
+	SystemDescriptor *SystemTypeDescriptor `json:"systemTypeDescriptor,omitempty"`
+	TypeIdLen        uint32                `json:"typeIdLength"`
+	UnitIdLen        uint32                `json:"unitIdLength"`
+	Shards           ShardingScheme        `json:"shardingScheme"`
+	SummaryTrustBase []byte                `json:"summaryTrustBase,omitempty"`
 	T2Timeout        time.Duration         `json:"t2timeout"`
-	FeeCreditBill    *FeeCreditBill        `json:"fee_credit_bill,omitempty"`
+	FeeCreditBill    *FeeCreditBill        `json:"feeCreditBill,omitempty"`
 	//todo: Transaction cost function
 }
 
 type FeeCreditBill struct {
 	_              struct{}       `cbor:",toarray"`
-	UnitID         UnitID         `json:"unit_id,omitempty"`
-	OwnerPredicate PredicateBytes `json:"owner_predicate,omitempty"`
+	UnitID         UnitID         `json:"unitId,omitempty"`
+	OwnerPredicate PredicateBytes `json:"ownerPredicate,omitempty"`
 }
 
 func (pdr *PartitionDescriptionRecord) IsValid() error {

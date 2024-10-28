@@ -7,16 +7,17 @@ import (
 
 	"github.com/alphabill-org/alphabill-go-base/txsystem/fc"
 	"github.com/alphabill-org/alphabill-go-base/types"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 var _ types.UnitData = (*BillData)(nil)
 
 type BillData struct {
-	_              struct{} `cbor:",toarray"`
-	Value          uint64   `json:"value,string"`   // The monetary value of this bill
-	OwnerPredicate []byte   `json:"ownerPredicate"` // The owner predicate of this bill
-	Locked         uint64   `json:"locked,string"`  // The lock status of this bill (non-zero value means locked)
-	Counter        uint64   `json:"counter,string"` // The transaction counter of this bill
+	_              struct{}  `cbor:",toarray"`
+	Value          uint64    `json:"value,string"`   // The monetary value of this bill
+	OwnerPredicate hex.Bytes `json:"ownerPredicate"` // The owner predicate of this bill
+	Locked         uint64    `json:"locked,string"`  // The lock status of this bill (non-zero value means locked)
+	Counter        uint64    `json:"counter,string"` // The transaction counter of this bill
 }
 
 func NewUnitData(unitID types.UnitID) (types.UnitData, error) {

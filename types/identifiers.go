@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 const (
@@ -67,11 +69,11 @@ func (uid UnitID) HasType(typePart []byte) bool {
 }
 
 func (uid UnitID) MarshalText() ([]byte, error) {
-	return toHex(uid), nil
+	return hex.Encode(uid), nil
 }
 
 func (uid *UnitID) UnmarshalText(src []byte) error {
-	res, err := fromHex(src)
+	res, err := hex.Decode(src)
 	if err == nil {
 		*uid = res
 	}
