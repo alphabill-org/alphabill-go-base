@@ -92,7 +92,7 @@ func TestTxProofFunctions(t *testing.T) {
 		tb := NewTrustBase(t, verifier)
 		uc, err := proof.TxProof.getUCv1()
 		require.NoError(t, err)
-		uc.UnicityTreeCertificate.PartitionID = 1
+		uc.UnicityTreeCertificate.PartitionIdentifier = 1
 		proof.TxProof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
 		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256),

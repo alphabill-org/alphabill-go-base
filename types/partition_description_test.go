@@ -63,7 +63,7 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 		require.EqualError(t, pdr.IsValid(), "invalid partition identifier: 00000000")
 
 		pdr.PartitionIdentifier = 3
-		require.EqualValues(t, 3, pdr.GetPartitionID())
+		require.EqualValues(t, 3, pdr.GetPartitionIdentifier())
 	})
 
 	t.Run("type id length", func(t *testing.T) {

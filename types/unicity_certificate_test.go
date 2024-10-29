@@ -27,7 +27,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 	}
 
 	leaf := UnicityTreeData{
-		partitionID:              partitionID,
+		PartitionIdentifier:      partitionID,
 		InputRecord:              inputRecord,
 		PartitionDescriptionHash: sdrh,
 	}
@@ -50,7 +50,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			InputRecord: inputRecord,
 			TRHash:      zeroHash,
 			UnicityTreeCertificate: &UnicityTreeCertificate{
-				PartitionID:              partitionID,
+				PartitionIdentifier:      partitionID,
 				PartitionDescriptionHash: zeroHash,
 				HashSteps:                []*imt.PathItem{{Key: partitionID.Bytes(), Hash: utLeafHash}},
 			},
@@ -142,7 +142,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			InputRecord: inputRecord,
 			TRHash:      make([]byte, 32),
 			UnicityTreeCertificate: &UnicityTreeCertificate{
-				PartitionID:              identifier,
+				PartitionIdentifier:      identifier,
 				PartitionDescriptionHash: zeroHash,
 			},
 			UnicitySeal: seal,
@@ -174,7 +174,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			InputRecord: inputRecord,
 			TRHash:      make([]byte, 32),
 			UnicityTreeCertificate: &UnicityTreeCertificate{
-				PartitionID:              identifier,
+				PartitionIdentifier:      identifier,
 				PartitionDescriptionHash: zeroHash,
 			},
 			UnicitySeal: seal,
@@ -678,7 +678,7 @@ func TestUCHash(t *testing.T) {
 			SumOfEarnedFees: 20,
 		},
 		UnicityTreeCertificate: &UnicityTreeCertificate{
-			PartitionID:              identifier,
+			PartitionIdentifier:      identifier,
 			PartitionDescriptionHash: []byte{1, 2, 3, 4},
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
 		},

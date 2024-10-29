@@ -96,11 +96,11 @@ func TestBlock_PartitionID(t *testing.T) {
 		b := &Block{}
 		require.EqualValues(t, 0, b.PartitionID())
 	})
-	t.Run("PartitionID not set", func(t *testing.T) {
+	t.Run("PartitionIdentifier not set", func(t *testing.T) {
 		b := &Block{Header: &Header{}}
 		require.EqualValues(t, 0, b.PartitionID())
 	})
-	t.Run("PartitionID equal", func(t *testing.T) {
+	t.Run("PartitionIdentifier equal", func(t *testing.T) {
 		b := &Block{Header: &Header{
 			PartitionID: 5,
 		}}

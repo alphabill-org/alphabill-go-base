@@ -20,7 +20,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 	})
 	t.Run("invalid partition identifier", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
-			PartitionID:              identifier,
+			PartitionIdentifier:      identifier,
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
 			PartitionDescriptionHash: zeroHash,
 		}
@@ -29,7 +29,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 	})
 	t.Run("invalid system description hash", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
-			PartitionID:              identifier,
+			PartitionIdentifier:      identifier,
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
 			PartitionDescriptionHash: []byte{1, 1, 1, 1},
 		}
@@ -47,7 +47,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		}
 		sdrh := []byte{1, 2, 3, 4}
 		leaf := UnicityTreeData{
-			partitionID:              identifier,
+			PartitionIdentifier:      identifier,
 			InputRecord:              ir,
 			PartitionDescriptionHash: sdrh,
 		}
@@ -55,7 +55,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		leaf.AddToHasher(hasher)
 		require.Equal(t, identifier.Bytes(), leaf.Key())
 		var uct = &UnicityTreeCertificate{
-			PartitionID:              identifier,
+			PartitionIdentifier:      identifier,
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: hasher.Sum(nil)}},
 			PartitionDescriptionHash: sdrh,
 		}
@@ -65,7 +65,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 
 func TestUnicityTreeCertificate_Serialize(t *testing.T) {
 	ut := &UnicityTreeCertificate{
-		PartitionID:              identifier,
+		PartitionIdentifier:      identifier,
 		HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
 		PartitionDescriptionHash: []byte{1, 2, 3, 4},
 	}
@@ -91,7 +91,7 @@ func createUnicityCertificate(
 ) *UnicityCertificate {
 	t.Helper()
 	leaf := &UnicityTreeData{
-		partitionID:              pdr.PartitionIdentifier,
+		PartitionIdentifier:      pdr.PartitionIdentifier,
 		InputRecord:              ir,
 		PartitionDescriptionHash: pdr.Hash(gocrypto.SHA256),
 	}
@@ -110,7 +110,7 @@ func createUnicityCertificate(
 		InputRecord: ir,
 		TRHash:      trHash,
 		UnicityTreeCertificate: &UnicityTreeCertificate{
-			PartitionID:              pdr.PartitionIdentifier,
+			PartitionIdentifier:      pdr.PartitionIdentifier,
 			PartitionDescriptionHash: leaf.PartitionDescriptionHash,
 		},
 		UnicitySeal: unicitySeal,

@@ -106,7 +106,7 @@ func (pdr *PartitionDescriptionRecord) GetNetworkIdentifier() NetworkID {
 	return pdr.NetworkIdentifier
 }
 
-func (pdr *PartitionDescriptionRecord) GetPartitionID() PartitionID {
+func (pdr *PartitionDescriptionRecord) GetPartitionIdentifier() PartitionID {
 	return pdr.PartitionIdentifier
 }
 
