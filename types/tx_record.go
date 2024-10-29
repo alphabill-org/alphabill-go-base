@@ -86,18 +86,6 @@ func (t *TransactionRecord) IsSuccessful() bool {
 	return t.TxStatus() == TxStatusSuccessful
 }
 
-//func (t *TransactionRecord) NetworkID() NetworkID {
-//	return t.GetTransactionOrderV1().GetNetworkID()
-//}
-//
-//func (t *TransactionRecord) SystemID() SystemID {
-//	return t.GetTransactionOrderV1().GetSystemID()
-//}
-//
-//func (t *TransactionRecord) UnitID() UnitID {
-//	return t.GetTransactionOrderV1().GetUnitID()
-//}
-
 func (t *TransactionRecord) GetTransactionOrderV1() (*TransactionOrder, error) {
 	if t == nil {
 		return nil, ErrTransactionRecordIsNil
@@ -217,24 +205,6 @@ func (t *TxRecordProof) IsValid() error {
 	return nil
 }
 
-//func (t *TxRecordProof) NetworkID() NetworkID {
-//	if t == nil {
-//		return 0
-//	}
-//	return t.TxRecord.NetworkID()
-//}
-//
-//func (t *TxRecordProof) SystemID() SystemID {
-//	if t == nil {
-//		return 0
-//	}
-//	return t.TxRecord.SystemID()
-//}
-
-//func (t *TxRecordProof) UnitID() UnitID {
-//	return t.GetTransactionOrderV1().GetUnitID()
-//}
-
 func (t *TxRecordProof) GetTransactionOrderV1() (*TransactionOrder, error) {
 	if t == nil {
 		return nil, ErrTxRecordProofIsNil
@@ -255,19 +225,3 @@ func (t *TxRecordProof) TxStatus() TxStatus {
 	}
 	return t.TxRecord.TxStatus()
 }
-
-//func (t *TxRecordProof) Timeout() uint64 {
-//	return t.GetTransactionOrderV1().Timeout()
-//}
-//
-//func (t *TxRecordProof) FeeCreditRecordID() []byte {
-//	return t.GetTransactionOrderV1().FeeCreditRecordID()
-//}
-//
-//func (t *TxRecordProof) MaxFee() uint64 {
-//	return t.GetTransactionOrderV1().MaxFee()
-//}
-//
-//func (t *TxRecordProof) ReferenceNumber() []byte {
-//	return t.GetTransactionOrderV1().ReferenceNumber()
-//}
