@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/fxamacker/cbor/v2"
 )
 
@@ -150,4 +151,16 @@ func (r *RawCBOR) UnmarshalCBOR(data []byte) error {
 		*r = append((*r)[0:0], data...)
 	}
 	return nil
+}
+
+func (r RawCBOR) MarshalText() ([]byte, error) {
+	return hex.Encode(r), nil
+}
+
+func (r *RawCBOR) UnmarshalText(src []byte) error {
+	res, err := hex.Decode(src)
+	if err == nil {
+		*r = res
+	}
+	return err
 }
