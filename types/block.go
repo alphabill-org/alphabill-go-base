@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 var (
@@ -31,7 +32,7 @@ type (
 		PartitionID       PartitionID
 		ShardID           ShardID
 		ProposerID        string
-		PreviousBlockHash []byte
+		PreviousBlockHash hex.Bytes
 	}
 )
 

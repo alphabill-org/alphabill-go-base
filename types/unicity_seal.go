@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/alphabill-org/alphabill-go-base/crypto"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
@@ -32,17 +33,17 @@ type UnicitySeal struct {
 	Version              ABVersion    `json:"version"`
 	RootChainRoundNumber uint64       `json:"rootChainRoundNumber"`
 	Timestamp            uint64       `json:"timestamp"`
-	PreviousHash         []byte       `json:"previousHash"`
-	Hash                 []byte       `json:"hash"`
+	PreviousHash         hex.Bytes    `json:"previousHash"`
+	Hash                 hex.Bytes    `json:"hash"`
 	Signatures           SignatureMap `json:"signatures"`
 }
 
 // Signatures are serialized as alphabetically sorted CBOR array
 type signaturesCBOR []*signature
 type signature struct {
-	_         struct{} `cbor:",toarray"`
-	NodeID    string   `json:"nodeId"`
-	Signature []byte   `json:"signature"`
+	_         struct{}  `cbor:",toarray"`
+	NodeID    string    `json:"nodeId"`
+	Signature hex.Bytes `json:"signature"`
 }
 
 func (s SignatureMap) MarshalCBOR() ([]byte, error) {

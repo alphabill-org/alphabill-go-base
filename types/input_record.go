@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash"
 
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
@@ -22,10 +23,10 @@ var (
 type InputRecord struct {
 	_               struct{}  `cbor:",toarray"`
 	Version         ABVersion `json:"version"`
-	PreviousHash    []byte    `json:"previousHash"`    // previously certified state hash
-	Hash            []byte    `json:"hash"`            // state hash to be certified
-	BlockHash       []byte    `json:"blockHash"`       // hash of the block
-	SummaryValue    []byte    `json:"summaryValue"`    // summary value to certified
+	PreviousHash    hex.Bytes `json:"previousHash"`    // previously certified state hash
+	Hash            hex.Bytes `json:"hash"`            // state hash to be certified
+	BlockHash       hex.Bytes `json:"blockHash"`       // hash of the block
+	SummaryValue    hex.Bytes `json:"summaryValue"`    // summary value to certified
 	RoundNumber     uint64    `json:"roundNumber"`     // shard's round number
 	Epoch           uint64    `json:"epoch"`           // shard’s epoch number
 	SumOfEarnedFees uint64    `json:"sumOfEarnedFees"` // sum of the actual fees over all transaction records in the block

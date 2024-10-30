@@ -8,6 +8,8 @@ import (
 	"hash"
 	"slices"
 	"time"
+
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 var (
@@ -38,7 +40,7 @@ type PartitionDescriptionRecord struct {
 	TypeIdLen        uint32                `json:"typeIdLength"`
 	UnitIdLen        uint32                `json:"unitIdLength"`
 	Shards           ShardingScheme        `json:"shardingScheme"`
-	SummaryTrustBase []byte                `json:"summaryTrustBase"`
+	SummaryTrustBase hex.Bytes             `json:"summaryTrustBase"`
 	T2Timeout        time.Duration         `json:"t2timeout"`
 	FeeCreditBill    *FeeCreditBill        `json:"feeCreditBill"`
 	//todo: Transaction cost function

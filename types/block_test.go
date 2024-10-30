@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/stretchr/testify/require"
 
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
@@ -363,7 +364,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		}
 		ir, err := b.CalculateBlockHash(crypto.SHA256)
 		require.NoError(t, err)
-		require.Equal(t, ir.BlockHash, make([]byte, 32))
+		require.Equal(t, ir.BlockHash, make(hex.Bytes, 32))
 	})
 
 	t.Run("hash - ok", func(t *testing.T) {

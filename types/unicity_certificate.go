@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
@@ -14,10 +15,10 @@ var ErrUnicityCertificateIsNil = errors.New("unicity certificate is nil")
 type UnicityCertificate struct {
 	_                      struct{}                `cbor:",toarray"`
 	Version                ABVersion               `json:"version"`
-	InputRecord            *InputRecord            `json:"input_record"`
-	TRHash                 []byte                  `json:"tr_hash"` // hash of the TechnicalRecord
-	UnicityTreeCertificate *UnicityTreeCertificate `json:"unicity_tree_certificate"`
-	UnicitySeal            *UnicitySeal            `json:"unicity_seal"`
+	InputRecord            *InputRecord            `json:"inputRecord"`
+	TRHash                 hex.Bytes               `json:"trHash"` // hash of the TechnicalRecord
+	UnicityTreeCertificate *UnicityTreeCertificate `json:"unicityTreeCertificate"`
+	UnicitySeal            *UnicitySeal            `json:"unicitySeal"`
 }
 
 func (x *UnicityCertificate) IsValid(algorithm crypto.Hash, partitionID PartitionID, systemDescriptionHash []byte) error {

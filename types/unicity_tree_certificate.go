@@ -8,6 +8,7 @@ import (
 	"hash"
 
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 var (
@@ -21,7 +22,7 @@ type UnicityTreeCertificate struct {
 	Version                  ABVersion       `json:"version"`
 	PartitionIdentifier      PartitionID     `json:"partitionIdentifier"`
 	HashSteps                []*imt.PathItem `json:"hashSteps"`
-	PartitionDescriptionHash []byte          `json:"partitionDescriptionHash"`
+	PartitionDescriptionHash hex.Bytes       `json:"partitionDescriptionHash"`
 }
 
 type UnicityTreeData struct {
