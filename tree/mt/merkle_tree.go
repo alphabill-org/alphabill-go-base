@@ -4,6 +4,8 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
+
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 var ErrIndexOutOfBounds = errors.New("merkle tree data index out of bounds")
@@ -20,8 +22,8 @@ type (
 
 	// PathItem helper struct for proof extraction, contains Hash and Direction from parent node
 	PathItem struct {
-		Hash          []byte
-		DirectionLeft bool // true - left from parent, false - right from parent
+		Hash          hex.Bytes `json:"hash"`
+		DirectionLeft bool      `json:"directionLeft"` // true - left from parent, false - right from parent
 	}
 
 	node struct {

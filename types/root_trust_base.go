@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
@@ -26,16 +27,16 @@ type (
 		EpochStartRound   uint64               `json:"epochStartRound"`   // root chain round number when the epoch begins
 		RootNodes         map[string]*NodeInfo `json:"rootNodes"`         // list of all root nodes for the current epoch
 		QuorumThreshold   uint64               `json:"quorumThreshold"`   // amount of alpha required to reach consensus, currently each node gets equal amount of voting power i.e. +1 for each node
-		StateHash         []byte               `json:"stateHash"`         // unicity tree root hash
-		ChangeRecordHash  []byte               `json:"changeRecordHash"`  // epoch change request hash
-		PreviousEntryHash []byte               `json:"previousEntryHash"` // previous trust base entry hash
-		Signatures        map[string][]byte    `json:"signatures"`        // signatures of previous epoch validators, over all fields except for the signatures fields itself
+		StateHash         hex.Bytes            `json:"stateHash"`         // unicity tree root hash
+		ChangeRecordHash  hex.Bytes            `json:"changeRecordHash"`  // epoch change request hash
+		PreviousEntryHash hex.Bytes            `json:"previousEntryHash"` // previous trust base entry hash
+		Signatures        map[string]hex.Bytes `json:"signatures"`        // signatures of previous epoch validators, over all fields except for the signatures fields itself
 	}
 
 	NodeInfo struct {
 		_         struct{}          `cbor:",toarray"`
 		NodeID    string            `json:"nodeId"`    // node identifier derived from node's encryption public key
-		PublicKey []byte            `json:"publicKey"` // the trust base signing public key
+		PublicKey hex.Bytes         `json:"publicKey"` // the trust base signing public key
 		Stake     uint64            `json:"stake"`     // amount of staked alpha for this node, currently unused as each nodes get equal votes regardless of stake
 		verifier  abcrypto.Verifier // cached verifier, should always be filled in constructor; private field is ignored in json and cbor
 	}
@@ -87,7 +88,7 @@ func NewTrustBaseGenesis(nodes []*NodeInfo, unicityTreeRootHash []byte, opts ...
 		StateHash:         unicityTreeRootHash,
 		ChangeRecordHash:  nil,
 		PreviousEntryHash: nil,
-		Signatures:        make(map[string][]byte),
+		Signatures:        make(map[string]hex.Bytes),
 	}, nil
 }
 

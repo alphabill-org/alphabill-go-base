@@ -8,6 +8,8 @@ import (
 	"hash"
 	"iter"
 	"slices"
+
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 type ShardID struct {
@@ -97,11 +99,11 @@ func (id ShardID) Comparator() func([]byte) bool {
 }
 
 func (id ShardID) MarshalText() ([]byte, error) {
-	return toHex(encodeBitstring(id.bits, id.length)), nil
+	return hex.Encode(encodeBitstring(id.bits, id.length)), nil
 }
 
 func (id *ShardID) UnmarshalText(src []byte) error {
-	res, err := fromHex(src)
+	res, err := hex.Decode(src)
 	if err != nil {
 		return fmt.Errorf("decoding from hex: %w", err)
 	}

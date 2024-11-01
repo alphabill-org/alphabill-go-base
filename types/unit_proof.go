@@ -8,16 +8,17 @@ import (
 
 	"github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 type (
 	UnitStateProof struct {
 		_                  struct{}       `cbor:",toarray"`
-		Version            ABVersion      `json:"version,omitempty"`
+		Version            ABVersion      `json:"version"`
 		UnitID             UnitID         `json:"unitId"`
 		UnitValue          uint64         `json:"unitValue,string"`
-		UnitLedgerHash     Bytes          `json:"unitLedgerHash"`
+		UnitLedgerHash     hex.Bytes      `json:"unitLedgerHash"`
 		UnitTreeCert       *UnitTreeCert  `json:"unitTreeCert"`
 		StateTreeCert      *StateTreeCert `json:"stateTreeCert"`
 		UnicityCertificate TaggedCBOR     `json:"unicityCert"`
@@ -25,27 +26,27 @@ type (
 
 	UnitTreeCert struct {
 		_                     struct{}       `cbor:",toarray"`
-		TransactionRecordHash Bytes          `json:"txrHash"`  // t
-		UnitDataHash          Bytes          `json:"dataHash"` // s
+		TransactionRecordHash hex.Bytes      `json:"txrHash"`  // t
+		UnitDataHash          hex.Bytes      `json:"dataHash"` // s
 		Path                  []*mt.PathItem `json:"path"`
 	}
 
 	StateTreeCert struct {
 		_                 struct{}             `cbor:",toarray"`
-		LeftSummaryHash   Bytes                `json:"leftSummaryHash"`
+		LeftSummaryHash   hex.Bytes            `json:"leftSummaryHash"`
 		LeftSummaryValue  uint64               `json:"leftSummaryValue,string"`
-		RightSummaryHash  Bytes                `json:"rightSummaryHash"`
+		RightSummaryHash  hex.Bytes            `json:"rightSummaryHash"`
 		RightSummaryValue uint64               `json:"rightSummaryValue,string"`
 		Path              []*StateTreePathItem `json:"path"`
 	}
 
 	StateTreePathItem struct {
-		_                   struct{} `cbor:",toarray"`
-		UnitID              UnitID   `json:"unitId"`       // (ι′)
-		LogsHash            Bytes    `json:"logsHash"`     // (z)
-		Value               uint64   `json:"value,string"` // (V)
-		SiblingSummaryHash  Bytes    `json:"siblingSummaryHash"`
-		SiblingSummaryValue uint64   `json:"siblingSummaryValue,string"`
+		_                   struct{}  `cbor:",toarray"`
+		UnitID              UnitID    `json:"unitId"`       // (ι′)
+		LogsHash            hex.Bytes `json:"logsHash"`     // (z)
+		Value               uint64    `json:"value,string"` // (V)
+		SiblingSummaryHash  hex.Bytes `json:"siblingSummaryHash"`
+		SiblingSummaryValue uint64    `json:"siblingSummaryValue,string"`
 	}
 
 	StateUnitData struct {

@@ -1,4 +1,4 @@
-package types
+package hex
 
 import (
 	"encoding/hex"
@@ -24,18 +24,18 @@ func (u *Uint64) UnmarshalText(src []byte) error {
 }
 
 func (b Bytes) MarshalText() ([]byte, error) {
-	return toHex(b), nil
+	return Encode(b), nil
 }
 
 func (b *Bytes) UnmarshalText(src []byte) error {
-	res, err := fromHex(src)
+	res, err := Decode(src)
 	if err == nil {
 		*b = res
 	}
 	return err
 }
 
-func toHex(src []byte) []byte {
+func Encode(src []byte) []byte {
 	if len(src) == 0 {
 		return nil
 	}
@@ -45,7 +45,7 @@ func toHex(src []byte) []byte {
 	return dst
 }
 
-func fromHex(src []byte) ([]byte, error) {
+func Decode(src []byte) ([]byte, error) {
 	src, err := checkHex(src)
 	if err != nil {
 		return nil, err

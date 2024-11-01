@@ -10,7 +10,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-const DefaultSystemID types.SystemID = 3
+const DefaultPartitionID types.PartitionID = 3
 
 const TransactionTypeEVMCall uint16 = 1
 

@@ -11,7 +11,7 @@ import (
 )
 
 func TestUnicityCertificate_IsValid(t *testing.T) {
-	const partitionID SystemID = 0x01010101
+	const partitionID PartitionID = 0x01010101
 	sdrh := zeroHash
 	signer, _ := testsig.CreateSignerAndVerifier(t)
 
@@ -27,7 +27,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 	}
 
 	leaf := UnicityTreeData{
-		SystemIdentifier:         partitionID,
+		PartitionIdentifier:      partitionID,
 		InputRecord:              inputRecord,
 		PartitionDescriptionHash: sdrh,
 	}
@@ -49,9 +49,8 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			Version:     1,
 			InputRecord: inputRecord,
 			TRHash:      zeroHash,
-			UnicityTreeCertificate: &UnicityTreeCertificate{
-				Version:                  1,
-				SystemIdentifier:         partitionID,
+			UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
+				PartitionIdentifier:      partitionID,
 				PartitionDescriptionHash: zeroHash,
 				HashSteps:                []*imt.PathItem{{Key: partitionID.Bytes(), Hash: utLeafHash}},
 			},
@@ -142,9 +141,8 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			Version:     1,
 			InputRecord: inputRecord,
 			TRHash:      make([]byte, 32),
-			UnicityTreeCertificate: &UnicityTreeCertificate{
-				Version:                  1,
-				SystemIdentifier:         identifier,
+			UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
+				PartitionIdentifier:      identifier,
 				PartitionDescriptionHash: zeroHash,
 			},
 			UnicitySeal: seal,
@@ -175,9 +173,8 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			Version:     1,
 			InputRecord: inputRecord,
 			TRHash:      make([]byte, 32),
-			UnicityTreeCertificate: &UnicityTreeCertificate{
-				Version:                  1,
-				SystemIdentifier:         identifier,
+			UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
+				PartitionIdentifier:      identifier,
 				PartitionDescriptionHash: zeroHash,
 			},
 			UnicitySeal: seal,
@@ -680,9 +677,8 @@ func TestUCHash(t *testing.T) {
 			RoundNumber:     6,
 			SumOfEarnedFees: 20,
 		},
-		UnicityTreeCertificate: &UnicityTreeCertificate{
-			Version:                  1,
-			SystemIdentifier:         identifier,
+		UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
+			PartitionIdentifier:      identifier,
 			PartitionDescriptionHash: []byte{1, 2, 3, 4},
 			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
 		},

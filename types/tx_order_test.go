@@ -9,16 +9,16 @@ import (
 )
 
 var (
-	networkID         NetworkID = 1
-	systemID          SystemID  = 0x01000001
-	transactionType   uint16    = 1
-	unitID                      = make([]byte, 32)
-	timeout           uint64    = 42
-	maxFee            uint64    = 69
-	feeCreditRecordID           = []byte{32, 32, 32, 32}
-	newOwnerPredicate           = []byte{1, 2, 3, 4}
-	targetValue       uint64    = 100
-	counter           uint64    = 123
+	networkID         NetworkID   = 1
+	systemID          PartitionID = 0x01000001
+	transactionType   uint16      = 1
+	unitID                        = make([]byte, 32)
+	timeout           uint64      = 42
+	maxFee            uint64      = 69
+	feeCreditRecordID             = []byte{32, 32, 32, 32}
+	newOwnerPredicate             = []byte{1, 2, 3, 4}
+	targetValue       uint64      = 100
+	counter           uint64      = 123
 
 	// 88                                       # array(8)
 	//   01                                     #   unsigned(1)
@@ -46,7 +46,7 @@ var (
 	//   F6                                     #   primitive(22)
 	payloadInHEX = "87" + // 8 element array
 		"01" + // NetworkID
-		"1A01000001" + // SystemID
+		"1A01000001" + // PartitionID
 		"58200000000000000000000000000000000000000000000000000000000000000000" + // UnitID
 		"01" + // Type
 		"8344010203041864187b" + // Attributes
@@ -72,7 +72,7 @@ func TestMarshalNilValuesInPayload(t *testing.T) {
 	txo := &TransactionOrder{Version: 1,
 		Payload: Payload{
 			NetworkID:      0,
-			SystemID:       0,
+			PartitionID:    0,
 			UnitID:         nil,
 			Type:           0,
 			Attributes:     nil,
@@ -101,7 +101,7 @@ func TestUnmarshalPayload(t *testing.T) {
 	var payload Payload
 	require.NoError(t, Cbor.Unmarshal(hexDecode(t, payloadInHEX), &payload))
 	require.Equal(t, networkID, payload.NetworkID)
-	require.Equal(t, systemID, payload.SystemID)
+	require.Equal(t, systemID, payload.PartitionID)
 	require.Equal(t, UnitID(unitID), payload.UnitID)
 	require.Equal(t, transactionType, payload.Type)
 
@@ -127,7 +127,7 @@ func TestUnmarshalAttributes(t *testing.T) {
 	require.Equal(t, targetValue, attr.TargetValue)
 	require.Equal(t, counter, attr.Counter)
 	require.Equal(t, UnitID(unitID), txo.UnitID)
-	require.Equal(t, systemID, txo.SystemID)
+	require.Equal(t, systemID, txo.PartitionID)
 	require.Equal(t, timeout, txo.Timeout())
 	require.Equal(t, transactionType, txo.Type)
 	require.Equal(t, feeCreditRecordID, txo.FeeCreditRecordID())
@@ -183,11 +183,11 @@ func createTransactionOrder(t *testing.T) *TransactionOrder {
 	attrBytes, err := Cbor.Marshal(attr)
 	require.NoError(t, err)
 	return &TransactionOrder{Version: 1, Payload: Payload{
-		NetworkID:  1,
-		SystemID:   systemID,
-		UnitID:     unitID,
-		Type:       transactionType,
-		Attributes: attrBytes,
+		NetworkID:   1,
+		PartitionID: systemID,
+		UnitID:      unitID,
+		Type:        transactionType,
+		Attributes:  attrBytes,
 		ClientMetadata: &ClientMetadata{
 			Timeout:           timeout,
 			MaxTransactionFee: maxFee,

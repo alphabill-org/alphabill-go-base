@@ -106,7 +106,7 @@ func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm
 	if err != nil {
 		return fmt.Errorf("failed to get transaction order: %w", err)
 	}
-	if err := uc.Verify(tb, hashAlgorithm, txo.SystemID, sdrHash); err != nil {
+	if err := uc.Verify(tb, hashAlgorithm, txo.PartitionID, sdrHash); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 	// h ← plain_tree_output(C, H(P))
