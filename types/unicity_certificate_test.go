@@ -7,6 +7,7 @@ import (
 
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/stretchr/testify/require"
 )
 
@@ -688,7 +689,7 @@ func TestUCHash(t *testing.T) {
 			Timestamp:            9,
 			PreviousHash:         []byte{1, 2, 3},
 			Hash:                 []byte{2, 3, 4},
-			Signatures:           map[string][]byte{"1": {1, 1, 1}},
+			Signatures:           map[string]hex.Bytes{"1": {1, 1, 1}},
 		},
 	}
 	// serialize manually

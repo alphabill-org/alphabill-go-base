@@ -31,7 +31,7 @@ func TestUnicitySeal_IsValid(t *testing.T) {
 			Timestamp:            NewTimestamp(),
 			PreviousHash:         zeroHash,
 			Hash:                 nil,
-			Signatures:           map[string][]byte{"": zeroHash},
+			Signatures:           map[string]hex.Bytes{"": zeroHash},
 		}
 		tb := NewTrustBase(t, verifier)
 		require.Error(t, seal.Verify(tb), ErrUnicitySealHashIsNil)
@@ -66,7 +66,7 @@ func TestIsValid_InvalidSignature(t *testing.T) {
 		Timestamp:            NewTimestamp(),
 		PreviousHash:         zeroHash,
 		Hash:                 zeroHash,
-		Signatures:           map[string][]byte{"test": zeroHash},
+		Signatures:           map[string]hex.Bytes{"test": zeroHash},
 	}
 	tb := NewTrustBase(t, verifier)
 
@@ -125,7 +125,7 @@ func TestVerify_SignatureUnknownSigner(t *testing.T) {
 		Timestamp:            NewTimestamp(),
 		PreviousHash:         zeroHash,
 		Hash:                 zeroHash,
-		Signatures:           map[string][]byte{"test": test.RandomBytes(64)},
+		Signatures:           map[string]hex.Bytes{"test": test.RandomBytes(64)},
 	}
 	tb := NewTrustBase(t, verifier)
 	err := seal.Verify(tb)
@@ -149,7 +149,7 @@ func TestVerify_VerifierIsNil(t *testing.T) {
 		Timestamp:            NewTimestamp(),
 		PreviousHash:         zeroHash,
 		Hash:                 zeroHash,
-		Signatures:           map[string][]byte{"": zeroHash},
+		Signatures:           map[string]hex.Bytes{"": zeroHash},
 	}
 	err := seal.Verify(nil)
 	require.ErrorIs(t, err, ErrRootValidatorInfoMissing)
@@ -191,7 +191,7 @@ func TestSeal_AddToHasher(t *testing.T) {
 		Timestamp:            NewTimestamp(),
 		PreviousHash:         zeroHash,
 		Hash:                 zeroHash,
-		Signatures:           map[string][]byte{"xxx": {1, 1, 1}, "aaa": {2, 2, 2}},
+		Signatures:           map[string]hex.Bytes{"xxx": {1, 1, 1}, "aaa": {2, 2, 2}},
 	}
 	hasher := gocrypto.SHA256.New()
 	seal.AddToHasher(hasher)

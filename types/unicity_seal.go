@@ -27,7 +27,7 @@ var (
 	ErrInvalidTimestamp          = errors.New("invalid timestamp")
 )
 
-type SignatureMap map[string][]byte
+type SignatureMap map[string]hex.Bytes
 type UnicitySeal struct {
 	_                    struct{}     `cbor:",toarray"`
 	Version              ABVersion    `json:"version"`
