@@ -87,8 +87,8 @@ func (t *TransactionRecord) NetworkID() NetworkID {
 	return t.GetTransactionOrder().GetNetworkID()
 }
 
-func (t *TransactionRecord) SystemID() SystemID {
-	return t.GetTransactionOrder().GetSystemID()
+func (t *TransactionRecord) PartitionID() PartitionID {
+	return t.GetTransactionOrder().GetPartitionID()
 }
 
 func (t *TransactionRecord) UnitID() UnitID {
@@ -191,11 +191,11 @@ func (t *TxRecordProof) NetworkID() NetworkID {
 	return t.TxRecord.NetworkID()
 }
 
-func (t *TxRecordProof) SystemID() SystemID {
+func (t *TxRecordProof) PartitionID() PartitionID {
 	if t == nil {
 		return 0
 	}
-	return t.TxRecord.SystemID()
+	return t.TxRecord.PartitionID()
 }
 
 func (t *TxRecordProof) UnitID() UnitID {

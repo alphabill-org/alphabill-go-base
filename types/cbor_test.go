@@ -2,8 +2,11 @@ package types
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
 
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
+	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -92,9 +95,9 @@ func TestCborHandler_Unmarshal(t *testing.T) {
 	})
 
 	t.Run("Unmarshal wrong type", func(t *testing.T) {
-		var got Bytes
+		var got hex.Bytes
 		err := Cbor.Unmarshal(validCbor, &got)
-		require.ErrorContains(t, err, "cbor: cannot unmarshal map into Go value of type types.Bytes")
+		require.ErrorContains(t, err, "cbor: cannot unmarshal map into Go value of type hex.Bytes")
 		require.Nil(t, got)
 	})
 }
@@ -282,5 +285,20 @@ func Test_RawCBOR(t *testing.T) {
 		var d RawCBOR
 		require.NoError(t, d.UnmarshalCBOR(buf))
 		require.Equal(t, data, d)
+	})
+
+	t.Run("RawCBOR is encoded as hex in json", func(t *testing.T) {
+		type jsonType struct {
+			RawCborField RawCBOR `json:"rawCborField"`
+		}
+		data := []byte{1, 255}
+		dataCBOR, err := cbor.Marshal(data)
+		require.NoError(t, err)
+		dataJson := jsonType{RawCborField: dataCBOR}
+
+		jsonBytes, err := json.Marshal(dataJson)
+		require.NoError(t, err)
+
+		require.Equal(t, `{"rawCborField":"0x4201ff"}`, string(jsonBytes))
 	})
 }

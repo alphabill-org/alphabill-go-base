@@ -6,7 +6,7 @@ const (
 	TransactionTypeAddVAR uint16 = 1
 )
 
-const DefaultSystemID types.SystemID = 4
+const DefaultPartitionID types.PartitionID = 4
 
 type (
 	AddVarAttributes struct {

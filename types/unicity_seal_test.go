@@ -7,6 +7,7 @@ import (
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	test "github.com/alphabill-org/alphabill-go-base/testutils"
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/alphabill-org/alphabill-go-base/util"
 	"github.com/stretchr/testify/require"
 )
@@ -280,8 +281,8 @@ func TestUnicitySeal_UnmarshalCBOR(t *testing.T) {
 		require.Equal(t, ABVersion(1), seal.GetVersion())
 		require.Equal(t, uint64(1), seal.RootChainRoundNumber)
 		require.Equal(t, uint64(1), seal.Timestamp)
-		require.Equal(t, []byte{0xFF}, seal.PreviousHash)
-		require.Equal(t, []byte{0xFF}, seal.Hash)
+		require.Equal(t, hex.Bytes{0xFF}, seal.PreviousHash)
+		require.Equal(t, hex.Bytes{0xFF}, seal.Hash)
 		require.Nil(t, seal.Signatures)
 	})
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 	errPrevBlockHashIsNil     = errors.New("previous block hash is nil")
 	errBlockProposerIDMissing = errors.New("block proposer node identifier is missing")
 	errTransactionsIsNil      = errors.New("transactions is nil")
-	errSystemIDIsNil          = errors.New("system identifier is unassigned")
+	errPartitionIDIsNil       = errors.New("partition identifier is unassigned")
 )
 
 type (
@@ -28,10 +29,10 @@ type (
 
 	Header struct {
 		_                 struct{} `cbor:",toarray"`
-		SystemID          SystemID
+		PartitionID       PartitionID
 		ShardID           ShardID
 		ProposerID        string
-		PreviousBlockHash []byte
+		PreviousBlockHash hex.Bytes
 	}
 )
 
@@ -170,7 +171,7 @@ func (b *Block) IsValid(algorithm crypto.Hash, systemDescriptionHash []byte) err
 	if err != nil {
 		return fmt.Errorf("unicity certificate error: %w", err)
 	}
-	if err := uc.IsValid(algorithm, b.Header.SystemID, systemDescriptionHash); err != nil {
+	if err := uc.IsValid(algorithm, b.Header.PartitionID, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity certificate validation failed: %w", err)
 	}
 	// match block hash to input record
@@ -191,11 +192,11 @@ func (b *Block) GetProposerID() string {
 	return b.Header.ProposerID
 }
 
-func (b *Block) SystemID() SystemID {
+func (b *Block) PartitionID() PartitionID {
 	if b == nil || b.Header == nil {
 		return 0
 	}
-	return b.Header.SystemID
+	return b.Header.PartitionID
 }
 
 func (h *Header) Hash(algorithm crypto.Hash) []byte {
@@ -203,7 +204,7 @@ func (h *Header) Hash(algorithm crypto.Hash) []byte {
 		return nil
 	}
 	hasher := algorithm.New()
-	hasher.Write(h.SystemID.Bytes())
+	hasher.Write(h.PartitionID.Bytes())
 	h.ShardID.AddToHasher(hasher)
 	hasher.Write(h.PreviousBlockHash)
 	hasher.Write([]byte(h.ProposerID))
@@ -214,8 +215,8 @@ func (h *Header) IsValid() error {
 	if h == nil {
 		return errBlockHeaderIsNil
 	}
-	if h.SystemID == 0 {
-		return errSystemIDIsNil
+	if h.PartitionID == 0 {
+		return errPartitionIDIsNil
 	}
 	// skip shard identifier for now, it is not used
 	if h.PreviousBlockHash == nil {

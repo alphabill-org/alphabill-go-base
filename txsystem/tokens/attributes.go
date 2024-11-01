@@ -7,7 +7,7 @@ import (
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
-const DefaultSystemID types.SystemID = 2
+const DefaultPartitionID types.PartitionID = 2
 
 const (
 	TransactionTypeDefineFT    uint16 = 1
