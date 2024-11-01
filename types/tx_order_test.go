@@ -10,7 +10,7 @@ import (
 
 var (
 	networkID         NetworkID   = 1
-	systemID          PartitionID = 0x01000001
+	partitionID       PartitionID = 0x01000001
 	transactionType   uint16      = 1
 	unitID                        = make([]byte, 32)
 	timeout           uint64      = 42
@@ -101,7 +101,7 @@ func TestUnmarshalPayload(t *testing.T) {
 	var payload Payload
 	require.NoError(t, Cbor.Unmarshal(hexDecode(t, payloadInHEX), &payload))
 	require.Equal(t, networkID, payload.NetworkID)
-	require.Equal(t, systemID, payload.PartitionID)
+	require.Equal(t, partitionID, payload.PartitionID)
 	require.Equal(t, UnitID(unitID), payload.UnitID)
 	require.Equal(t, transactionType, payload.Type)
 
@@ -127,7 +127,7 @@ func TestUnmarshalAttributes(t *testing.T) {
 	require.Equal(t, targetValue, attr.TargetValue)
 	require.Equal(t, counter, attr.Counter)
 	require.Equal(t, UnitID(unitID), txo.UnitID)
-	require.Equal(t, systemID, txo.PartitionID)
+	require.Equal(t, partitionID, txo.PartitionID)
 	require.Equal(t, timeout, txo.Timeout())
 	require.Equal(t, transactionType, txo.Type)
 	require.Equal(t, feeCreditRecordID, txo.FeeCreditRecordID())
@@ -184,7 +184,7 @@ func createTransactionOrder(t *testing.T) *TransactionOrder {
 	require.NoError(t, err)
 	return &TransactionOrder{Payload: Payload{
 		NetworkID:   1,
-		PartitionID: systemID,
+		PartitionID: partitionID,
 		UnitID:      unitID,
 		Type:        transactionType,
 		Attributes:  attrBytes,

@@ -113,7 +113,7 @@ func TestTxProofFunctions(t *testing.T) {
 
 func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 	sdrs := &PartitionDescriptionRecord{
-		PartitionIdentifier: systemID,
+		PartitionIdentifier: partitionID,
 		T2Timeout:           2500 * time.Millisecond,
 	}
 	inputRecord := &InputRecord{
@@ -130,7 +130,7 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 	require.NoError(t, err)
 	block := &Block{
 		Header: &Header{
-			PartitionID:       systemID,
+			PartitionID:       partitionID,
 			ProposerID:        "proposer123",
 			PreviousBlockHash: []byte{1, 2, 3},
 		},
