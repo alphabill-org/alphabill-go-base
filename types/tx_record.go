@@ -3,6 +3,9 @@ package types
 import (
 	"crypto"
 	"errors"
+	"fmt"
+
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 )
 
 var (
@@ -49,12 +52,13 @@ type (
 )
 
 func (t *TransactionRecord) Hash(algorithm crypto.Hash) []byte {
-	res, err := HashCBOR(t, algorithm)
+	h := abhash.New(algorithm.New())
+	h.Write(t)
+	hash, err := h.Sum()
 	if err != nil {
-		// TODO
-		panic(err)
+		panic(fmt.Errorf("hashing transaction record: %w", err))
 	}
-	return res
+	return hash
 }
 
 func (t *TransactionRecord) Bytes() ([]byte, error) {

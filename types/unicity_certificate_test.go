@@ -7,6 +7,7 @@ import (
 
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/stretchr/testify/require"
 )
 
@@ -814,19 +815,20 @@ func Test_Cbor(t *testing.T) {
 	})
 
 	t.Run("version 1", func(t *testing.T) {
-		t.Skip() // TODO unskip
 		// if this tests fails the number of fields (or type) in the UC has changed,
 		// must do a version change? ucData is CBOR of zero value, ie
 		//uc := &UnicityCertificate{InputRecord: &InputRecord{}, TRHash: []byte{1}, UnicityTreeCertificate: &UnicityTreeCertificate{}, UnicitySeal: &UnicitySeal{}}
-		//ucData, err := uc.MarshalCBOR()
-		ucData := []byte{0xd9, 0x3, 0xef, 0x85, 0x1, 0xd9, 0x3, 0xf0, 0x88, 0x1, 0xf6, 0xf6, 0xf6, 0xf6, 0x0, 0x0, 0x0, 0x41, 0x1, 0x84, 0x0, 0x0, 0xf6, 0xf6, 0xd9, 0x3, 0xe9, 0x86, 0x1, 0x0, 0x0, 0xf6, 0xf6, 0x41, 0x80}
+		//_ucData, _ := uc.MarshalCBOR()
+		//fmt.Printf("ucData: 0x%X\n", _ucData)
+		ucData, err := hex.Decode([]byte("0xD903EF8501D903F08801F6F6F6F60000004101D903F6840000F6F6D903E986010000F6F64180"))
+		require.NoError(t, err)
 
-		uc := &UnicityCertificate{}
-		require.NoError(t, uc.UnmarshalCBOR(ucData))
+		uc1 := &UnicityCertificate{}
+		require.NoError(t, uc1.UnmarshalCBOR(ucData))
 
 		uc2 := UnicityCertificate{}
 		require.NoError(t, Cbor.Unmarshal(ucData, &uc2))
 
-		require.Equal(t, uc, &uc2)
+		require.Equal(t, uc1, &uc2)
 	})
 }

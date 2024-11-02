@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
@@ -117,12 +118,13 @@ func (t *TransactionOrder) UnmarshalAuthProof(v any) error {
 }
 
 func (t *TransactionOrder) Hash(algorithm crypto.Hash) []byte {
-	res, err := HashCBOR(t, algorithm)
+	h := abhash.New(algorithm.New())
+	h.Write(t)
+	hash, err := h.Sum()
 	if err != nil {
-		//TODO
-		panic(err)
+		panic(fmt.Errorf("hashing transaction order: %w", err))
 	}
-	return res
+	return hash
 }
 
 // SetAuthProof converts provided authProof struct to CBOR and sets the AuthProof field.

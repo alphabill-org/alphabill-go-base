@@ -43,6 +43,7 @@ func (h *Hash) WriteRaw(d []byte) {
 
 func (h *Hash) Reset() {
 	h.h.Reset()
+	h.err = nil
 	h.enc = encoderMode.NewEncoder(h.h)
 }
 
