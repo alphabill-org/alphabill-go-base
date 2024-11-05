@@ -99,7 +99,7 @@ func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm
 	}
 	var sdrHash []byte
 	if uc.UnicityTreeCertificate != nil {
-		sdrHash = uc.UnicityTreeCertificate.PartitionDescriptionHash
+		sdrHash = uc.UnicityTreeCertificate.PDRHash
 	}
 	if err := uc.Verify(tb, hashAlgorithm, txRecord.TransactionOrder.PartitionID, sdrHash); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)

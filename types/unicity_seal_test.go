@@ -1,15 +1,16 @@
 package types
 
 import (
-	gocrypto "crypto"
+	"crypto"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	test "github.com/alphabill-org/alphabill-go-base/testutils"
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/alphabill-org/alphabill-go-base/util"
-	"github.com/stretchr/testify/require"
 )
 
 var zeroHash = make([]byte, 32)
@@ -115,7 +116,7 @@ func TestVerify_SignatureIsNil(t *testing.T) {
 	}
 	tb := NewTrustBase(t, verifier)
 	err := seal.Verify(tb)
-	require.EqualError(t, err, "unicity seal validation error: no signatures")
+	require.EqualError(t, err, "invalid unicity seal: no signatures")
 }
 
 func TestVerify_SignatureUnknownSigner(t *testing.T) {
@@ -180,7 +181,7 @@ func TestSignatureMap_Serialize(t *testing.T) {
 
 func TestSignatureMap_AddToHasher_Nil(t *testing.T) {
 	var smap SignatureMap
-	hasher := gocrypto.SHA256.New()
+	hasher := crypto.SHA256.New()
 	smap.AddToHasher(hasher)
 	require.Nil(t, smap)
 }
@@ -193,7 +194,7 @@ func TestSeal_AddToHasher(t *testing.T) {
 		Hash:                 zeroHash,
 		Signatures:           map[string]hex.Bytes{"xxx": {1, 1, 1}, "aaa": {2, 2, 2}},
 	}
-	hasher := gocrypto.SHA256.New()
+	hasher := crypto.SHA256.New()
 	seal.AddToHasher(hasher)
 	hash := hasher.Sum(nil)
 	// serialize manually
