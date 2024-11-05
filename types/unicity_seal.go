@@ -27,7 +27,7 @@ var (
 	ErrInvalidTimestamp          = errors.New("invalid timestamp")
 )
 
-type SignatureMap map[string][]byte
+type SignatureMap map[string]hex.Bytes
 type UnicitySeal struct {
 	_                    struct{}     `cbor:",toarray"`
 	Version              ABVersion    `json:"version"`
@@ -153,11 +153,10 @@ func (x *UnicitySeal) Verify(tb RootTrustBase) error {
 		return ErrRootValidatorInfoMissing
 	}
 	if err := x.IsValid(); err != nil {
-		return fmt.Errorf("unicity seal validation error: %w", err)
+		return fmt.Errorf("invalid unicity seal: %w", err)
 	}
-	err, _ := tb.VerifyQuorumSignatures(x.Bytes(), x.Signatures)
-	if err != nil {
-		return err
+	if err, _ := tb.VerifyQuorumSignatures(x.Bytes(), x.Signatures); err != nil {
+		return fmt.Errorf("verifying signatures: %w", err)
 	}
 	return nil
 }
