@@ -80,7 +80,8 @@ func NewTrustBaseGenesis(nodes []*NodeInfo, unicityTreeRootHash []byte, opts ...
 	if err != nil {
 		return nil, err
 	}
-	return &RootTrustBaseV1{Version: 1,
+	return &RootTrustBaseV1{
+		Version:           1,
 		Epoch:             1,
 		EpochStartRound:   1,
 		RootNodes:         rootNodes,

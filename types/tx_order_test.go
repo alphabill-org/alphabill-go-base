@@ -69,7 +69,8 @@ func TestMarshalPayload(t *testing.T) {
 }
 
 func TestMarshalNilValuesInPayload(t *testing.T) {
-	txo := &TransactionOrder{Version: 1,
+	txo := &TransactionOrder{
+		Version: 1,
 		Payload: Payload{
 			NetworkID:      0,
 			PartitionID:    0,
@@ -182,19 +183,22 @@ func createTransactionOrder(t *testing.T) *TransactionOrder {
 	attr := &testAttributes{NewOwnerPredicate: newOwnerPredicate, TargetValue: targetValue, Counter: counter}
 	attrBytes, err := Cbor.Marshal(attr)
 	require.NoError(t, err)
-	return &TransactionOrder{Version: 1, Payload: Payload{
-		NetworkID:   1,
-		PartitionID: partitionID,
-		UnitID:      unitID,
-		Type:        transactionType,
-		Attributes:  attrBytes,
-		ClientMetadata: &ClientMetadata{
-			Timeout:           timeout,
-			MaxTransactionFee: maxFee,
-			FeeCreditRecordID: feeCreditRecordID,
-			ReferenceNumber:   []byte("REF"),
+	return &TransactionOrder{
+		Version: 1,
+		Payload: Payload{
+			NetworkID:   1,
+			PartitionID: partitionID,
+			UnitID:      unitID,
+			Type:        transactionType,
+			Attributes:  attrBytes,
+			ClientMetadata: &ClientMetadata{
+				Timeout:           timeout,
+				MaxTransactionFee: maxFee,
+				FeeCreditRecordID: feeCreditRecordID,
+				ReferenceNumber:   []byte("REF"),
+			},
 		},
-	}}
+	}
 }
 
 func hexDecode(t *testing.T, s string) []byte {

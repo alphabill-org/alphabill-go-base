@@ -708,7 +708,8 @@ func Test_UnicityCertificate_Hash(t *testing.T) {
 			RoundNumber:     6,
 			SumOfEarnedFees: 20,
 		},
-		UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
+		UnicityTreeCertificate: &UnicityTreeCertificate{
+			Version:   1,
 			Partition: partitionID,
 			PDRHash:   []byte{1, 2, 3, 4},
 			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: []byte{1, 2, 3}}},

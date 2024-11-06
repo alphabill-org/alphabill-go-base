@@ -26,7 +26,8 @@ func TestTransactionRecordFunctions(t *testing.T) {
 	}
 	txoBytes, err := txo.MarshalCBOR()
 	require.NoError(t, err)
-	txr := &TransactionRecord{Version: 1,
+	txr := &TransactionRecord{
+		Version:          1,
 		TransactionOrder: txoBytes,
 		ServerMetadata:   serverMetadata,
 	}
@@ -55,7 +56,8 @@ func TestTransactionRecordFunctions(t *testing.T) {
 func createTransactionRecord(t *testing.T, tx *TransactionOrder, fee uint64) *TransactionRecord {
 	txoBytes, err := tx.MarshalCBOR()
 	require.NoError(t, err)
-	return &TransactionRecord{Version: 1,
+	return &TransactionRecord{
+		Version:          1,
 		TransactionOrder: txoBytes,
 		ServerMetadata: &ServerMetadata{
 			ActualFee:        fee,

@@ -116,7 +116,8 @@ func TestTxProofFunctions(t *testing.T) {
 }
 
 func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
-	sdrs := &PartitionDescriptionRecord{Version: 1,
+	sdrs := &PartitionDescriptionRecord{
+		Version:             1,
 		PartitionIdentifier: partitionID,
 		T2Timeout:           2500 * time.Millisecond,
 	}
@@ -133,7 +134,8 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 	uc, err := (&UnicityCertificate{Version: 1, InputRecord: inputRecord}).MarshalCBOR()
 	require.NoError(t, err)
 	block := &Block{
-		Header: &Header{Version: 1,
+		Header: &Header{
+			Version:           1,
 			PartitionID:       partitionID,
 			ProposerID:        "proposer123",
 			PreviousBlockHash: []byte{1, 2, 3},
