@@ -2,6 +2,7 @@ package types
 
 import (
 	"crypto"
+	"fmt"
 	"testing"
 	"time"
 
@@ -529,5 +530,76 @@ func TestBlock_InputRecord(t *testing.T) {
 		got, err := b.InputRecord()
 		require.NoError(t, err)
 		require.NotNil(t, got)
+	})
+}
+
+func TestBlock_CBOR(t *testing.T) {
+	t.Run("empty block", func(t *testing.T) {
+		b := Block{}
+		blockBytes, err := Cbor.Marshal(b)
+		require.NoError(t, err)
+		require.NotNil(t, blockBytes)
+		b2 := Block{}
+		err = Cbor.Unmarshal(blockBytes, &b2)
+		require.NoError(t, err)
+		require.EqualValues(t, b, b2)
+	})
+	h := Header{
+		Version:           1,
+		PartitionID:       2,
+		ShardID:           ShardID{},
+		ProposerID:        "test",
+		PreviousBlockHash: []byte{2, 2, 2},
+	}
+	t.Run("block with header", func(t *testing.T) {
+		b := Block{Header: &h}
+		blockBytes, err := Cbor.Marshal(b)
+		require.NoError(t, err)
+		require.NotNil(t, blockBytes)
+		b2 := Block{}
+		err = Cbor.Unmarshal(blockBytes, &b2)
+		require.NoError(t, err)
+		require.EqualValues(t, b, b2)
+	})
+	t.Run("block with transactions", func(t *testing.T) {
+		txr := createTransactionRecord(t, createTransactionOrder(t), 1)
+		b := Block{
+			Header:       &h,
+			Transactions: []*TransactionRecord{txr},
+		}
+		blockBytes, err := Cbor.Marshal(b)
+		require.NoError(t, err)
+		require.NotNil(t, blockBytes)
+		b2 := Block{}
+		err = Cbor.Unmarshal(blockBytes, &b2)
+		require.NoError(t, err)
+		require.EqualValues(t, b, b2)
+	})
+	t.Run("block with unicity certificate", func(t *testing.T) {
+		uc := &UnicityCertificate{
+			InputRecord: &InputRecord{
+				Version:      1, // if version is not set here, the test fails (despite the fact it's a pointer)
+				Hash:         []byte{1, 1, 1},
+				PreviousHash: []byte{1, 1, 1},
+			}}
+		ucBytes, err := (uc).MarshalCBOR()
+		require.NoError(t, err)
+		b := Block{
+			Header:             &h,
+			UnicityCertificate: ucBytes,
+		}
+		blockBytes, err := Cbor.Marshal(b)
+		require.NoError(t, err)
+		require.NotNil(t, blockBytes)
+		b2 := Block{}
+		err = Cbor.Unmarshal(blockBytes, &b2)
+		require.NoError(t, err)
+		require.EqualValues(t, b, b2)
+		fmt.Printf("UC: %X\n", ucBytes)
+
+		uc2 := &UnicityCertificate{}
+		err = Cbor.Unmarshal(b2.UnicityCertificate, uc2)
+		require.NoError(t, err)
+		require.EqualValues(t, uc, uc2)
 	})
 }
