@@ -1,73 +1,70 @@
 package types
 
 import (
-	gocrypto "crypto"
+	"crypto"
 	"crypto/sha256"
 	"testing"
 
-	"github.com/alphabill-org/alphabill-go-base/crypto"
+	"github.com/stretchr/testify/require"
+
+	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	test "github.com/alphabill-org/alphabill-go-base/testutils"
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
-	"github.com/stretchr/testify/require"
 )
 
-const identifier PartitionID = 0x01010101
-
 func TestUnicityTreeCertificate_IsValid(t *testing.T) {
+	const partitionID PartitionID = 0x01010101
+	pdrHash := test.RandomBytes(32)
+
 	t.Run("unicity tree certificate is nil", func(t *testing.T) {
 		var uct *UnicityTreeCertificate = nil
-		require.ErrorIs(t, uct.IsValid(2, test.RandomBytes(32)), ErrUnicityTreeCertificateIsNil)
+		require.ErrorIs(t, uct.IsValid(2, pdrHash), ErrUnicityTreeCertificateIsNil)
 	})
-	t.Run("invalid partition identifier", func(t *testing.T) {
+
+	t.Run("invalid system identifier", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{Version: 1,
-			PartitionIdentifier:      identifier,
-			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
-			PartitionDescriptionHash: zeroHash,
+			Partition: partitionID,
+			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: test.RandomBytes(32)}},
+			PDRHash:   pdrHash,
 		}
-		require.EqualError(t, uct.IsValid(0x01010100, test.RandomBytes(32)),
+		require.EqualError(t, uct.IsValid(0x01010100, pdrHash),
 			"invalid partition identifier: expected 01010100, got 01010101")
 	})
+
 	t.Run("invalid system description hash", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{Version: 1,
-			PartitionIdentifier:      identifier,
-			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: test.RandomBytes(32)}},
-			PartitionDescriptionHash: []byte{1, 1, 1, 1},
+			Partition: partitionID,
+			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: test.RandomBytes(32)}},
+			PDRHash:   []byte{1, 1, 1, 1},
 		}
-		require.EqualError(t, uct.IsValid(identifier, []byte{1, 1, 1, 2}),
+		require.EqualError(t, uct.IsValid(partitionID, []byte{1, 1, 1, 2}),
 			"invalid system description hash: expected 01010102, got 01010101")
 	})
+
 	t.Run("ok", func(t *testing.T) {
-		ir := &InputRecord{
-			PreviousHash:    []byte{0, 0, 0, 0},
-			Hash:            []byte{0, 0, 0, 2},
-			BlockHash:       []byte{0, 0, 0, 3},
-			SummaryValue:    []byte{0, 0, 0, 4},
-			RoundNumber:     5,
-			SumOfEarnedFees: 10,
-		}
-		sdrh := []byte{1, 2, 3, 4}
 		leaf := UnicityTreeData{
-			PartitionIdentifier:      identifier,
-			InputRecord:              ir,
-			PartitionDescriptionHash: sdrh,
+			Partition:     partitionID,
+			ShardTreeRoot: []byte{9, 9, 9, 9},
+			PDRHash:       pdrHash,
 		}
-		hasher := gocrypto.SHA256.New()
+		hasher := crypto.SHA256.New()
 		leaf.AddToHasher(hasher)
-		require.Equal(t, identifier.Bytes(), leaf.Key())
-		var uct = &UnicityTreeCertificate{Version: 1,
-			PartitionIdentifier:      identifier,
-			HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: hasher.Sum(nil)}},
-			PartitionDescriptionHash: sdrh,
+		require.Equal(t, partitionID.Bytes(), leaf.Key())
+		uct := &UnicityTreeCertificate{Version: 1,
+			Partition: partitionID,
+			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: hasher.Sum(nil)}},
+			PDRHash:   pdrHash,
 		}
-		require.NoError(t, uct.IsValid(identifier, sdrh))
+		require.NoError(t, uct.IsValid(partitionID, pdrHash))
 	})
 }
 
 func TestUnicityTreeCertificate_Serialize(t *testing.T) {
+	const partitionID PartitionID = 0x01010101
 	ut := &UnicityTreeCertificate{Version: 1,
-		PartitionIdentifier:      identifier,
-		HashSteps:                []*imt.PathItem{{Key: identifier.Bytes(), Hash: []byte{1, 2, 3}}},
-		PartitionDescriptionHash: []byte{1, 2, 3, 4},
+		Partition: partitionID,
+		HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: []byte{1, 2, 3}}},
+		PDRHash:   []byte{1, 2, 3, 4},
 	}
 	expectedBytes := []byte{
 		0, 0, 0, 1, // version
@@ -77,7 +74,7 @@ func TestUnicityTreeCertificate_Serialize(t *testing.T) {
 	}
 	expectedHash := sha256.Sum256(expectedBytes)
 	// test add to hasher too
-	hasher := gocrypto.SHA256.New()
+	hasher := crypto.SHA256.New()
 	ut.AddToHasher(hasher)
 	require.EqualValues(t, expectedHash[:], hasher.Sum(nil))
 }
@@ -85,35 +82,43 @@ func TestUnicityTreeCertificate_Serialize(t *testing.T) {
 func createUnicityCertificate(
 	t *testing.T,
 	rootID string,
-	signer crypto.Signer,
+	signer abcrypto.Signer,
 	ir *InputRecord,
 	trHash []byte,
 	pdr *PartitionDescriptionRecord,
 ) *UnicityCertificate {
 	t.Helper()
-	leaf := &UnicityTreeData{
-		PartitionIdentifier:      pdr.PartitionIdentifier,
-		InputRecord:              ir,
-		PartitionDescriptionHash: pdr.Hash(gocrypto.SHA256),
-	}
-	tree, err := imt.New(gocrypto.SHA256, []imt.LeafData{leaf})
+
+	sTree, err := CreateShardTree(ShardingScheme{}, []ShardTreeInput{{IR: ir, TRHash: trHash}}, crypto.SHA256)
 	require.NoError(t, err)
+	stCert, err := sTree.Certificate(ShardID{})
+	require.NoError(t, err)
+
+	leaf := []*UnicityTreeData{{
+		Partition:     pdr.PartitionIdentifier,
+		ShardTreeRoot: sTree.RootHash(),
+		PDRHash:       pdr.Hash(crypto.SHA256),
+	}}
+	ut, err := NewUnicityTree(crypto.SHA256, leaf)
+	require.NoError(t, err)
+	utCert, err := ut.Certificate(pdr.PartitionIdentifier)
+	require.NoError(t, err)
+
 	unicitySeal := &UnicitySeal{
 		Version:              1,
 		RootChainRoundNumber: 1,
 		Timestamp:            NewTimestamp(),
 		PreviousHash:         make([]byte, 32),
-		Hash:                 tree.GetRootHash(),
+		Hash:                 ut.RootHash(),
 	}
 	require.NoError(t, unicitySeal.Sign(rootID, signer))
+
 	return &UnicityCertificate{
-		Version:     1,
-		InputRecord: ir,
-		TRHash:      trHash,
-		UnicityTreeCertificate: &UnicityTreeCertificate{Version: 1,
-			PartitionIdentifier:      pdr.PartitionIdentifier,
-			PartitionDescriptionHash: leaf.PartitionDescriptionHash,
-		},
-		UnicitySeal: unicitySeal,
+		Version:                1,
+		InputRecord:            ir,
+		TRHash:                 trHash,
+		ShardTreeCertificate:   stCert,
+		UnicityTreeCertificate: utCert,
+		UnicitySeal:            unicitySeal,
 	}
 }

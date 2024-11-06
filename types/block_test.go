@@ -156,7 +156,7 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("valid block", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		sdrs := &PartitionDescriptionRecord{Version: 1,
-			PartitionIdentifier: systemID,
+			PartitionIdentifier: partitionID,
 			T2Timeout:           2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
@@ -173,7 +173,7 @@ func TestBlock_IsValid(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{Version: 1,
-				PartitionID:       systemID,
+				PartitionID:       partitionID,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},
@@ -191,7 +191,7 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("invalid block hash", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		sdrs := &PartitionDescriptionRecord{Version: 1,
-			PartitionIdentifier: systemID,
+			PartitionIdentifier: partitionID,
 			T2Timeout:           2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
@@ -208,7 +208,7 @@ func TestBlock_IsValid(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{Version: 1,
-				PartitionID:       systemID,
+				PartitionID:       partitionID,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
 			},

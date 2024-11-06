@@ -99,7 +99,7 @@ func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm
 	}
 	var sdrHash []byte
 	if uc.UnicityTreeCertificate != nil {
-		sdrHash = uc.UnicityTreeCertificate.PartitionDescriptionHash
+		sdrHash = uc.UnicityTreeCertificate.PDRHash
 	}
 
 	txo, err := txRecord.GetTransactionOrderV1()

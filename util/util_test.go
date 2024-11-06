@@ -1,24 +1,12 @@
 package util
 
 import (
-	"crypto/rand"
 	"math"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
-
-func TestShuffleSliceCopy(t *testing.T) {
-	sample := make([]byte, 100)
-	_, err := rand.Read(sample)
-	if err != nil {
-		t.Error("Error generating random bytes:", err)
-	}
-	result := ShuffleSliceCopy(sample)
-	require.ElementsMatch(t, sample, result)
-	require.NotEqualValues(t, sample, result)
-}
 
 func TestConverter(t *testing.T) {
 	t.Parallel()

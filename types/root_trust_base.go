@@ -14,7 +14,7 @@ import (
 
 type (
 	RootTrustBase interface {
-		VerifyQuorumSignatures(data []byte, signatures map[string][]byte) (error, []error)
+		VerifyQuorumSignatures(data []byte, signatures map[string]hex.Bytes) (error, []error)
 		VerifySignature(data []byte, sig []byte, nodeID string) (uint64, error)
 		GetQuorumThreshold() uint64
 		GetMaxFaultyNodes() uint64
@@ -199,7 +199,7 @@ func (r *RootTrustBaseV1) SigBytes() []byte {
 // VerifyQuorumSignatures verifies that the data is signed by enough root nodes so that quorum is reached,
 // returns error if quorum is not reached, also returns list of any signature verification errors,
 // regardless if quorum is reached or not.
-func (r *RootTrustBaseV1) VerifyQuorumSignatures(data []byte, signatures map[string][]byte) (error, []error) {
+func (r *RootTrustBaseV1) VerifyQuorumSignatures(data []byte, signatures map[string]hex.Bytes) (error, []error) {
 	// verify all signatures, calculate quorum
 	var quorum uint64
 	var verificationErrors []error

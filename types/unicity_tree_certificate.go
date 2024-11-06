@@ -19,79 +19,71 @@ var (
 )
 
 type UnicityTreeCertificate struct {
-	_                        struct{}        `cbor:",toarray"`
-	Version                  ABVersion       `json:"version"`
-	PartitionIdentifier      PartitionID     `json:"partitionIdentifier"`
-	HashSteps                []*imt.PathItem `json:"hashSteps"`
-	PartitionDescriptionHash hex.Bytes       `json:"partitionDescriptionHash"`
+	_         struct{}        `cbor:",toarray"`
+	Version   ABVersion       `json:"version"`
+	Partition PartitionID     `json:"partitionIdentifier"`
+	HashSteps []*imt.PathItem `json:"hashSteps"`
+	PDRHash   hex.Bytes       `json:"partitionDescriptionHash"`
 }
 
 type UnicityTreeData struct {
-	PartitionIdentifier      PartitionID
-	InputRecord              *InputRecord
-	PartitionDescriptionHash []byte
+	Partition     PartitionID
+	ShardTreeRoot []byte // root hash of the partition shard tree
+	PDRHash       []byte // PartitionDescriptionRecord hash
 }
 
 func (t *UnicityTreeData) AddToHasher(hasher hash.Hash) {
-	t.InputRecord.AddToHasher(hasher)
-	hasher.Write(t.PartitionDescriptionHash)
+	hasher.Write(t.ShardTreeRoot)
+	hasher.Write(t.PDRHash)
 }
 
 func (t *UnicityTreeData) Key() []byte {
-	return t.PartitionIdentifier.Bytes()
+	return t.Partition.Bytes()
 }
 
-func (x *UnicityTreeCertificate) IsValid(partitionID PartitionID, systemDescriptionHash []byte) error {
-	if x == nil {
+func (utc *UnicityTreeCertificate) IsValid(partition PartitionID, systemDescriptionHash []byte) error {
+	if utc == nil {
 		return ErrUnicityTreeCertificateIsNil
 	}
-	if x.Version == 0 {
-		return ErrInvalidVersion(x)
+	if utc.Version == 0 {
+		return ErrInvalidVersion(utc)
 	}
-	if x.PartitionIdentifier != partitionID {
-		return fmt.Errorf("invalid partition identifier: expected %s, got %s", partitionID, x.PartitionIdentifier)
+	if utc.Partition != partition {
+		return fmt.Errorf("invalid partition identifier: expected %s, got %s", partition, utc.Partition)
 	}
-	if !bytes.Equal(systemDescriptionHash, x.PartitionDescriptionHash) {
-		return fmt.Errorf("invalid system description hash: expected %X, got %X", systemDescriptionHash, x.PartitionDescriptionHash)
+	if !bytes.Equal(systemDescriptionHash, utc.PDRHash) {
+		return fmt.Errorf("invalid system description hash: expected %X, got %X", systemDescriptionHash, utc.PDRHash)
 	}
 	return nil
 }
 
-func (x *UnicityTreeCertificate) EvalAuthPath(inputRecord *InputRecord, hashAlgorithm crypto.Hash) []byte {
+/*
+EvalAuthPath aka Compute Unicity Tree Certificate.
+
+The shardTreeRoot is output of the CompShardTreeCert function.
+*/
+func (utc *UnicityTreeCertificate) EvalAuthPath(shardTreeRoot []byte, hashAlgorithm crypto.Hash) []byte {
 	// restore the merkle path with the first hash step
-	var hashSteps []*imt.PathItem
-	hashSteps = append(hashSteps, x.FirstHashStep(inputRecord, hashAlgorithm))
-	hashSteps = append(hashSteps, x.HashSteps...)
+	h := hashAlgorithm.New()
+	(&UnicityTreeData{
+		Partition:     utc.Partition,
+		ShardTreeRoot: shardTreeRoot,
+		PDRHash:       utc.PDRHash,
+	}).AddToHasher(h)
+	hashSteps := append([]*imt.PathItem{{Key: utc.Partition.Bytes(), Hash: h.Sum(nil)}}, utc.HashSteps...)
 
 	// calculate root hash from the merkle path
-	return imt.IndexTreeOutput(hashSteps, x.PartitionIdentifier.Bytes(), hashAlgorithm)
+	return imt.IndexTreeOutput(hashSteps, utc.Partition.Bytes(), hashAlgorithm)
 }
 
-func (x *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
-	hasher.Write(util.Uint32ToBytes(x.Version))
-	hasher.Write(x.PartitionIdentifier.Bytes())
-	for _, hashStep := range x.HashSteps {
+func (utc *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
+	hasher.Write(util.Uint32ToBytes(utc.Version))
+	hasher.Write(utc.Partition.Bytes())
+	for _, hashStep := range utc.HashSteps {
 		hasher.Write(hashStep.Key)
 		hasher.Write(hashStep.Hash)
 	}
-	hasher.Write(x.PartitionDescriptionHash)
-}
-
-// FirstHashStep restores the first hash step that was left out as an optimization
-func (x *UnicityTreeCertificate) FirstHashStep(inputRecord *InputRecord, hashAlgorithm crypto.Hash) *imt.PathItem {
-	leaf := UnicityTreeData{
-		PartitionIdentifier:      x.PartitionIdentifier,
-		InputRecord:              inputRecord,
-		PartitionDescriptionHash: x.PartitionDescriptionHash,
-	}
-	hasher := hashAlgorithm.New()
-	leaf.AddToHasher(hasher)
-	leafHash := hasher.Sum(nil)
-
-	return &imt.PathItem{
-		Key:  x.PartitionIdentifier.Bytes(),
-		Hash: leafHash,
-	}
+	hasher.Write(utc.PDRHash)
 }
 
 func (x *UnicityTreeCertificate) GetVersion() ABVersion {
