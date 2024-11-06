@@ -169,7 +169,7 @@ func TestBlock_IsValid(t *testing.T) {
 		}
 		txr1 := createTransactionRecord(t, createTransactionOrder(t), 1)
 		txr2 := createTransactionRecord(t, createTransactionOrder(t), 2)
-		uc, err := (&UnicityCertificate{InputRecord: inputRecord}).MarshalCBOR()
+		uc, err := (&UnicityCertificate{Version: 1, InputRecord: inputRecord}).MarshalCBOR()
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{Version: 1,

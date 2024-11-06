@@ -123,6 +123,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 func TestUnicityCertificate_Verify(t *testing.T) {
 	sid0, sid1 := ShardID{}.Split()
 	pdr := PartitionDescriptionRecord{
+		Version:             1,
 		PartitionIdentifier: 0x0f0f0f0f,
 		TypeIdLen:           8,
 		UnitIdLen:           256,
@@ -209,7 +210,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := validUC(t, sid0, &ir0, trHash0)
 		uc.UnicitySeal.Hash = []byte{1, 2, 3}
 		require.EqualError(t, uc.Verify(tb, crypto.SHA256, pdr.PartitionIdentifier, pdrHash),
-			"unicity seal hash 010203 does not match with the root hash of the unicity tree B136DD1374DB5CD44D979E539D569B301AA3A706C76B0E4681C169687EC68994")
+			"unicity seal hash 010203 does not match with the root hash of the unicity tree 0D408FB684C03524E552B0CBD45855BDC95D67EE63F03DC77DEA3C752FB45832")
 	})
 }
 
