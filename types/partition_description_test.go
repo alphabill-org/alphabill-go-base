@@ -199,3 +199,22 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 		require.NoError(t, vf([]byte{0b1000_0000, 2}))
 	})
 }
+
+func Test_PartitionDescriptionRecord_CBOR(t *testing.T) {
+	pdr := &PartitionDescriptionRecord{
+		Version:             1,
+		PartitionIdentifier: 1,
+		NetworkIdentifier:   5,
+		TypeIdLen:           8,
+		UnitIdLen:           256,
+		T2Timeout:           2500 * time.Millisecond,
+	}
+
+	encoded, err := pdr.MarshalCBOR()
+	require.NoError(t, err)
+
+	decoded := &PartitionDescriptionRecord{}
+	require.NoError(t, decoded.UnmarshalCBOR(encoded))
+
+	require.EqualValues(t, pdr, decoded)
+}

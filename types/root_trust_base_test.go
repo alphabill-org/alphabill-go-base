@@ -156,6 +156,33 @@ func TestSignAndVerify(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func Test_RootTrustBaseV1_CBOR(t *testing.T) {
+	keys := genKeys(3)
+	tb, err := NewTrustBaseGenesis(
+		[]*NodeInfo{
+			NewNodeInfo("1", 1, keys["1"].verifier),
+			NewNodeInfo("2", 1, keys["2"].verifier),
+			NewNodeInfo("3", 1, keys["3"].verifier),
+		},
+		[]byte{1},
+	)
+	require.NoError(t, err)
+
+	data, err := Cbor.Marshal(tb)
+	require.NoError(t, err)
+
+	tb2 := &RootTrustBaseV1{}
+	err = Cbor.Unmarshal(data, tb2)
+	require.NoError(t, err)
+
+	// TODO: restore verifiers?
+	tb2.RootNodes["1"].verifier = keys["1"].verifier
+	tb2.RootNodes["2"].verifier = keys["2"].verifier
+	tb2.RootNodes["3"].verifier = keys["3"].verifier
+
+	require.EqualValues(t, tb, tb2)
+}
+
 type key struct {
 	signer    abcrypto.Signer
 	verifier  abcrypto.Verifier
