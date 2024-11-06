@@ -74,7 +74,7 @@ func (x *InputRecord) IsValid() error {
 	if x == nil {
 		return ErrInputRecordIsNil
 	}
-	if x.Version == 0 {
+	if x.Version != 1 {
 		return ErrInvalidVersion(x)
 	}
 	if x.Hash == nil {

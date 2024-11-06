@@ -280,7 +280,7 @@ func (r *RootTrustBaseV1) MarshalCBOR() ([]byte, error) {
 func (r *RootTrustBaseV1) UnmarshalCBOR(data []byte) error {
 	type alias RootTrustBaseV1
 	if err := Cbor.Unmarshal(data, (*alias)(r)); err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal root trust base: %w", err)
 	}
 	return nil
 }

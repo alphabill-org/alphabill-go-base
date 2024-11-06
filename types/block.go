@@ -219,7 +219,7 @@ func (h *Header) MarshalCBOR() ([]byte, error) {
 func (h *Header) UnmarshalCBOR(data []byte) error {
 	type alias Header
 	if err := Cbor.Unmarshal(data, (*alias)(h)); err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal block header: %w", err)
 	}
 	return nil
 }
@@ -241,7 +241,7 @@ func (h *Header) IsValid() error {
 	if h == nil {
 		return errBlockHeaderIsNil
 	}
-	if h.Version == 0 {
+	if h.Version != 1 {
 		return ErrInvalidVersion(h)
 	}
 	if h.PartitionID == 0 {

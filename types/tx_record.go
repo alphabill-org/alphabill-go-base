@@ -115,7 +115,7 @@ func (t *TransactionRecord) IsValid() error {
 	if t == nil {
 		return ErrTransactionRecordIsNil
 	}
-	if t.Version == 0 {
+	if t.Version != 1 {
 		return ErrInvalidVersion(t)
 	}
 	if t.TransactionOrder == nil {

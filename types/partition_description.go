@@ -33,7 +33,7 @@ func (std *SystemTypeDescriptor) AddToHasher(h hash.Hash) {
 
 type PartitionDescriptionRecord struct {
 	_                   struct{}    `cbor:",toarray"`
-	Version           ABVersion `json:"version,omitempty"`
+	Version             ABVersion   `json:"version,omitempty"`
 	NetworkIdentifier   NetworkID   `json:"networkIdentifier"`
 	PartitionIdentifier PartitionID `json:"partitionIdentifier"`
 	// System Type Descriptor is only used (ie is not nil) when PartitionIdentifier == 0
@@ -57,7 +57,7 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if pdr == nil {
 		return ErrSystemDescriptionIsNil
 	}
-	if pdr.Version == 0 {
+	if pdr.Version != 1 {
 		return ErrInvalidVersion(pdr)
 	}
 	if pdr.NetworkIdentifier == 0 {
@@ -176,7 +176,7 @@ func (pdr *PartitionDescriptionRecord) MarshalCBOR() ([]byte, error) {
 func (pdr *PartitionDescriptionRecord) UnmarshalCBOR(data []byte) error {
 	type alias PartitionDescriptionRecord
 	if err := Cbor.Unmarshal(data, (*alias)(pdr)); err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal partition description record: %w", err)
 	}
 	return nil
 }

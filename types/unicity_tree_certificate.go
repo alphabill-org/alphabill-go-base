@@ -45,7 +45,7 @@ func (utc *UnicityTreeCertificate) IsValid(partition PartitionID, systemDescript
 	if utc == nil {
 		return ErrUnicityTreeCertificateIsNil
 	}
-	if utc.Version == 0 {
+	if utc.Version != 1 {
 		return ErrInvalidVersion(utc)
 	}
 	if utc.Partition != partition {
