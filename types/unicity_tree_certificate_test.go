@@ -23,6 +23,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 
 	t.Run("invalid system identifier", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
+			Version:   1,
 			Partition: partitionID,
 			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: test.RandomBytes(32)}},
 			PDRHash:   pdrHash,
@@ -33,6 +34,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 
 	t.Run("invalid system description hash", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
+			Version:   1,
 			Partition: partitionID,
 			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: test.RandomBytes(32)}},
 			PDRHash:   []byte{1, 1, 1, 1},
@@ -51,6 +53,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		leaf.AddToHasher(hasher)
 		require.Equal(t, partitionID.Bytes(), leaf.Key())
 		uct := &UnicityTreeCertificate{
+			Version:   1,
 			Partition: partitionID,
 			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: hasher.Sum(nil)}},
 			PDRHash:   pdrHash,
@@ -62,11 +65,13 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 func TestUnicityTreeCertificate_Serialize(t *testing.T) {
 	const partitionID PartitionID = 0x01010101
 	ut := &UnicityTreeCertificate{
+		Version:   1,
 		Partition: partitionID,
 		HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: []byte{1, 2, 3}}},
 		PDRHash:   []byte{1, 2, 3, 4},
 	}
 	expectedBytes := []byte{
+		0, 0, 0, 1, // version
 		1, 1, 1, 1, //identifier
 		1, 1, 1, 1, 1, 2, 3, // siblings key+hash
 		1, 2, 3, 4, // system description hash

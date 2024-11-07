@@ -9,6 +9,7 @@ import (
 
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
+	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var (
@@ -44,6 +45,9 @@ func (utc *UnicityTreeCertificate) IsValid(partition PartitionID, systemDescript
 	if utc == nil {
 		return ErrUnicityTreeCertificateIsNil
 	}
+	if utc.Version != 1 {
+		return ErrInvalidVersion(utc)
+	}
 	if utc.Partition != partition {
 		return fmt.Errorf("invalid partition identifier: expected %s, got %s", partition, utc.Partition)
 	}
@@ -73,10 +77,31 @@ func (utc *UnicityTreeCertificate) EvalAuthPath(shardTreeRoot []byte, hashAlgori
 }
 
 func (utc *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
+	hasher.Write(util.Uint32ToBytes(utc.Version))
 	hasher.Write(utc.Partition.Bytes())
 	for _, hashStep := range utc.HashSteps {
 		hasher.Write(hashStep.Key)
 		hasher.Write(hashStep.Hash)
 	}
 	hasher.Write(utc.PDRHash)
+}
+
+func (x *UnicityTreeCertificate) GetVersion() ABVersion {
+	if x != nil && x.Version > 0 {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *UnicityTreeCertificate) MarshalCBOR() ([]byte, error) {
+	type alias UnicityTreeCertificate
+	if x.Version == 0 {
+		x.Version = x.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(UnicityTreeCertificateTag, (*alias)(x))
+}
+
+func (x *UnicityTreeCertificate) UnmarshalCBOR(data []byte) error {
+	type alias UnicityTreeCertificate
+	return Cbor.UnmarshalTaggedValue(UnicityTreeCertificateTag, data, (*alias)(x))
 }

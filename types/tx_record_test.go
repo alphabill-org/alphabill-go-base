@@ -24,8 +24,11 @@ func TestTransactionRecordFunctions(t *testing.T) {
 		SuccessIndicator:  TxStatusSuccessful,
 		ProcessingDetails: processingDetailsCBOR,
 	}
+	txoBytes, err := txo.MarshalCBOR()
+	require.NoError(t, err)
 	txr := &TransactionRecord{
-		TransactionOrder: txo,
+		Version:          1,
+		TransactionOrder: txoBytes,
 		ServerMetadata:   serverMetadata,
 	}
 
@@ -50,9 +53,12 @@ func TestTransactionRecordFunctions(t *testing.T) {
 	})
 }
 
-func createTransactionRecord(tx *TransactionOrder, fee uint64) *TransactionRecord {
+func createTransactionRecord(t *testing.T, tx *TransactionOrder, fee uint64) *TransactionRecord {
+	txoBytes, err := tx.MarshalCBOR()
+	require.NoError(t, err)
 	return &TransactionRecord{
-		TransactionOrder: tx,
+		Version:          1,
+		TransactionOrder: txoBytes,
 		ServerMetadata: &ServerMetadata{
 			ActualFee:        fee,
 			SuccessIndicator: TxStatusSuccessful,

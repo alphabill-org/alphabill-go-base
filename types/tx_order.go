@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
@@ -17,9 +18,10 @@ var (
 type (
 	TransactionOrder struct {
 		_           struct{} `cbor:",toarray"`
-		Payload              // the embedded Payload field is "flattened" in CBOR array
-		StateUnlock []byte   // two CBOR data items: [0|1]+[<state lock/rollback predicate input>]
-		AuthProof   RawCBOR  // transaction type specific signatures/authorisation proofs
+		Version     ABVersion
+		Payload             // the embedded Payload field is "flattened" in CBOR array
+		StateUnlock []byte  // two CBOR data items: [0|1]+[<state lock/rollback predicate input>]
+		AuthProof   RawCBOR // transaction type specific signatures/authorisation proofs
 		FeeProof    []byte
 	}
 
@@ -116,14 +118,13 @@ func (t *TransactionOrder) UnmarshalAuthProof(v any) error {
 }
 
 func (t *TransactionOrder) Hash(algorithm crypto.Hash) []byte {
-	hasher := algorithm.New()
-	b, err := Cbor.Marshal(t)
+	h := abhash.New(algorithm.New())
+	h.Write(t)
+	hash, err := h.Sum()
 	if err != nil {
-		//TODO
-		panic(err)
+		panic(fmt.Errorf("hashing transaction order: %w", err))
 	}
-	hasher.Write(b)
-	return hasher.Sum(nil)
+	return hash
 }
 
 // SetAuthProof converts provided authProof struct to CBOR and sets the AuthProof field.
@@ -215,6 +216,26 @@ func (t *TransactionOrder) ReferenceNumber() []byte {
 		return nil
 	}
 	return t.ClientMetadata.GetReferenceNumber()
+}
+
+func (t *TransactionOrder) GetVersion() ABVersion {
+	if t == nil || t.Version == 0 {
+		return 1
+	}
+	return t.Version
+}
+
+func (t *TransactionOrder) MarshalCBOR() ([]byte, error) {
+	type alias TransactionOrder
+	if t.Version == 0 {
+		t.Version = t.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(TransactionOrderTag, (*alias)(t))
+}
+
+func (t *TransactionOrder) UnmarshalCBOR(data []byte) error {
+	type alias TransactionOrder
+	return Cbor.UnmarshalTaggedValue(TransactionOrderTag, data, (*alias)(t))
 }
 
 func (c *ClientMetadata) GetTimeout() uint64 {

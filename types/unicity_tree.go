@@ -56,6 +56,7 @@ func (u *UnicityTree) Certificate(partition PartitionID) (*UnicityTreeCertificat
 		return nil, fmt.Errorf("creating index tree chain: %w", err)
 	}
 	return &UnicityTreeCertificate{
+		Version:   1,
 		Partition: partition,
 		PDRHash:   pdrh,
 		HashSteps: path[1:], // drop redundant first hash step; path is guaranteed to have size > 0

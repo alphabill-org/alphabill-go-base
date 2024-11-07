@@ -10,6 +10,7 @@ import (
 
 func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
 	pdr := PartitionDescriptionRecord{
+		Version:             1,
 		PartitionIdentifier: 1,
 		TypeIdLen:           8,
 		UnitIdLen:           256,
@@ -34,6 +35,7 @@ func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
 func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 	validPDR := func() *PartitionDescriptionRecord {
 		return &PartitionDescriptionRecord{
+			Version:             1,
 			NetworkIdentifier:   5,
 			PartitionIdentifier: 1,
 			TypeIdLen:           8,
@@ -97,6 +99,7 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 	t.Run("empty scheme", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
+			Version:             1,
 			PartitionIdentifier: 1,
 			TypeIdLen:           8,
 			UnitIdLen:           256,
@@ -113,6 +116,7 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 
 	t.Run("non empty scheme", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
+			Version:             1,
 			PartitionIdentifier: 1,
 			TypeIdLen:           8,
 			UnitIdLen:           256,
@@ -138,6 +142,7 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 
 	t.Run("shard id longer than unit id", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
+			Version:             1,
 			PartitionIdentifier: 1,
 			TypeIdLen:           8,
 			UnitIdLen:           8,
@@ -155,6 +160,7 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 	t.Run("unit ID length", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
+			Version:             1,
 			PartitionIdentifier: 1,
 			TypeIdLen:           8,
 			UnitIdLen:           8,
@@ -173,6 +179,7 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 
 	t.Run("matching shard ID", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
+			Version:             1,
 			PartitionIdentifier: 1,
 			TypeIdLen:           8,
 			UnitIdLen:           8,
@@ -191,4 +198,23 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 		// unit ID in the shard "1"
 		require.NoError(t, vf([]byte{0b1000_0000, 2}))
 	})
+}
+
+func Test_PartitionDescriptionRecord_CBOR(t *testing.T) {
+	pdr := &PartitionDescriptionRecord{
+		Version:             1,
+		PartitionIdentifier: 1,
+		NetworkIdentifier:   5,
+		TypeIdLen:           8,
+		UnitIdLen:           256,
+		T2Timeout:           2500 * time.Millisecond,
+	}
+
+	encoded, err := pdr.MarshalCBOR()
+	require.NoError(t, err)
+
+	decoded := &PartitionDescriptionRecord{}
+	require.NoError(t, decoded.UnmarshalCBOR(encoded))
+
+	require.EqualValues(t, pdr, decoded)
 }

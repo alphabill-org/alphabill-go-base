@@ -3,9 +3,15 @@ package types
 import (
 	"crypto"
 	"errors"
+	"fmt"
+
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 )
 
-var ErrOutOfGas = errors.New("out of gas")
+var (
+	ErrTxRecordProofIsNil = errors.New("transaction record proof is nil")
+	ErrOutOfGas           = errors.New("out of gas")
+)
 
 const (
 	// TxStatusFailed is the status code of a transaction if execution failed.
@@ -17,13 +23,15 @@ const (
 )
 
 type (
-	TxStatus uint64
+	TransactionOrderCBOR = TaggedCBOR
+	TxStatus             uint64
 
 	// TransactionRecord is a transaction order with "server-side" metadata added to it. TransactionRecord is a structure
 	// that is added to the block.
 	TransactionRecord struct {
 		_                struct{} `cbor:",toarray"`
-		TransactionOrder *TransactionOrder
+		Version          ABVersion
+		TransactionOrder TransactionOrderCBOR
 		ServerMetadata   *ServerMetadata
 	}
 
@@ -44,14 +52,13 @@ type (
 )
 
 func (t *TransactionRecord) Hash(algorithm crypto.Hash) []byte {
-	bytes, err := t.Bytes()
+	h := abhash.New(algorithm.New())
+	h.Write(t)
+	hash, err := h.Sum()
 	if err != nil {
-		// TODO
-		panic(err)
+		panic(fmt.Errorf("hashing transaction record: %w", err))
 	}
-	hasher := algorithm.New()
-	hasher.Write(bytes)
-	return hasher.Sum(nil)
+	return hash
 }
 
 func (t *TransactionRecord) Bytes() ([]byte, error) {
@@ -83,23 +90,18 @@ func (t *TransactionRecord) IsSuccessful() bool {
 	return t.TxStatus() == TxStatusSuccessful
 }
 
-func (t *TransactionRecord) NetworkID() NetworkID {
-	return t.GetTransactionOrder().GetNetworkID()
-}
-
-func (t *TransactionRecord) PartitionID() PartitionID {
-	return t.GetTransactionOrder().GetPartitionID()
-}
-
-func (t *TransactionRecord) UnitID() UnitID {
-	return t.GetTransactionOrder().GetUnitID()
-}
-
-func (t *TransactionRecord) GetTransactionOrder() *TransactionOrder {
+func (t *TransactionRecord) GetTransactionOrderV1() (*TransactionOrder, error) {
 	if t == nil {
-		return nil
+		return nil, ErrTransactionRecordIsNil
 	}
-	return t.TransactionOrder
+	if t.TransactionOrder == nil {
+		return nil, ErrTransactionOrderIsNil
+	}
+	txoV1 := &TransactionOrder{}
+	if err := txoV1.UnmarshalCBOR(t.TransactionOrder); err != nil {
+		return nil, err
+	}
+	return txoV1, nil
 }
 
 func (t *TransactionRecord) TargetUnits() []UnitID {
@@ -113,6 +115,9 @@ func (t *TransactionRecord) IsValid() error {
 	if t == nil {
 		return ErrTransactionRecordIsNil
 	}
+	if t.Version != 1 {
+		return ErrInvalidVersion(t)
+	}
 	if t.TransactionOrder == nil {
 		return ErrTransactionOrderIsNil
 	}
@@ -120,6 +125,26 @@ func (t *TransactionRecord) IsValid() error {
 		return ErrServerMetadataIsNil
 	}
 	return nil
+}
+
+func (t *TransactionRecord) GetVersion() ABVersion {
+	if t == nil || t.Version == 0 {
+		return 1
+	}
+	return t.Version
+}
+
+func (t *TransactionRecord) MarshalCBOR() ([]byte, error) {
+	type alias TransactionRecord
+	if t.Version == 0 {
+		t.Version = t.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(TransactionRecordTag, (*alias)(t))
+}
+
+func (t *TransactionRecord) UnmarshalCBOR(data []byte) error {
+	type alias TransactionRecord
+	return Cbor.UnmarshalTaggedValue(TransactionRecordTag, data, (*alias)(t))
 }
 
 func (sm *ServerMetadata) GetActualFee() uint64 {
@@ -184,29 +209,11 @@ func (t *TxRecordProof) IsValid() error {
 	return nil
 }
 
-func (t *TxRecordProof) NetworkID() NetworkID {
+func (t *TxRecordProof) GetTransactionOrderV1() (*TransactionOrder, error) {
 	if t == nil {
-		return 0
+		return nil, ErrTxRecordProofIsNil
 	}
-	return t.TxRecord.NetworkID()
-}
-
-func (t *TxRecordProof) PartitionID() PartitionID {
-	if t == nil {
-		return 0
-	}
-	return t.TxRecord.PartitionID()
-}
-
-func (t *TxRecordProof) UnitID() UnitID {
-	return t.TransactionOrder().GetUnitID()
-}
-
-func (t *TxRecordProof) TransactionOrder() *TransactionOrder {
-	if t == nil {
-		return nil
-	}
-	return t.TxRecord.GetTransactionOrder()
+	return t.TxRecord.GetTransactionOrderV1()
 }
 
 func (t *TxRecordProof) ActualFee() uint64 {
@@ -221,20 +228,4 @@ func (t *TxRecordProof) TxStatus() TxStatus {
 		return 0
 	}
 	return t.TxRecord.TxStatus()
-}
-
-func (t *TxRecordProof) Timeout() uint64 {
-	return t.TransactionOrder().Timeout()
-}
-
-func (t *TxRecordProof) FeeCreditRecordID() []byte {
-	return t.TransactionOrder().FeeCreditRecordID()
-}
-
-func (t *TxRecordProof) MaxFee() uint64 {
-	return t.TransactionOrder().MaxFee()
-}
-
-func (t *TxRecordProof) ReferenceNumber() []byte {
-	return t.TransactionOrder().ReferenceNumber()
 }

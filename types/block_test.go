@@ -50,11 +50,11 @@ func TestBlock_GetProposerID(t *testing.T) {
 		require.Equal(t, "", b.GetProposerID())
 	})
 	t.Run("Proposer not set", func(t *testing.T) {
-		b := &Block{Header: &Header{}}
+		b := &Block{Header: &Header{Version: 1}}
 		require.Equal(t, "", b.GetProposerID())
 	})
 	t.Run("Proposer equal", func(t *testing.T) {
-		b := &Block{Header: &Header{ProposerID: "test"}}
+		b := &Block{Header: &Header{Version: 1, ProposerID: "test"}}
 		require.Equal(t, "test", b.GetProposerID())
 	})
 }
@@ -98,11 +98,12 @@ func TestBlock_PartitionID(t *testing.T) {
 		require.EqualValues(t, 0, b.PartitionID())
 	})
 	t.Run("PartitionIdentifier not set", func(t *testing.T) {
-		b := &Block{Header: &Header{}}
+		b := &Block{Header: &Header{Version: 1}}
 		require.EqualValues(t, 0, b.PartitionID())
 	})
 	t.Run("PartitionIdentifier equal", func(t *testing.T) {
 		b := &Block{Header: &Header{
+			Version:     1,
 			PartitionID: 5,
 		}}
 		require.Equal(t, PartitionID(5), b.PartitionID())
@@ -121,6 +122,7 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("Transactions is nil", func(t *testing.T) {
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -131,6 +133,7 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("UC is nil", func(t *testing.T) {
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -144,6 +147,7 @@ func TestBlock_IsValid(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -156,6 +160,7 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("valid block", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		sdrs := &PartitionDescriptionRecord{
+			Version:             1,
 			PartitionIdentifier: partitionID,
 			T2Timeout:           2500 * time.Millisecond,
 		}
@@ -167,12 +172,13 @@ func TestBlock_IsValid(t *testing.T) {
 			RoundNumber:     1,
 			SumOfEarnedFees: 2,
 		}
-		txr1 := createTransactionRecord(createTransactionOrder(t), 1)
-		txr2 := createTransactionRecord(createTransactionOrder(t), 2)
-		uc, err := (&UnicityCertificate{InputRecord: inputRecord}).MarshalCBOR()
+		txr1 := createTransactionRecord(t, createTransactionOrder(t), 1)
+		txr2 := createTransactionRecord(t, createTransactionOrder(t), 2)
+		uc, err := (&UnicityCertificate{Version: 1, InputRecord: inputRecord}).MarshalCBOR()
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       partitionID,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -191,6 +197,7 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("invalid block hash", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		sdrs := &PartitionDescriptionRecord{
+			Version:             1,
 			PartitionIdentifier: partitionID,
 			T2Timeout:           2500 * time.Millisecond,
 		}
@@ -202,12 +209,13 @@ func TestBlock_IsValid(t *testing.T) {
 			RoundNumber:     1,
 			SumOfEarnedFees: 2,
 		}
-		txr1 := createTransactionRecord(createTransactionOrder(t), 1)
-		txr2 := createTransactionRecord(createTransactionOrder(t), 2)
+		txr1 := createTransactionRecord(t, createTransactionOrder(t), 1)
+		txr2 := createTransactionRecord(t, createTransactionOrder(t), 2)
 		uc, err := (&UnicityCertificate{InputRecord: inputRecord}).MarshalCBOR()
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       partitionID,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -238,6 +246,7 @@ func TestBlock_Hash(t *testing.T) {
 		uc := &UnicityCertificate{}
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -254,6 +263,7 @@ func TestBlock_Hash(t *testing.T) {
 		}}
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -271,6 +281,7 @@ func TestBlock_Hash(t *testing.T) {
 		}}
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -289,6 +300,7 @@ func TestBlock_Hash(t *testing.T) {
 		}}
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -318,6 +330,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -336,6 +349,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -355,6 +369,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -375,6 +390,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		require.NoError(t, err)
 		b := &Block{
 			Header: &Header{
+				Version:           1,
 				PartitionID:       1,
 				ProposerID:        "test",
 				PreviousBlockHash: []byte{1, 2, 3},
@@ -396,7 +412,7 @@ func TestBlock_Size(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 0, size)
 
-	txr := createTransactionRecord(createTransactionOrder(t), 1)
+	txr := createTransactionRecord(t, createTransactionOrder(t), 1)
 	buf, err := txr.Bytes()
 	require.NoError(t, err)
 	txSize := len(buf)
@@ -424,17 +440,19 @@ func TestHeader_IsValid(t *testing.T) {
 		require.EqualError(t, h.IsValid(), "block header is nil")
 	})
 	t.Run("partition identifier is nil", func(t *testing.T) {
-		h := &Header{}
+		h := &Header{Version: 1}
 		require.EqualError(t, h.IsValid(), "partition identifier is unassigned")
 	})
 	t.Run("previous block hash is nil", func(t *testing.T) {
 		h := &Header{
+			Version:     1,
 			PartitionID: 2,
 		}
 		require.EqualError(t, h.IsValid(), "previous block hash is nil")
 	})
 	t.Run("proposer is missing", func(t *testing.T) {
 		h := &Header{
+			Version:           1,
 			PartitionID:       2,
 			PreviousBlockHash: []byte{1, 2, 3},
 		}
@@ -442,6 +460,7 @@ func TestHeader_IsValid(t *testing.T) {
 	})
 	t.Run("valid", func(t *testing.T) {
 		h := &Header{
+			Version:           1,
 			PartitionID:       2,
 			PreviousBlockHash: []byte{1, 2, 3},
 			ProposerID:        "test",
@@ -452,6 +471,7 @@ func TestHeader_IsValid(t *testing.T) {
 
 func TestHeader_Hash(t *testing.T) {
 	hdr := Header{
+		Version:           1,
 		PartitionID:       2,
 		ShardID:           ShardID{bits: []byte{0b1110_0000}, length: 3},
 		ProposerID:        "test",
@@ -509,5 +529,75 @@ func TestBlock_InputRecord(t *testing.T) {
 		got, err := b.InputRecord()
 		require.NoError(t, err)
 		require.NotNil(t, got)
+	})
+}
+
+func TestBlock_CBOR(t *testing.T) {
+	t.Run("empty block", func(t *testing.T) {
+		b := Block{}
+		blockBytes, err := Cbor.Marshal(b)
+		require.NoError(t, err)
+		require.NotNil(t, blockBytes)
+		b2 := Block{}
+		err = Cbor.Unmarshal(blockBytes, &b2)
+		require.NoError(t, err)
+		require.EqualValues(t, b, b2)
+	})
+	h := Header{
+		Version:           1,
+		PartitionID:       2,
+		ShardID:           ShardID{},
+		ProposerID:        "test",
+		PreviousBlockHash: []byte{2, 2, 2},
+	}
+	t.Run("block with header", func(t *testing.T) {
+		b := Block{Header: &h}
+		blockBytes, err := Cbor.Marshal(b)
+		require.NoError(t, err)
+		require.NotNil(t, blockBytes)
+		b2 := Block{}
+		err = Cbor.Unmarshal(blockBytes, &b2)
+		require.NoError(t, err)
+		require.EqualValues(t, b, b2)
+	})
+	t.Run("block with transactions", func(t *testing.T) {
+		txr := createTransactionRecord(t, createTransactionOrder(t), 1)
+		b := Block{
+			Header:       &h,
+			Transactions: []*TransactionRecord{txr},
+		}
+		blockBytes, err := Cbor.Marshal(b)
+		require.NoError(t, err)
+		require.NotNil(t, blockBytes)
+		b2 := Block{}
+		err = Cbor.Unmarshal(blockBytes, &b2)
+		require.NoError(t, err)
+		require.EqualValues(t, b, b2)
+	})
+	t.Run("block with unicity certificate", func(t *testing.T) {
+		uc := &UnicityCertificate{
+			InputRecord: &InputRecord{
+				Version:      1, // if version is not set here, the test fails (despite the fact it's a pointer)
+				Hash:         []byte{1, 1, 1},
+				PreviousHash: []byte{1, 1, 1},
+			}}
+		ucBytes, err := (uc).MarshalCBOR()
+		require.NoError(t, err)
+		b := Block{
+			Header:             &h,
+			UnicityCertificate: ucBytes,
+		}
+		blockBytes, err := Cbor.Marshal(b)
+		require.NoError(t, err)
+		require.NotNil(t, blockBytes)
+		b2 := Block{}
+		err = Cbor.Unmarshal(blockBytes, &b2)
+		require.NoError(t, err)
+		require.EqualValues(t, b, b2)
+
+		uc2 := &UnicityCertificate{}
+		err = Cbor.Unmarshal(b2.UnicityCertificate, uc2)
+		require.NoError(t, err)
+		require.EqualValues(t, uc, uc2)
 	})
 }

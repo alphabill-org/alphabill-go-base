@@ -8,6 +8,7 @@ import (
 
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
+	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var (
@@ -29,6 +30,7 @@ type (
 
 	Header struct {
 		_                 struct{} `cbor:",toarray"`
+		Version           ABVersion
 		PartitionID       PartitionID
 		ShardID           ShardID
 		ProposerID        string
@@ -199,11 +201,35 @@ func (b *Block) PartitionID() PartitionID {
 	return b.Header.PartitionID
 }
 
+func (h *Header) GetVersion() ABVersion {
+	if h != nil && h.Version > 0 {
+		return h.Version
+	}
+	return 1
+}
+
+func (h *Header) MarshalCBOR() ([]byte, error) {
+	type alias Header
+	if h.Version == 0 {
+		h.Version = h.GetVersion()
+	}
+	return Cbor.MarshalTaggedValue(BlockTag, (*alias)(h))
+}
+
+func (h *Header) UnmarshalCBOR(data []byte) error {
+	type alias Header
+	if err := Cbor.Unmarshal(data, (*alias)(h)); err != nil {
+		return fmt.Errorf("failed to unmarshal block header: %w", err)
+	}
+	return nil
+}
+
 func (h *Header) Hash(algorithm crypto.Hash) []byte {
 	if h == nil {
 		return nil
 	}
 	hasher := algorithm.New()
+	hasher.Write(util.Uint32ToBytes(h.Version))
 	hasher.Write(h.PartitionID.Bytes())
 	h.ShardID.AddToHasher(hasher)
 	hasher.Write(h.PreviousBlockHash)
@@ -214,6 +240,9 @@ func (h *Header) Hash(algorithm crypto.Hash) []byte {
 func (h *Header) IsValid() error {
 	if h == nil {
 		return errBlockHeaderIsNil
+	}
+	if h.Version != 1 {
+		return ErrInvalidVersion(h)
 	}
 	if h.PartitionID == 0 {
 		return errPartitionIDIsNil

@@ -20,7 +20,7 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       args
-		verifyFunc func(t *testing.T, tb *RootTrustBaseV0)
+		verifyFunc func(t *testing.T, tb *RootTrustBaseV1)
 		wantErrStr string
 	}{
 		{
@@ -46,7 +46,7 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 				},
 				unicityTreeRootHash: []byte{1},
 			},
-			verifyFunc: func(t *testing.T, tb *RootTrustBaseV0) {
+			verifyFunc: func(t *testing.T, tb *RootTrustBaseV1) {
 				// verify values
 				require.EqualValues(t, 1, tb.Epoch)
 				require.EqualValues(t, 1, tb.EpochStartRound)
@@ -90,7 +90,7 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 				unicityTreeRootHash: []byte{1},
 				opts:                []Option{WithQuorumThreshold(2)},
 			},
-			verifyFunc: func(t *testing.T, tb *RootTrustBaseV0) {
+			verifyFunc: func(t *testing.T, tb *RootTrustBaseV1) {
 				require.EqualValues(t, 2, tb.GetQuorumThreshold())
 				require.EqualValues(t, 1, tb.GetMaxFaultyNodes())
 			},
@@ -154,6 +154,33 @@ func TestSignAndVerify(t *testing.T) {
 	require.NotEmpty(t, sig)
 	err = keys["1"].verifier.VerifyBytes(sig, tb.SigBytes())
 	require.NoError(t, err)
+}
+
+func Test_RootTrustBaseV1_CBOR(t *testing.T) {
+	keys := genKeys(3)
+	tb, err := NewTrustBaseGenesis(
+		[]*NodeInfo{
+			NewNodeInfo("1", 1, keys["1"].verifier),
+			NewNodeInfo("2", 1, keys["2"].verifier),
+			NewNodeInfo("3", 1, keys["3"].verifier),
+		},
+		[]byte{1},
+	)
+	require.NoError(t, err)
+
+	data, err := Cbor.Marshal(tb)
+	require.NoError(t, err)
+
+	tb2 := &RootTrustBaseV1{}
+	err = Cbor.Unmarshal(data, tb2)
+	require.NoError(t, err)
+
+	// TODO: restore verifiers?
+	tb2.RootNodes["1"].verifier = keys["1"].verifier
+	tb2.RootNodes["2"].verifier = keys["2"].verifier
+	tb2.RootNodes["3"].verifier = keys["3"].verifier
+
+	require.EqualValues(t, tb, tb2)
 }
 
 type key struct {

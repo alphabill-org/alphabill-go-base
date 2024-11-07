@@ -178,7 +178,7 @@ func (x *UnicitySeal) MarshalCBOR() ([]byte, error) {
 func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 	tag, arr, err := Cbor.UnmarshalTagged(b)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal unicity seal: %w", err)
 	}
 	if tag != UnicitySealTag {
 		return fmt.Errorf("invalid tag %d, expected %d", tag, UnicitySealTag)

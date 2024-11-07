@@ -101,7 +101,12 @@ func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm
 	if uc.UnicityTreeCertificate != nil {
 		sdrHash = uc.UnicityTreeCertificate.PDRHash
 	}
-	if err := uc.Verify(tb, hashAlgorithm, txRecord.TransactionOrder.PartitionID, sdrHash); err != nil {
+
+	txo, err := txRecord.GetTransactionOrderV1()
+	if err != nil {
+		return fmt.Errorf("failed to get transaction order: %w", err)
+	}
+	if err := uc.Verify(tb, hashAlgorithm, txo.PartitionID, sdrHash); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 	// h ← plain_tree_output(C, H(P))
@@ -124,6 +129,9 @@ func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm
 func (p *TxProof) IsValid() error {
 	if p == nil {
 		return errors.New("transaction proof is nil")
+	}
+	if p.Version != 1 {
+		return ErrInvalidVersion(p)
 	}
 	return nil
 }

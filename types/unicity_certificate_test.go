@@ -123,6 +123,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 func TestUnicityCertificate_Verify(t *testing.T) {
 	sid0, sid1 := ShardID{}.Split()
 	pdr := PartitionDescriptionRecord{
+		Version:             1,
 		PartitionIdentifier: 0x0f0f0f0f,
 		TypeIdLen:           8,
 		UnitIdLen:           256,
@@ -209,7 +210,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := validUC(t, sid0, &ir0, trHash0)
 		uc.UnicitySeal.Hash = []byte{1, 2, 3}
 		require.EqualError(t, uc.Verify(tb, crypto.SHA256, pdr.PartitionIdentifier, pdrHash),
-			"unicity seal hash 010203 does not match with the root hash of the unicity tree B136DD1374DB5CD44D979E539D569B301AA3A706C76B0E4681C169687EC68994")
+			"unicity seal hash 010203 does not match with the root hash of the unicity tree 0D408FB684C03524E552B0CBD45855BDC95D67EE63F03DC77DEA3C752FB45832")
 	})
 }
 
@@ -708,6 +709,7 @@ func Test_UnicityCertificate_Hash(t *testing.T) {
 			SumOfEarnedFees: 20,
 		},
 		UnicityTreeCertificate: &UnicityTreeCertificate{
+			Version:   1,
 			Partition: partitionID,
 			PDRHash:   []byte{1, 2, 3, 4},
 			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: []byte{1, 2, 3}}},
@@ -732,6 +734,7 @@ func Test_UnicityCertificate_Hash(t *testing.T) {
 		0, 0, 0, 0, 0, 0, 0, 6, // IR: round
 		0, 0, 0, 0, 0, 0, 0, 0, // IR: epoch
 		0, 0, 0, 0, 0, 0, 0, 20, // IR: sum of fees
+		0, 0, 0, 1, // UT: version
 		1, 1, 1, 1, // UT: identifier
 		1, 1, 1, 1, 1, 2, 3, // UT: siblings key+hash
 		1, 2, 3, 4, // UT: system description hash
@@ -847,15 +850,17 @@ func Test_UnicityCertificate_Cbor(t *testing.T) {
 		// if this tests fails the number of fields (or type) in the UC has changed,
 		// must do a version change? ucData is CBOR of zero value, ie
 		//uc := &UnicityCertificate{InputRecord: &InputRecord{}, TRHash: []byte{1}, UnicityTreeCertificate: &UnicityTreeCertificate{}, UnicitySeal: &UnicitySeal{}}
-		//ucData, err := uc.MarshalCBOR()
-		ucData := []byte{0xd9, 0x3, 0xef, 0x86, 0x1, 0xd9, 0x3, 0xf0, 0x88, 0x1, 0xf6, 0xf6, 0xf6, 0xf6, 0x0, 0x0, 0x0, 0x41, 0x1, 0x82, 0x41, 0x80, 0xf6, 0x84, 0x0, 0x0, 0xf6, 0xf6, 0xd9, 0x3, 0xe9, 0x86, 0x1, 0x0, 0x0, 0xf6, 0xf6, 0x41, 0x80}
+		//_ucData, _ := uc.MarshalCBOR()
+		//fmt.Printf("ucData: 0x%X\n", _ucData)
+		ucData, err := hex.Decode([]byte("0xD903EF8601D903F08801F6F6F6F60000004101824180F6D903F6840000F6F6D903E986010000F6F64180"))
+		require.NoError(t, err)
 
-		uc := &UnicityCertificate{}
-		require.NoError(t, uc.UnmarshalCBOR(ucData))
+		uc1 := &UnicityCertificate{}
+		require.NoError(t, uc1.UnmarshalCBOR(ucData))
 
 		uc2 := UnicityCertificate{}
 		require.NoError(t, Cbor.Unmarshal(ucData, &uc2))
 
-		require.Equal(t, uc, &uc2)
+		require.Equal(t, uc1, &uc2)
 	})
 }
