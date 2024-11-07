@@ -33,7 +33,7 @@ func (std *SystemTypeDescriptor) AddToHasher(h hash.Hash) {
 
 type PartitionDescriptionRecord struct {
 	_                   struct{}    `cbor:",toarray"`
-	Version             ABVersion   `json:"version,omitempty"`
+	Version             ABVersion   `json:"version"`
 	NetworkIdentifier   NetworkID   `json:"networkIdentifier"`
 	PartitionIdentifier PartitionID `json:"partitionIdentifier"`
 	// System Type Descriptor is only used (ie is not nil) when PartitionIdentifier == 0

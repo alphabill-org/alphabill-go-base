@@ -2,7 +2,6 @@ package types
 
 import (
 	"crypto"
-	"fmt"
 	"testing"
 	"time"
 
@@ -595,7 +594,6 @@ func TestBlock_CBOR(t *testing.T) {
 		err = Cbor.Unmarshal(blockBytes, &b2)
 		require.NoError(t, err)
 		require.EqualValues(t, b, b2)
-		fmt.Printf("UC: %X\n", ucBytes)
 
 		uc2 := &UnicityCertificate{}
 		err = Cbor.Unmarshal(b2.UnicityCertificate, uc2)
