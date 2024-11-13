@@ -169,6 +169,7 @@ func TestBlock_IsValid(t *testing.T) {
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			SummaryValue:    []byte{0, 0, 4},
+			Timestamp:       NewTimestamp(),
 			RoundNumber:     1,
 			SumOfEarnedFees: 2,
 		}
@@ -206,6 +207,7 @@ func TestBlock_IsValid(t *testing.T) {
 			PreviousHash:    []byte{0, 0, 1},
 			Hash:            []byte{0, 0, 2},
 			SummaryValue:    []byte{0, 0, 4},
+			Timestamp:       NewTimestamp(),
 			RoundNumber:     1,
 			SumOfEarnedFees: 2,
 		}

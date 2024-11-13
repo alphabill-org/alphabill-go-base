@@ -128,6 +128,7 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 		SummaryValue:    []byte{0, 0, 4},
 		RoundNumber:     1,
 		SumOfEarnedFees: 2,
+		Timestamp:       NewTimestamp(),
 	}
 	txr1 := createTransactionRecord(t, createTransactionOrder(t), 1)
 	txr2 := createTransactionRecord(t, createTransactionOrder(t), 1)
