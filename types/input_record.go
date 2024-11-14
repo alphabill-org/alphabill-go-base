@@ -27,6 +27,7 @@ type InputRecord struct {
 	Hash            hex.Bytes `json:"hash"`            // state hash to be certified
 	BlockHash       hex.Bytes `json:"blockHash"`       // hash of the block
 	SummaryValue    hex.Bytes `json:"summaryValue"`    // summary value to certified
+	Timestamp       uint64    `json:"timestamp"`       // reference time for transaction validation
 	RoundNumber     uint64    `json:"roundNumber"`     // shard's round number
 	Epoch           uint64    `json:"epoch"`           // shard’s epoch number
 	SumOfEarnedFees uint64    `json:"sumOfEarnedFees"` // sum of the actual fees over all transaction records in the block
@@ -54,6 +55,9 @@ func AssertEqualIR(a, b *InputRecord) error {
 	}
 	if a.SumOfEarnedFees != b.SumOfEarnedFees {
 		return fmt.Errorf("sum of fees is different: %v vs %v", a.SumOfEarnedFees, b.SumOfEarnedFees)
+	}
+	if a.Timestamp != b.Timestamp {
+		return fmt.Errorf("timestamp is different: %d vs %d", a.Timestamp, b.Timestamp)
 	}
 	if !bytes.Equal(a.SummaryValue, b.SummaryValue) {
 		return fmt.Errorf("summary value is different: %v vs %v", a.SummaryValue, b.SummaryValue)
@@ -89,15 +93,15 @@ func (x *InputRecord) IsValid() error {
 	if x.SummaryValue == nil {
 		return ErrSummaryValueIsNil
 	}
-	if isZeroHash(x.BlockHash) {
-		if !bytes.Equal(x.PreviousHash, x.Hash) {
-			return fmt.Errorf("block hash is 0H, but state hash changes")
-		}
+	if x.Timestamp == 0 {
+		return errors.New("timestamp is unassigned")
 	}
-	if bytes.Equal(x.PreviousHash, x.Hash) {
-		if !isZeroHash(x.BlockHash) {
-			return fmt.Errorf("state hash does not change, but block hash is 0H")
+	sameSH := bytes.Equal(x.PreviousHash, x.Hash)
+	if sameSH != isZeroHash(x.BlockHash) {
+		if sameSH {
+			return errors.New("state hash didn't change but block hash is not 0H")
 		}
+		return errors.New("block hash is 0H but state hash changed")
 	}
 	return nil
 }
@@ -115,6 +119,7 @@ func (x *InputRecord) Bytes() []byte {
 	b.Write(x.SummaryValue)
 	b.Write(util.Uint64ToBytes(x.RoundNumber))
 	b.Write(util.Uint64ToBytes(x.Epoch))
+	b.Write(util.Uint64ToBytes(x.Timestamp))
 	b.Write(util.Uint64ToBytes(x.SumOfEarnedFees))
 	return b.Bytes()
 }
@@ -129,6 +134,7 @@ func (x *InputRecord) NewRepeatIR() *InputRecord {
 		SummaryValue:    bytes.Clone(x.SummaryValue),
 		RoundNumber:     x.RoundNumber,
 		Epoch:           x.Epoch,
+		Timestamp:       x.Timestamp,
 		SumOfEarnedFees: x.SumOfEarnedFees,
 	}
 }
