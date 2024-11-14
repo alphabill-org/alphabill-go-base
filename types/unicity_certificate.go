@@ -187,7 +187,7 @@ func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 }
 
 func (x *UnicityCertificate) IsSuccessor(prevUC *UnicityCertificate) bool {
-	return x.GetRoundNumber() == prevUC.GetRoundNumber()+1
+	return bytes.Equal(x.GetPreviousStateHash(), prevUC.GetStateHash())
 }
 
 func (x *UnicityCertificate) IsDuplicate(prevUC *UnicityCertificate) bool {
