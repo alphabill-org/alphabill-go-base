@@ -27,6 +27,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		SummaryValue:    []byte{0, 0, 4},
 		RoundNumber:     1,
 		Epoch:           0,
+		Timestamp:       NewTimestamp(),
 		SumOfEarnedFees: 20,
 	}
 
@@ -137,12 +138,16 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 	signer, verifier := testsig.CreateSignerAndVerifier(t)
 	tb := NewTrustBase(t, verifier)
 
+	// must use const timestamp to have deterministic UC hash
+	const curTimestamp uint64 = 1731504540
+
 	ir0 := InputRecord{
 		Version:         1,
 		PreviousHash:    []byte{0, 0, 1},
 		Hash:            []byte{0, 0, 2},
 		BlockHash:       []byte{0, 0, 3},
 		SummaryValue:    []byte{0, 0, 4},
+		Timestamp:       curTimestamp,
 		RoundNumber:     1,
 		Epoch:           0,
 		SumOfEarnedFees: 20,
@@ -210,7 +215,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := validUC(t, sid0, &ir0, trHash0)
 		uc.UnicitySeal.Hash = []byte{1, 2, 3}
 		require.EqualError(t, uc.Verify(tb, crypto.SHA256, pdr.PartitionIdentifier, pdrHash),
-			"unicity seal hash 010203 does not match with the root hash of the unicity tree 0D408FB684C03524E552B0CBD45855BDC95D67EE63F03DC77DEA3C752FB45832")
+			"unicity seal hash 010203 does not match with the root hash of the unicity tree 739339DB2095C09E833C39ADE3026248E4D761CFCEAB64BA21D18A668C375DF9")
 	})
 }
 
@@ -707,6 +712,7 @@ func Test_UnicityCertificate_Hash(t *testing.T) {
 			SummaryValue:    []byte{0, 0, 4},
 			RoundNumber:     6,
 			SumOfEarnedFees: 20,
+			Timestamp:       31,
 		},
 		UnicityTreeCertificate: &UnicityTreeCertificate{
 			Version:   1,
@@ -733,6 +739,7 @@ func Test_UnicityCertificate_Hash(t *testing.T) {
 		0, 0, 4, // IR: summary hash
 		0, 0, 0, 0, 0, 0, 0, 6, // IR: round
 		0, 0, 0, 0, 0, 0, 0, 0, // IR: epoch
+		0, 0, 0, 0, 0, 0, 0, 31, // IR: timestamp
 		0, 0, 0, 0, 0, 0, 0, 20, // IR: sum of fees
 		0, 0, 0, 1, // UT: version
 		1, 1, 1, 1, // UT: identifier
@@ -852,7 +859,7 @@ func Test_UnicityCertificate_Cbor(t *testing.T) {
 		//uc := &UnicityCertificate{InputRecord: &InputRecord{}, TRHash: []byte{1}, UnicityTreeCertificate: &UnicityTreeCertificate{}, UnicitySeal: &UnicitySeal{}}
 		//_ucData, _ := uc.MarshalCBOR()
 		//fmt.Printf("ucData: 0x%X\n", _ucData)
-		ucData, err := hex.Decode([]byte("0xD903EF8601D903F08801F6F6F6F60000004101824180F6D903F6840000F6F6D903E986010000F6F64180"))
+		ucData, err := hex.Decode([]byte("0xD903EF8601D903F08901F6F6F6F6000000004101824180F6D903F6840000F6F6D903E986010000F6F64180"))
 		require.NoError(t, err)
 
 		uc1 := &UnicityCertificate{}
