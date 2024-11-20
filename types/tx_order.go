@@ -235,7 +235,10 @@ func (t *TransactionOrder) MarshalCBOR() ([]byte, error) {
 
 func (t *TransactionOrder) UnmarshalCBOR(data []byte) error {
 	type alias TransactionOrder
-	return Cbor.UnmarshalTaggedValue(TransactionOrderTag, data, (*alias)(t))
+	if err := Cbor.UnmarshalTaggedValue(TransactionOrderTag, data, (*alias)(t)); err != nil {
+		return err
+	}
+	return EnsureVersion(t, t.Version, 1)
 }
 
 func (c *ClientMetadata) GetTimeout() uint64 {

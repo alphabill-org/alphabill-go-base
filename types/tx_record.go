@@ -144,7 +144,10 @@ func (t *TransactionRecord) MarshalCBOR() ([]byte, error) {
 
 func (t *TransactionRecord) UnmarshalCBOR(data []byte) error {
 	type alias TransactionRecord
-	return Cbor.UnmarshalTaggedValue(TransactionRecordTag, data, (*alias)(t))
+	if err := Cbor.UnmarshalTaggedValue(TransactionRecordTag, data, (*alias)(t)); err != nil {
+		return err
+	}
+	return EnsureVersion(t, t.Version, 1)
 }
 
 func (sm *ServerMetadata) GetActualFee() uint64 {

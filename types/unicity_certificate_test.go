@@ -870,4 +870,13 @@ func Test_UnicityCertificate_Cbor(t *testing.T) {
 
 		require.Equal(t, uc1, &uc2)
 	})
+
+	t.Run("unmarshal invalid version", func(t *testing.T) {
+		uc := &UnicityCertificate{Version: 2, InputRecord: &InputRecord{}, TRHash: []byte{1}, UnicityTreeCertificate: &UnicityTreeCertificate{}, UnicitySeal: &UnicitySeal{}}
+		ucData, err := uc.MarshalCBOR()
+		require.NoError(t, err)
+
+		uc2 := UnicityCertificate{}
+		require.ErrorContains(t, uc2.UnmarshalCBOR(ucData), "invalid version (type *types.UnicityCertificate), expected 1, got 2")
+	})
 }

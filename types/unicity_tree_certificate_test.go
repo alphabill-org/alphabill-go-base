@@ -59,10 +59,29 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 			PDRHash:   pdrHash,
 		}
 		require.NoError(t, uct.IsValid(partitionID, pdrHash))
+
+		uctBytes, err := uct.MarshalCBOR()
+		require.NoError(t, err)
+		uct2 := &UnicityTreeCertificate{}
+		require.NoError(t, uct2.UnmarshalCBOR(uctBytes))
+		require.Equal(t, uct, uct2)
+	})
+
+	t.Run("unmarshal invalid version", func(t *testing.T) {
+		uct := &UnicityTreeCertificate{
+			Version:   2,
+			Partition: partitionID,
+			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: test.RandomBytes(32)}},
+			PDRHash:   pdrHash,
+		}
+		uctBytes, err := uct.MarshalCBOR()
+		require.NoError(t, err)
+		uct2 := &UnicityTreeCertificate{}
+		require.ErrorContains(t, uct2.UnmarshalCBOR(uctBytes), "invalid version (type *types.UnicityTreeCertificate), expected 1, got 2")
 	})
 }
 
-func TestUnicityTreeCertificate_Serialize(t *testing.T) {
+func TestUnicityTreeCertificate_Hash(t *testing.T) {
 	const partitionID PartitionID = 0x01010101
 	ut := &UnicityTreeCertificate{
 		Version:   1,

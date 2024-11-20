@@ -95,6 +95,26 @@ func TestInputRecord_IsValid(t *testing.T) {
 		testIR.Version = 0
 		require.EqualError(t, testIR.IsValid(), `invalid version (type *types.InputRecord)`)
 	})
+
+	t.Run("unmarshal CBOR - ok", func(t *testing.T) {
+		irBytes, err := validIR.MarshalCBOR()
+		require.NoError(t, err)
+		require.NotNil(t, irBytes)
+
+		ir2 := &InputRecord{}
+		require.NoError(t, ir2.UnmarshalCBOR(irBytes))
+		require.Equal(t, validIR, *ir2)
+	})
+
+	t.Run("unmarshal CBOR - invalid version", func(t *testing.T) {
+		validIR.Version = 2
+		irBytes, err := validIR.MarshalCBOR()
+		require.NoError(t, err)
+		require.NotNil(t, irBytes)
+
+		ir2 := &InputRecord{}
+		require.ErrorContains(t, ir2.UnmarshalCBOR(irBytes), "invalid version (type *types.InputRecord), expected 1, got 2")
+	})
 }
 
 func TestInputRecord_IsNil(t *testing.T) {

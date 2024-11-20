@@ -200,5 +200,8 @@ func (u *UnitStateProof) MarshalCBOR() ([]byte, error) {
 
 func (u *UnitStateProof) UnmarshalCBOR(data []byte) error {
 	type alias UnitStateProof
-	return Cbor.UnmarshalTaggedValue(UnitStateProofTag, data, (*alias)(u))
+	if err := Cbor.UnmarshalTaggedValue(UnitStateProofTag, data, (*alias)(u)); err != nil {
+		return err
+	}
+	return EnsureVersion(u, u.Version, 1)
 }

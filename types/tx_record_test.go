@@ -18,19 +18,9 @@ func TestTransactionRecordFunctions(t *testing.T) {
 	expectedProcessingDetails := testProcessingDetails{A: 97, B: "b"}
 	processingDetailsCBOR, err := Cbor.Marshal(expectedProcessingDetails)
 	require.NoError(t, err)
-	serverMetadata := &ServerMetadata{
-		ActualFee:         1,
-		TargetUnits:       []UnitID{txo.UnitID},
-		SuccessIndicator:  TxStatusSuccessful,
-		ProcessingDetails: processingDetailsCBOR,
-	}
-	txoBytes, err := txo.MarshalCBOR()
-	require.NoError(t, err)
-	txr := &TransactionRecord{
-		Version:          1,
-		TransactionOrder: txoBytes,
-		ServerMetadata:   serverMetadata,
-	}
+
+	txr := createTransactionRecord(t, txo, 1)
+	txr.ServerMetadata.ProcessingDetails = processingDetailsCBOR
 
 	t.Run("Test Hash", func(t *testing.T) {
 		require.NotEmpty(t, txr.Hash(crypto.SHA256))
@@ -51,6 +41,25 @@ func TestTransactionRecordFunctions(t *testing.T) {
 	t.Run("Test GetActualFee", func(t *testing.T) {
 		require.EqualValues(t, uint64(1), txr.GetActualFee())
 	})
+
+	t.Run("Test Unmarshal", func(t *testing.T) {
+		txrBytes, err := txr.MarshalCBOR()
+		require.NoError(t, err)
+
+		txr2 := &TransactionRecord{}
+		require.NoError(t, txr2.UnmarshalCBOR(txrBytes))
+		require.Equal(t, txr, txr2)
+		require.NoError(t, txr2.IsValid())
+	})
+
+	t.Run("Test Unmarshal invalid version", func(t *testing.T) {
+		txr.Version = 2
+		txrBytes, err := txr.MarshalCBOR()
+		require.NoError(t, err)
+
+		txr2 := &TransactionRecord{}
+		require.ErrorContains(t, txr2.UnmarshalCBOR(txrBytes), "invalid version (type *types.TransactionRecord), expected 1, got 2")
+	})
 }
 
 func createTransactionRecord(t *testing.T, tx *TransactionOrder, fee uint64) *TransactionRecord {
@@ -61,6 +70,7 @@ func createTransactionRecord(t *testing.T, tx *TransactionOrder, fee uint64) *Tr
 		TransactionOrder: txoBytes,
 		ServerMetadata: &ServerMetadata{
 			ActualFee:        fee,
+			TargetUnits:      []UnitID{tx.UnitID},
 			SuccessIndicator: TxStatusSuccessful,
 		},
 	}

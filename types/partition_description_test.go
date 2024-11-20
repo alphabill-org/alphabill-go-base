@@ -210,11 +210,23 @@ func Test_PartitionDescriptionRecord_CBOR(t *testing.T) {
 		T2Timeout:           2500 * time.Millisecond,
 	}
 
-	encoded, err := pdr.MarshalCBOR()
-	require.NoError(t, err)
+	t.Run("Marshal - ok", func(t *testing.T) {
+		encoded, err := pdr.MarshalCBOR()
+		require.NoError(t, err)
 
-	decoded := &PartitionDescriptionRecord{}
-	require.NoError(t, decoded.UnmarshalCBOR(encoded))
+		decoded := &PartitionDescriptionRecord{}
+		require.NoError(t, decoded.UnmarshalCBOR(encoded))
 
-	require.EqualValues(t, pdr, decoded)
+		require.EqualValues(t, pdr, decoded)
+	})
+
+	t.Run("Unmarshal - invalid version", func(t *testing.T) {
+		pdr.Version = 2
+		encoded, err := pdr.MarshalCBOR()
+		require.NoError(t, err)
+
+		decoded := &PartitionDescriptionRecord{}
+		err = decoded.UnmarshalCBOR(encoded)
+		require.ErrorContains(t, err, "invalid version (type *types.PartitionDescriptionRecord), expected 1, got 2")
+	})
 }
