@@ -49,15 +49,6 @@ func TestTransactionRecordFunctions(t *testing.T) {
 		txr2 := &TransactionRecord{}
 		require.NoError(t, txr2.UnmarshalCBOR(txrBytes))
 		require.Equal(t, txr, txr2)
-	})
-
-	t.Run("Test Unmarshal", func(t *testing.T) {
-		txrBytes, err := txr.MarshalCBOR()
-		require.NoError(t, err)
-
-		txr2 := &TransactionRecord{}
-		require.NoError(t, txr2.UnmarshalCBOR(txrBytes))
-		require.Equal(t, txr, txr2)
 		require.NoError(t, txr2.IsValid())
 	})
 
