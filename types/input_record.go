@@ -164,5 +164,8 @@ func (x *InputRecord) MarshalCBOR() ([]byte, error) {
 
 func (x *InputRecord) UnmarshalCBOR(data []byte) error {
 	type alias InputRecord
-	return Cbor.UnmarshalTaggedValue(InputRecordTag, data, (*alias)(x))
+	if err := Cbor.UnmarshalTaggedValue(InputRecordTag, data, (*alias)(x)); err != nil {
+		return err
+	}
+	return EnsureVersion(x, x.Version, 1)
 }

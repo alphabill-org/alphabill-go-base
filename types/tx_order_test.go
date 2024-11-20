@@ -208,3 +208,23 @@ func hexDecode(t *testing.T, s string) []byte {
 	}
 	return data
 }
+
+func Test_UnmarshalCBOR(t *testing.T) {
+	t.Run("Unmarshal valid", func(t *testing.T) {
+		txo := createTransactionOrder(t)
+		data, err := Cbor.Marshal(txo)
+		require.NoError(t, err)
+		txo2 := &TransactionOrder{}
+		require.NoError(t, txo2.UnmarshalCBOR(data))
+		require.Equal(t, txo, txo2)
+	})
+
+	t.Run("Unmarshal with invalid version", func(t *testing.T) {
+		txo := createTransactionOrder(t)
+		txo.Version = 2
+		data, err := Cbor.Marshal(txo)
+		require.NoError(t, err)
+		txo2 := &TransactionOrder{}
+		require.ErrorContains(t, txo2.UnmarshalCBOR(data), "invalid version (type *types.TransactionOrder), expected 1, got 2")
+	})
+}

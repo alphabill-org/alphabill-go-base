@@ -218,10 +218,10 @@ func (h *Header) MarshalCBOR() ([]byte, error) {
 
 func (h *Header) UnmarshalCBOR(data []byte) error {
 	type alias Header
-	if err := Cbor.Unmarshal(data, (*alias)(h)); err != nil {
+	if err := Cbor.UnmarshalTaggedValue(BlockTag, data, (*alias)(h)); err != nil {
 		return fmt.Errorf("failed to unmarshal block header: %w", err)
 	}
-	return nil
+	return EnsureVersion(h, h.Version, 1)
 }
 
 func (h *Header) Hash(algorithm crypto.Hash) []byte {

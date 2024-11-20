@@ -222,5 +222,8 @@ func (x *UnicityCertificate) MarshalCBOR() ([]byte, error) {
 
 func (x *UnicityCertificate) UnmarshalCBOR(data []byte) error {
 	type alias UnicityCertificate
-	return Cbor.UnmarshalTaggedValue(UnicityCertificateTag, data, (*alias)(x))
+	if err := Cbor.UnmarshalTaggedValue(UnicityCertificateTag, data, (*alias)(x)); err != nil {
+		return err
+	}
+	return EnsureVersion(x, x.Version, 1)
 }

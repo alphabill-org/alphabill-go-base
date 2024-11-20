@@ -602,4 +602,14 @@ func TestBlock_CBOR(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, uc, uc2)
 	})
+	t.Run("invalid version", func(t *testing.T) {
+		h.Version = 2
+		b := Block{Header: &h}
+		blockBytes, err := Cbor.Marshal(b)
+		require.NoError(t, err)
+		require.NotNil(t, blockBytes)
+		b2 := Block{}
+		err = Cbor.Unmarshal(blockBytes, &b2)
+		require.ErrorContains(t, err, "invalid version (type *types.Header), expected 1, got 2")
+	})
 }

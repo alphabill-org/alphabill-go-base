@@ -86,22 +86,25 @@ func (utc *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
 	hasher.Write(utc.PDRHash)
 }
 
-func (x *UnicityTreeCertificate) GetVersion() ABVersion {
-	if x != nil && x.Version > 0 {
-		return x.Version
+func (utc *UnicityTreeCertificate) GetVersion() ABVersion {
+	if utc != nil && utc.Version > 0 {
+		return utc.Version
 	}
-	return 0
+	return 1
 }
 
-func (x *UnicityTreeCertificate) MarshalCBOR() ([]byte, error) {
+func (utc *UnicityTreeCertificate) MarshalCBOR() ([]byte, error) {
 	type alias UnicityTreeCertificate
-	if x.Version == 0 {
-		x.Version = x.GetVersion()
+	if utc.Version == 0 {
+		utc.Version = utc.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(UnicityTreeCertificateTag, (*alias)(x))
+	return Cbor.MarshalTaggedValue(UnicityTreeCertificateTag, (*alias)(utc))
 }
 
-func (x *UnicityTreeCertificate) UnmarshalCBOR(data []byte) error {
+func (utc *UnicityTreeCertificate) UnmarshalCBOR(data []byte) error {
 	type alias UnicityTreeCertificate
-	return Cbor.UnmarshalTaggedValue(UnicityTreeCertificateTag, data, (*alias)(x))
+	if err := Cbor.UnmarshalTaggedValue(UnicityTreeCertificateTag, data, (*alias)(utc)); err != nil {
+		return err
+	}
+	return EnsureVersion(utc, utc.Version, 1)
 }
