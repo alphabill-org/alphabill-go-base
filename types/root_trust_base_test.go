@@ -168,19 +168,31 @@ func Test_RootTrustBaseV1_CBOR(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	data, err := Cbor.Marshal(tb)
-	require.NoError(t, err)
+	t.Run("Marshal - ok", func(t *testing.T) {
+		data, err := Cbor.Marshal(tb)
+		require.NoError(t, err)
 
-	tb2 := &RootTrustBaseV1{}
-	err = Cbor.Unmarshal(data, tb2)
-	require.NoError(t, err)
+		tb2 := &RootTrustBaseV1{}
+		err = Cbor.Unmarshal(data, tb2)
+		require.NoError(t, err)
 
-	// TODO: restore verifiers?
-	tb2.RootNodes["1"].verifier = keys["1"].verifier
-	tb2.RootNodes["2"].verifier = keys["2"].verifier
-	tb2.RootNodes["3"].verifier = keys["3"].verifier
+		// TODO: restore verifiers?
+		tb2.RootNodes["1"].verifier = keys["1"].verifier
+		tb2.RootNodes["2"].verifier = keys["2"].verifier
+		tb2.RootNodes["3"].verifier = keys["3"].verifier
 
-	require.EqualValues(t, tb, tb2)
+		require.EqualValues(t, tb, tb2)
+	})
+
+	t.Run("Unmarshal - invalid version", func(t *testing.T) {
+		tb.Version = 2
+		data, err := Cbor.Marshal(tb)
+		require.NoError(t, err)
+
+		tb2 := &RootTrustBaseV1{}
+		err = Cbor.Unmarshal(data, tb2)
+		require.ErrorContains(t, err, "invalid version (type *types.RootTrustBaseV1), expected 1, got 2")
+	})
 }
 
 type key struct {

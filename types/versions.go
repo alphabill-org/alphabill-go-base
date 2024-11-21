@@ -36,3 +36,10 @@ func ErrInvalidVersion(s Versioned) error {
 	// since s.GetVersion() might return a default value instead of an actual one, no need to print it
 	return fmt.Errorf("invalid version (type %T)", s)
 }
+
+func EnsureVersion(data Versioned, actual, expected ABVersion) error {
+	if data.GetVersion() != expected {
+		return fmt.Errorf("invalid version (type %T), expected %d, got %d", data, expected, actual)
+	}
+	return nil
+}

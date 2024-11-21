@@ -136,4 +136,33 @@ func TestVerifyUnitStateProof(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, VerifyUnitStateProof(proof, crypto.SHA256, data, &alwaysValid{}), "unexpected error")
 	})
+	t.Run("marshal CBOR - ok", func(t *testing.T) {
+		proof := &UnitStateProof{
+			Version:            1,
+			UnitID:             []byte{0},
+			UnitTreeCert:       &UnitTreeCert{},
+			StateTreeCert:      &StateTreeCert{},
+			UnicityCertificate: emptyUC,
+		}
+		proofBytes, err := proof.MarshalCBOR()
+		require.NoError(t, err)
+
+		proof2 := &UnitStateProof{}
+		require.NoError(t, proof2.UnmarshalCBOR(proofBytes))
+		require.Equal(t, proof, proof2)
+	})
+	t.Run("marshal CBOR - invalid version", func(t *testing.T) {
+		proof := &UnitStateProof{
+			Version:            2,
+			UnitID:             []byte{0},
+			UnitTreeCert:       &UnitTreeCert{},
+			StateTreeCert:      &StateTreeCert{},
+			UnicityCertificate: emptyUC,
+		}
+		proofBytes, err := proof.MarshalCBOR()
+		require.NoError(t, err)
+
+		proof2 := &UnitStateProof{}
+		require.ErrorContains(t, proof2.UnmarshalCBOR(proofBytes), "invalid version (type *types.UnitStateProof), expected 1, got 2")
+	})
 }

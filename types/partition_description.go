@@ -175,8 +175,8 @@ func (pdr *PartitionDescriptionRecord) MarshalCBOR() ([]byte, error) {
 
 func (pdr *PartitionDescriptionRecord) UnmarshalCBOR(data []byte) error {
 	type alias PartitionDescriptionRecord
-	if err := Cbor.Unmarshal(data, (*alias)(pdr)); err != nil {
+	if err := Cbor.UnmarshalTaggedValue(PartitionDescriptionRecordTag, data, (*alias)(pdr)); err != nil {
 		return fmt.Errorf("failed to unmarshal partition description record: %w", err)
 	}
-	return nil
+	return EnsureVersion(pdr, pdr.Version, 1)
 }

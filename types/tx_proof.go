@@ -153,5 +153,8 @@ func (p *TxProof) MarshalCBOR() ([]byte, error) {
 
 func (p *TxProof) UnmarshalCBOR(data []byte) error {
 	type alias TxProof
-	return Cbor.UnmarshalTaggedValue(TxProofTag, data, (*alias)(p))
+	if err := Cbor.UnmarshalTaggedValue(TxProofTag, data, (*alias)(p)); err != nil {
+		return err
+	}
+	return EnsureVersion(p, p.Version, 1)
 }
