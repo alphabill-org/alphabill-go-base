@@ -56,18 +56,21 @@ type (
 	PredicateBytes = hex.Bytes
 
 	StateLockProofSigData struct {
-		_ struct{} `cbor:",toarray"`
+		_       struct{} `cbor:",toarray"`
+		Version ABVersion
 		Payload
 	}
 
 	AuthProofSigData struct {
-		_ struct{} `cbor:",toarray"`
+		_       struct{} `cbor:",toarray"`
+		Version ABVersion
 		Payload
 		StateUnlock []byte
 	}
 
 	FeeProofSigData struct {
-		_ struct{} `cbor:",toarray"`
+		_       struct{} `cbor:",toarray"`
+		Version ABVersion
 		Payload
 		StateUnlock []byte
 		AuthProof   RawCBOR
@@ -78,7 +81,7 @@ func (t *TransactionOrder) StateLockProofSigBytes() ([]byte, error) {
 	if t == nil {
 		return nil, ErrTransactionOrderIsNil
 	}
-	stateLockProof := StateLockProofSigData{Payload: t.Payload}
+	stateLockProof := StateLockProofSigData{Version: t.Version, Payload: t.Payload}
 	stateLockProofCBOR, err := Cbor.Marshal(stateLockProof)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal state lock sig bytes: %w", err)
@@ -90,7 +93,7 @@ func (t *TransactionOrder) AuthProofSigBytes() ([]byte, error) {
 	if t == nil {
 		return nil, ErrTransactionOrderIsNil
 	}
-	authProof := AuthProofSigData{Payload: t.Payload, StateUnlock: t.StateUnlock}
+	authProof := AuthProofSigData{Version: t.Version, Payload: t.Payload, StateUnlock: t.StateUnlock}
 	authProofCBOR, err := Cbor.Marshal(authProof)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal auth proof sig bytes: %w", err)
@@ -102,7 +105,7 @@ func (t *TransactionOrder) FeeProofSigBytes() ([]byte, error) {
 	if t == nil {
 		return nil, ErrTransactionOrderIsNil
 	}
-	feeProof := FeeProofSigData{Payload: t.Payload, StateUnlock: t.StateUnlock, AuthProof: t.AuthProof}
+	feeProof := FeeProofSigData{Version: t.Version, Payload: t.Payload, StateUnlock: t.StateUnlock, AuthProof: t.AuthProof}
 	feeProofCBOR, err := Cbor.Marshal(feeProof)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal fee proof sig bytes: %w", err)

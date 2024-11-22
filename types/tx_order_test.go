@@ -209,6 +209,37 @@ func hexDecode(t *testing.T, s string) []byte {
 	return data
 }
 
+func Test_VersionsInProofs(t *testing.T) {
+	testProofs := func(tx *TransactionOrder, f func() ([]byte, error)) {
+		require.EqualValues(t, 1, tx.Version)
+		proof1, err := f()
+		require.NoError(t, err)
+		require.NotNil(t, proof1)
+
+		tx.Version = 2
+		proof2, err := f()
+		require.NoError(t, err)
+		require.NotNil(t, proof2)
+
+		require.NotEqual(t, proof1, proof2)
+	}
+
+	t.Run("state lock proof", func(t *testing.T) {
+		tx := createTransactionOrder(t)
+		testProofs(tx, tx.StateLockProofSigBytes)
+	})
+
+	t.Run("auth proof", func(t *testing.T) {
+		tx := createTransactionOrder(t)
+		testProofs(tx, tx.AuthProofSigBytes)
+	})
+
+	t.Run("fee proof", func(t *testing.T) {
+		tx := createTransactionOrder(t)
+		testProofs(tx, tx.FeeProofSigBytes)
+	})
+}
+
 func Test_UnmarshalCBOR(t *testing.T) {
 	t.Run("Unmarshal valid", func(t *testing.T) {
 		txo := createTransactionOrder(t)
