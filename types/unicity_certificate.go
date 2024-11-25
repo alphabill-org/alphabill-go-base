@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
-	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var ErrUnicityCertificateIsNil = errors.New("unicity certificate is nil")
@@ -69,9 +69,9 @@ func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, par
 	return nil
 }
 
-func (x *UnicityCertificate) Hash(hash crypto.Hash) []byte {
-	hasher := hash.New()
-	hasher.Write(util.Uint32ToBytes(x.Version))
+func (x *UnicityCertificate) Hash(hash crypto.Hash) ([]byte, error) {
+	hasher := abhash.New(hash.New())
+	hasher.Write(x.Version)
 	if x.InputRecord != nil {
 		x.InputRecord.AddToHasher(hasher)
 	}
@@ -82,7 +82,7 @@ func (x *UnicityCertificate) Hash(hash crypto.Hash) []byte {
 	if x.UnicitySeal != nil {
 		x.UnicitySeal.AddToHasher(hasher)
 	}
-	return hasher.Sum(nil)
+	return hasher.Sum()
 }
 
 func (x *UnicityCertificate) GetStateHash() []byte {

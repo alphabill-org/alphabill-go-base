@@ -3,9 +3,9 @@ package imt
 import (
 	"crypto"
 	"fmt"
-	"hash"
 	"testing"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/util"
 	"github.com/stretchr/testify/require"
 )
@@ -15,8 +15,8 @@ type TestData struct {
 	data byte
 }
 
-func (t TestData) AddToHasher(hasher hash.Hash) {
-	hasher.Write([]byte{t.data})
+func (t TestData) AddToHasher(hasher abhash.Hasher) {
+	hasher.WriteRaw([]byte{t.data})
 }
 
 func (t TestData) Key() []byte {
@@ -63,8 +63,10 @@ func TestNewIMTWithSingleNode(t *testing.T) {
 	require.NotNil(t, imt)
 	require.NotNil(t, imt.GetRootHash())
 	hasher := crypto.SHA256.New()
-	data[0].AddToHasher(hasher)
-	dataHash := hasher.Sum(nil)
+	abhasher := abhash.New(hasher)
+	data[0].AddToHasher(abhasher)
+	dataHash, err := abhasher.Sum()
+	require.NoError(t, err)
 	hasher.Reset()
 	hasher.Write([]byte{tagLeaf})
 	hasher.Write(data[0].Key())
@@ -160,7 +162,8 @@ func TestNewIMTYellowpaperExample(t *testing.T) {
 		require.EqualValues(t, h, imt.GetRootHash())
 		// verify data hash
 		hasher := crypto.SHA256.New()
-		d.AddToHasher(hasher)
+		abhasher := abhash.New(hasher)
+		d.AddToHasher(abhasher)
 		require.EqualValues(t, hasher.Sum(nil), path[0].Hash)
 	}
 	// test non-inclusion
@@ -194,7 +197,8 @@ func TestNewIMTWithOddNumberOfLeaves(t *testing.T) {
 		require.EqualValues(t, h, imt.GetRootHash())
 		// verify data hash
 		hasher := crypto.SHA256.New()
-		d.AddToHasher(hasher)
+		abhasher := abhash.New(hasher)
+		d.AddToHasher(abhasher)
 		require.EqualValues(t, hasher.Sum(nil), path[0].Hash)
 	}
 	// non-inclusion
@@ -209,7 +213,8 @@ func TestNewIMTWithOddNumberOfLeaves(t *testing.T) {
 	// however, it is not from index 9
 	require.NotEqualValues(t, leaf.key, path[0].Key)
 	hasher := crypto.SHA256.New()
-	leaf.AddToHasher(hasher)
+	abhasher := abhash.New(hasher)
+	leaf.AddToHasher(abhasher)
 	require.NotEqualValues(t, hasher.Sum(nil), path[0].Hash)
 }
 
@@ -246,6 +251,7 @@ func TestNewIMTWithEvenNumberOfLeaves(t *testing.T) {
 	// however, it is not from index 9
 	require.NotEqualValues(t, leaf.key, path[0].Key)
 	hasher := crypto.SHA256.New()
-	leaf.AddToHasher(hasher)
+	abhasher := abhash.New(hasher)
+	leaf.AddToHasher(abhasher)
 	require.NotEqualValues(t, hasher.Sum(nil), path[0].Hash)
 }

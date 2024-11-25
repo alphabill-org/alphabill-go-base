@@ -93,7 +93,7 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			UnicityCertificate: emptyUC,
 		}
 		data := &StateUnitData{}
-		proof.UnitTreeCert.UnitDataHash = data.Hash(crypto.SHA256)
+		proof.UnitTreeCert.UnitDataHash = doHash(t, data)
 		uc, err := proof.getUCv1()
 		require.NoError(t, err)
 		uc.InputRecord = &InputRecord{SummaryValue: []byte{1}}
@@ -109,7 +109,7 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			UnicityCertificate: emptyUC,
 		}
 		data := &StateUnitData{}
-		proof.UnitTreeCert.UnitDataHash = data.Hash(crypto.SHA256)
+		proof.UnitTreeCert.UnitDataHash = doHash(t, data)
 		uc, err := proof.getUCv1()
 		require.NoError(t, err)
 		uc.InputRecord = &InputRecord{SummaryValue: []byte{0, 0, 0, 0, 0, 0, 0, 0}}
@@ -125,7 +125,7 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			UnicityCertificate: emptyUC,
 		}
 		data := &StateUnitData{}
-		proof.UnitTreeCert.UnitDataHash = data.Hash(crypto.SHA256)
+		proof.UnitTreeCert.UnitDataHash = doHash(t, data)
 
 		uc, err := proof.getUCv1()
 		require.NoError(t, err)

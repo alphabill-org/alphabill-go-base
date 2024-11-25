@@ -130,7 +130,8 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		UnitIdLen:           256,
 		Shards:              ShardingScheme{sid0, sid1},
 	}
-	pdrHash := pdr.Hash(crypto.SHA256)
+	pdrHash, err := pdr.Hash(crypto.SHA256)
+	require.NoError(t, err)
 
 	trHash0 := bytes.Repeat([]byte{10}, 32)
 	trHash1 := bytes.Repeat([]byte{11}, 32)
@@ -753,7 +754,7 @@ func Test_UnicityCertificate_Hash(t *testing.T) {
 		'1', 1, 1, 1, // US: signature
 	}
 	expectedHash := sha256.Sum256(expectedBytes)
-	require.EqualValues(t, expectedHash[:], uc.Hash(crypto.SHA256))
+	require.EqualValues(t, expectedHash[:], doHash(t, uc))
 }
 
 func TestUnicityCertificate_GetPreviousStateHash(t *testing.T) {

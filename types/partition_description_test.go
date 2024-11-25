@@ -1,7 +1,6 @@
 package types
 
 import (
-	"crypto"
 	"testing"
 	"time"
 
@@ -16,20 +15,20 @@ func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
 		UnitIdLen:           256,
 		T2Timeout:           2500 * time.Millisecond,
 	}
-	sdrHash := pdr.Hash(crypto.SHA256)
+	pdrHash := doHash(t, &pdr)
 
 	// each call must return the same value
-	require.EqualValues(t, sdrHash, pdr.Hash(crypto.SHA256))
+	require.EqualValues(t, pdrHash, doHash(t, &pdr))
 	// different hash algorithm should return different value
-	require.NotEqualValues(t, sdrHash, pdr.Hash(crypto.SHA512))
+	require.NotEqualValues(t, pdrHash, doHash(t, &pdr))
 
 	// make a copy of the struct - must get the same value as original
 	pdr2 := pdr // note that "pdr" is not a pointer!
-	require.EqualValues(t, sdrHash, pdr2.Hash(crypto.SHA256))
+	require.EqualValues(t, pdrHash, doHash(t, &pdr2))
 
 	// change field value in the copy - hash must change
 	pdr2.T2Timeout++
-	require.NotEqualValues(t, sdrHash, pdr2.Hash(crypto.SHA256))
+	require.NotEqualValues(t, pdrHash, doHash(t, &pdr2))
 }
 
 func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {

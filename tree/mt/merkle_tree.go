@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
@@ -17,7 +18,7 @@ type (
 	}
 
 	Data interface {
-		Hash(hashAlgorithm crypto.Hash) []byte
+		Hash(hashAlgorithm crypto.Hash) ([]byte, error)
 	}
 
 	// PathItem helper struct for proof extraction, contains Hash and Direction from parent node
@@ -34,17 +35,24 @@ type (
 )
 
 // New creates a new canonical Merkle Tree.
-func New[T Data](hashAlgorithm crypto.Hash, data []T) *MerkleTree {
+func New[T Data](hashAlgorithm crypto.Hash, data []T) (*MerkleTree, error) {
 	if len(data) == 0 {
-		return &MerkleTree{root: nil, dataLength: 0}
+		return &MerkleTree{root: nil, dataLength: 0}, nil
 	}
-	return &MerkleTree{root: createMerkleTree(data, hashAlgorithm), dataLength: len(data)}
+	tree, err := createMerkleTree(data, hashAlgorithm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create merkle tree: %w", err)
+	}
+	return &MerkleTree{root: tree, dataLength: len(data)}, nil
 }
 
 // EvalMerklePath returns root hash calculated from the given leaf and path items
-func EvalMerklePath(merklePath []*PathItem, leaf Data, hashAlgorithm crypto.Hash) []byte {
+func EvalMerklePath(merklePath []*PathItem, leaf Data, hashAlgorithm crypto.Hash) ([]byte, error) {
+	h, err := leaf.Hash(hashAlgorithm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash leaf: %w", err)
+	}
 	hasher := hashAlgorithm.New()
-	h := leaf.Hash(hashAlgorithm)
 	for _, item := range merklePath {
 		if item.DirectionLeft {
 			hasher.Write(h)
@@ -56,7 +64,7 @@ func EvalMerklePath(merklePath []*PathItem, leaf Data, hashAlgorithm crypto.Hash
 		h = hasher.Sum(nil)
 		hasher.Reset()
 	}
-	return h
+	return h, nil
 }
 
 // PlainTreeOutput calculates the output hash of the chain.
@@ -154,20 +162,28 @@ func (s *MerkleTree) output(node *node, prefix string, isTail bool, str *string)
 	}
 }
 
-func createMerkleTree[T Data](data []T, hashAlgorithm crypto.Hash) *node {
+func createMerkleTree[T Data](data []T, hashAlgorithm crypto.Hash) (*node, error) {
 	if len(data) == 0 {
-		return &node{hash: make([]byte, hashAlgorithm.Size())}
+		return &node{hash: make([]byte, hashAlgorithm.Size())}, nil
 	}
 	if len(data) == 1 {
-		return &node{hash: data[0].Hash(hashAlgorithm)}
+		h, err := data[0].Hash(hashAlgorithm)
+		if err != nil {
+			return nil, fmt.Errorf("failed to hash data: %w", err)
+		}
+		return &node{hash: h}, nil
 	}
 	n := hibit(len(data) - 1)
-	hasher := hashAlgorithm.New()
-	left := createMerkleTree(data[:n], hashAlgorithm)
-	right := createMerkleTree(data[n:], hashAlgorithm)
-	hasher.Write(left.hash)
-	hasher.Write(right.hash)
-	return &node{left: left, right: right, hash: hasher.Sum(nil)}
+	left, err := createMerkleTree(data[:n], hashAlgorithm)
+	if err != nil {
+		return nil, err
+	}
+	right, err := createMerkleTree(data[n:], hashAlgorithm)
+	if err != nil {
+		return nil, err
+	}
+
+	return &node{left: left, right: right, hash: abhash.SumHashes(hashAlgorithm, left.hash, right.hash)}, nil
 }
 
 // hibit floating-point-free equivalent of 2**math.floor(math.log(m, 2)),

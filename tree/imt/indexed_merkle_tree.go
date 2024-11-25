@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
@@ -24,7 +25,7 @@ type (
 	// NB!: indexed tree leaves must be sorted lexicographically by key in strict order k1 < k2 < ... kn
 	LeafData interface {
 		Key() []byte
-		AddToHasher(hasher hash.Hash)
+		AddToHasher(hasher abhash.Hasher)
 	}
 	// PathItem helper struct for proof extraction, contains Hash and Key of node
 	PathItem struct {
@@ -60,15 +61,16 @@ func New(hashAlgorithm crypto.Hash, leaves []LeafData) (*Tree, error) {
 			return nil, fmt.Errorf("data is not sorted by key in strictly ascending order")
 		}
 	}
-	hasher := hashAlgorithm.New()
+	rawHasher := hashAlgorithm.New()
+	hasher := abhash.New(rawHasher)
 	// calculate data hash for leaves
 	pairs := make([]pair, len(leaves))
 	for i, l := range leaves {
 		l.AddToHasher(hasher)
-		pairs[i] = pair{key: l.Key(), dataHash: hasher.Sum(nil)}
-		hasher.Reset()
+		pairs[i] = pair{key: l.Key(), dataHash: rawHasher.Sum(nil)}
+		rawHasher.Reset()
 	}
-	return &Tree{root: createMerkleTree(pairs, hasher), dataLength: len(pairs)}, nil
+	return &Tree{root: createMerkleTree(pairs, rawHasher), dataLength: len(pairs)}, nil
 }
 
 // IndexTreeOutput calculates the output hash of the index Merkle tree hash chain from hash chain, key and data hash.

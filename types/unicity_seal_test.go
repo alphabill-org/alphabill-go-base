@@ -4,13 +4,13 @@ import (
 	"crypto"
 	"testing"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/stretchr/testify/require"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	test "github.com/alphabill-org/alphabill-go-base/testutils"
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
-	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var zeroHash = make([]byte, 32)
@@ -182,7 +182,7 @@ func TestSignatureMap_Serialize(t *testing.T) {
 func TestSignatureMap_AddToHasher_Nil(t *testing.T) {
 	var smap SignatureMap
 	hasher := crypto.SHA256.New()
-	smap.AddToHasher(hasher)
+	smap.AddToHasher(abhash.New(hasher))
 	require.Nil(t, smap)
 }
 
@@ -194,14 +194,15 @@ func TestSeal_AddToHasher(t *testing.T) {
 		Hash:                 zeroHash,
 		Signatures:           map[string]hex.Bytes{"xxx": {1, 1, 1}, "aaa": {2, 2, 2}},
 	}
-	hasher := crypto.SHA256.New()
+	hasher := abhash.New(crypto.SHA256.New())
 	seal.AddToHasher(hasher)
-	hash := hasher.Sum(nil)
+	hash, err := hasher.Sum()
+	require.NoError(t, err)
 	// serialize manually
 	hasher.Reset()
-	hasher.Write(util.Uint32ToBytes(seal.GetVersion()))
-	hasher.Write(util.Uint64ToBytes(seal.RootChainRoundNumber))
-	hasher.Write(util.Uint64ToBytes(seal.Timestamp))
+	hasher.Write(seal.GetVersion())
+	hasher.Write(seal.RootChainRoundNumber)
+	hasher.Write(seal.Timestamp)
 	hasher.Write(seal.PreviousHash)
 	hasher.Write(seal.Hash)
 	// add signatures, in lexical order
@@ -209,7 +210,8 @@ func TestSeal_AddToHasher(t *testing.T) {
 	hasher.Write([]byte{2, 2, 2})
 	hasher.Write([]byte("xxx"))
 	hasher.Write([]byte{1, 1, 1})
-	require.Equal(t, hash, hasher.Sum(nil))
+	hash2, err := hasher.Sum()
+	require.Equal(t, hash, hash2)
 }
 
 func TestUnicitySeal_cbor(t *testing.T) {

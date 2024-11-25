@@ -14,20 +14,22 @@ type TestData struct {
 	hash []byte
 }
 
-func (t *TestData) Hash(hash crypto.Hash) []byte {
-	return t.hash
+func (t *TestData) Hash(hash crypto.Hash) ([]byte, error) {
+	return t.hash, nil
 }
 
 func TestNewMTWithNilData(t *testing.T) {
 	var data []Data = nil
-	mt := New(crypto.SHA256, data)
+	mt, err := New(crypto.SHA256, data)
+	require.NoError(t, err)
 	require.NotNil(t, mt)
 	require.Nil(t, mt.GetRootHash())
 	require.Equal(t, 0, mt.dataLength)
 }
 
 func TestNewMTWithEmptyData(t *testing.T) {
-	mt := New(crypto.SHA256, []Data{})
+	mt, err := New(crypto.SHA256, []Data{})
+	require.NoError(t, err)
 	require.NotNil(t, mt)
 	require.Nil(t, mt.GetRootHash())
 	require.Equal(t, 0, mt.dataLength)
@@ -35,10 +37,13 @@ func TestNewMTWithEmptyData(t *testing.T) {
 
 func TestNewMTWithSingleNode(t *testing.T) {
 	data := []Data{&TestData{hash: make([]byte, 32)}}
-	mt := New(crypto.SHA256, data)
+	mt, err := New(crypto.SHA256, data)
+	require.NoError(t, err)
 	require.NotNil(t, mt)
 	require.NotNil(t, mt.GetRootHash())
-	require.Equal(t, data[0].Hash(crypto.SHA256), mt.GetRootHash())
+	res, err := data[0].Hash(crypto.SHA256)
+	require.NoError(t, err)
+	require.Equal(t, res, mt.GetRootHash())
 }
 
 func TestNewMTWithOddNumberOfLeaves(t *testing.T) {
@@ -46,7 +51,8 @@ func TestNewMTWithOddNumberOfLeaves(t *testing.T) {
 	for i := 0; i < len(data); i++ {
 		data[i] = &TestData{hash: makeData(byte(i))}
 	}
-	mt := New(crypto.SHA256, data)
+	mt, err := New(crypto.SHA256, data)
+	require.NoError(t, err)
 	require.NotNil(t, mt)
 	require.EqualValues(t, "47A288CB996BFAAA0703D976C338841884F938C06E62A161E4772D6FB68A4A69", fmt.Sprintf("%X", mt.GetRootHash()))
 }
@@ -56,14 +62,16 @@ func TestNewMTWithEvenNumberOfLeaves(t *testing.T) {
 	for i := 0; i < len(data); i++ {
 		data[i] = &TestData{hash: makeData(byte(i))}
 	}
-	mt := New(crypto.SHA256, data)
+	mt, err := New(crypto.SHA256, data)
+	require.NoError(t, err)
 	require.NotNil(t, mt)
 	require.EqualValues(t, "89A0F1577268CC19B0A39C7A69F804FD140640C699585EB635EBB03C06154CCE", fmt.Sprintf("%X", mt.GetRootHash()))
 }
 
 func TestSingleNodeTreeMerklePath(t *testing.T) {
 	data := []Data{&TestData{hash: make([]byte, 32)}}
-	mt := New(crypto.SHA256, data)
+	mt, err := New(crypto.SHA256, data)
+	require.NoError(t, err)
 	path, err := mt.GetMerklePath(0)
 	require.NoError(t, err)
 	require.Nil(t, path)
@@ -134,7 +142,8 @@ func TestMerklePath(t *testing.T) {
 			for i := 0; i < len(data); i++ {
 				data[i] = &TestData{hash: makeData(byte(i))}
 			}
-			mt := New(crypto.SHA256, data)
+			mt, err := New(crypto.SHA256, data)
+			require.NoError(t, err)
 			merklePath, err := mt.GetMerklePath(tt.dataIdxToVerify)
 			if tt.wantErr != nil {
 				require.ErrorIs(t, err, tt.wantErr)
@@ -199,10 +208,12 @@ func TestMerklePathEval(t *testing.T) {
 			for i := 0; i < len(data); i++ {
 				data[i] = &TestData{hash: makeData(byte(i))}
 			}
-			mt := New(crypto.SHA256, data)
+			mt, err := New(crypto.SHA256, data)
+			require.NoError(t, err)
 			merklePath, err := mt.GetMerklePath(tt.dataIdxToVerify)
 			require.NoError(t, err)
-			rootHash := EvalMerklePath(merklePath, data[tt.dataIdxToVerify], crypto.SHA256)
+			rootHash, err := EvalMerklePath(merklePath, data[tt.dataIdxToVerify], crypto.SHA256)
+			require.NoError(t, err)
 			require.Equal(t, mt.GetRootHash(), rootHash)
 		})
 	}

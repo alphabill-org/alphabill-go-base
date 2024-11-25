@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"hash"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
-	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var (
@@ -106,22 +105,16 @@ func (x *InputRecord) IsValid() error {
 	return nil
 }
 
-func (x *InputRecord) AddToHasher(hasher hash.Hash) {
-	hasher.Write(x.Bytes())
+func (x *InputRecord) AddToHasher(hasher abhash.Hasher) {
+	hasher.Write(x)
 }
 
 func (x *InputRecord) Bytes() []byte {
-	var b bytes.Buffer
-	b.Write(util.Uint32ToBytes(x.Version))
-	b.Write(x.PreviousHash)
-	b.Write(x.Hash)
-	b.Write(x.BlockHash)
-	b.Write(x.SummaryValue)
-	b.Write(util.Uint64ToBytes(x.RoundNumber))
-	b.Write(util.Uint64ToBytes(x.Epoch))
-	b.Write(util.Uint64ToBytes(x.Timestamp))
-	b.Write(util.Uint64ToBytes(x.SumOfEarnedFees))
-	return b.Bytes()
+	bs, err := x.MarshalCBOR()
+	if err != nil {
+		panic(fmt.Errorf("failed to marshal input record: %w", err))
+	}
+	return bs
 }
 
 // NewRepeatIR - creates new repeat IR from current IR

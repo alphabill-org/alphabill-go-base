@@ -1,16 +1,14 @@
 package types
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"hash"
 	"sort"
 	"time"
 
 	"github.com/alphabill-org/alphabill-go-base/crypto"
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
-	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 // GenesisTime min timestamp Thursday, April 20, 2023 6:11:24 AM GMT+00:00
@@ -73,7 +71,7 @@ func (s *SignatureMap) UnmarshalCBOR(b []byte) error {
 	return nil
 }
 
-func (s SignatureMap) AddToHasher(hasher hash.Hash) {
+func (s SignatureMap) AddToHasher(hasher abhash.Hasher) {
 	if s == nil {
 		return
 	}
@@ -84,7 +82,7 @@ func (s SignatureMap) AddToHasher(hasher hash.Hash) {
 	sort.Strings(authors)
 	for _, author := range authors {
 		sig := s[author]
-		hasher.Write([]byte(author))
+		hasher.Write(author)
 		hasher.Write(sig)
 	}
 }
@@ -123,13 +121,11 @@ func (x *UnicitySeal) IsValid() error {
 
 // Bytes - serialize everything except signatures (used for sign and verify)
 func (x *UnicitySeal) Bytes() []byte {
-	var b bytes.Buffer
-	b.Write(util.Uint32ToBytes(x.GetVersion()))
-	b.Write(util.Uint64ToBytes(x.RootChainRoundNumber))
-	b.Write(util.Uint64ToBytes(x.Timestamp))
-	b.Write(x.PreviousHash)
-	b.Write(x.Hash)
-	return b.Bytes()
+	bs, err := x.MarshalCBOR()
+	if err != nil {
+		panic(fmt.Errorf("failed to marshal unicity seal: %w", err))
+	}
+	return bs
 }
 
 func (x *UnicitySeal) Sign(id string, signer crypto.Signer) error {
@@ -162,9 +158,8 @@ func (x *UnicitySeal) Verify(tb RootTrustBase) error {
 }
 
 // AddToHasher - add all UC data including signature bytes for hash calculation
-func (x *UnicitySeal) AddToHasher(hasher hash.Hash) {
-	hasher.Write(x.Bytes())
-	x.Signatures.AddToHasher(hasher)
+func (x *UnicitySeal) AddToHasher(hasher abhash.Hasher) {
+	hasher.Write(x)
 }
 
 func (x *UnicitySeal) MarshalCBOR() ([]byte, error) {

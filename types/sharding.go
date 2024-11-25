@@ -2,13 +2,12 @@ package types
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"hash"
 	"iter"
 	"slices"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
@@ -33,7 +32,7 @@ func (id ShardID) Key() string {
 	return string(id.Bytes())
 }
 
-func (id ShardID) AddToHasher(h hash.Hash) {
+func (id ShardID) AddToHasher(h abhash.Hasher) {
 	h.Write(id.Bytes())
 }
 
@@ -142,8 +141,8 @@ func (id *ShardID) UnmarshalCBOR(data []byte) (err error) {
 
 type ShardingScheme []ShardID
 
-func (sh ShardingScheme) AddToHasher(h hash.Hash) {
-	h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(sh))))
+func (sh ShardingScheme) AddToHasher(h abhash.Hasher) {
+	h.Write(len(sh))
 
 	// todo: id-s must be sorted? lexically or topologically?
 	// or do we assume that the list is kept sorted?
