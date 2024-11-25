@@ -3,6 +3,7 @@ package hash
 import (
 	"crypto"
 	"crypto/sha256"
+	"fmt"
 )
 
 var Zero256 = make([]byte, 32)
@@ -17,11 +18,24 @@ func Sum256(data []byte) []byte {
 	return hsh[:]
 }
 
-// Sum hashes together arbitrary data units
-func Sum(hashAlgorithm crypto.Hash, hashes ...[]byte) []byte {
+// SumHashes hashes the hashes, for hashing other data units, use hash.New() instead.
+func SumHashes(hashAlgorithm crypto.Hash, hashes ...[]byte) []byte {
 	hasher := hashAlgorithm.New()
 	for _, hash := range hashes {
 		hasher.Write(hash)
 	}
 	return hasher.Sum(nil)
+}
+
+func Sum(hashAlgorithm crypto.Hash, values ...any) []byte {
+	hasher := New(hashAlgorithm.New())
+	for _, value := range values {
+		hasher.Write(value)
+	}
+	res, err := hasher.Sum()
+	if err != nil {
+		// TODO: propagate error?
+		panic(fmt.Errorf("failed to calculate hash: %w", err))
+	}
+	return res
 }

@@ -7,6 +7,11 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
+type Hasher interface {
+	Write(any)
+	WriteRaw([]byte)
+}
+
 /*
 New creates "hash calculator" using given hash function.
 Values written to the hash are encoded as CBOR before hashing.
