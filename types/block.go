@@ -110,7 +110,7 @@ func BlockHash(algorithm crypto.Hash, h *Header, txs []*TransactionRecord, state
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash block header: %w", err)
 	}
-	hasher.WriteRaw(headerHash)
+	hasher.Write(headerHash)
 	hasher.Write(prevStateHash)
 	hasher.Write(stateHash)
 	hasher.Write(merkleRoot)

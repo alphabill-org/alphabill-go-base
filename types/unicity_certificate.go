@@ -71,17 +71,7 @@ func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, par
 
 func (x *UnicityCertificate) Hash(hash crypto.Hash) ([]byte, error) {
 	hasher := abhash.New(hash.New())
-	hasher.Write(x.Version)
-	if x.InputRecord != nil {
-		x.InputRecord.AddToHasher(hasher)
-	}
-	hasher.Write(x.TRHash)
-	if x.UnicityTreeCertificate != nil {
-		x.UnicityTreeCertificate.AddToHasher(hasher)
-	}
-	if x.UnicitySeal != nil {
-		x.UnicitySeal.AddToHasher(hasher)
-	}
+	hasher.Write(x)
 	return hasher.Sum()
 }
 

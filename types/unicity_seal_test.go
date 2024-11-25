@@ -198,19 +198,16 @@ func TestSeal_AddToHasher(t *testing.T) {
 	seal.AddToHasher(hasher)
 	hash, err := hasher.Sum()
 	require.NoError(t, err)
+
 	// serialize manually
 	hasher.Reset()
-	hasher.Write(seal.GetVersion())
-	hasher.Write(seal.RootChainRoundNumber)
-	hasher.Write(seal.Timestamp)
-	hasher.Write(seal.PreviousHash)
-	hasher.Write(seal.Hash)
-	// add signatures, in lexical order
-	hasher.Write([]byte("aaa"))
-	hasher.Write([]byte{2, 2, 2})
-	hasher.Write([]byte("xxx"))
-	hasher.Write([]byte{1, 1, 1})
+	sealBytes, err := seal.MarshalCBOR()
+	require.NoError(t, err)
+	hasher.WriteRaw(sealBytes)
+
 	hash2, err := hasher.Sum()
+	require.NoError(t, err)
+
 	require.Equal(t, hash, hash2)
 }
 

@@ -216,7 +216,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := validUC(t, sid0, &ir0, trHash0)
 		uc.UnicitySeal.Hash = []byte{1, 2, 3}
 		require.EqualError(t, uc.Verify(tb, crypto.SHA256, pdr.PartitionIdentifier, pdrHash),
-			"unicity seal hash 010203 does not match with the root hash of the unicity tree 739339DB2095C09E833C39ADE3026248E4D761CFCEAB64BA21D18A668C375DF9")
+			"unicity seal hash 010203 does not match with the root hash of the unicity tree 5D4C3BCC706E7E17665A8E33E5D213ADDF42A120CC350BEEC5BA2091C88B1804")
 	})
 }
 
@@ -730,30 +730,11 @@ func Test_UnicityCertificate_Hash(t *testing.T) {
 			Signatures:           map[string]hex.Bytes{"1": {1, 1, 1}},
 		},
 	}
-	// serialize manually
-	expectedBytes := []byte{
-		0, 0, 0, 1, // UC: version
-		0, 0, 0, 1, // IR: version
-		0, 0, 1, // IR: previous hash
-		0, 0, 2, // IR: hash
-		0, 0, 3, // IR: block hash
-		0, 0, 4, // IR: summary hash
-		0, 0, 0, 0, 0, 0, 0, 6, // IR: round
-		0, 0, 0, 0, 0, 0, 0, 0, // IR: epoch
-		0, 0, 0, 0, 0, 0, 0, 31, // IR: timestamp
-		0, 0, 0, 0, 0, 0, 0, 20, // IR: sum of fees
-		0, 0, 0, 1, // UT: version
-		1, 1, 1, 1, // UT: identifier
-		1, 1, 1, 1, 1, 2, 3, // UT: siblings key+hash
-		1, 2, 3, 4, // UT: system description hash
-		0, 0, 0, 1, // US: version
-		0, 0, 0, 0, 0, 0, 0, 1, // US: root round
-		0, 0, 0, 0, 0, 0, 0, 9, // US: timestamp
-		1, 2, 3, // US: previous hash
-		2, 3, 4, // US: hash
-		'1', 1, 1, 1, // US: signature
-	}
-	expectedHash := sha256.Sum256(expectedBytes)
+
+	ucBytes, err := uc.MarshalCBOR()
+	require.NoError(t, err)
+	expectedHash := sha256.Sum256(ucBytes)
+
 	require.EqualValues(t, expectedHash[:], doHash(t, uc))
 }
 

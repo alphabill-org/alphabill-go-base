@@ -120,7 +120,8 @@ func (x *UnicitySeal) IsValid() error {
 }
 
 // Bytes - serialize everything except signatures (used for sign and verify)
-func (x *UnicitySeal) Bytes() []byte {
+func (x UnicitySeal) Bytes() []byte {
+	x.Signatures = nil
 	bs, err := x.MarshalCBOR()
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal unicity seal: %w", err))

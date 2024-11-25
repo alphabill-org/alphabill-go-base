@@ -91,17 +91,15 @@ func TestUnicityTreeCertificate_Hash(t *testing.T) {
 		HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: []byte{1, 2, 3}}},
 		PDRHash:   []byte{1, 2, 3, 4},
 	}
-	expectedBytes := []byte{
-		0, 0, 0, 1, // version
-		1, 1, 1, 1, //identifier
-		1, 1, 1, 1, 1, 2, 3, // siblings key+hash
-		1, 2, 3, 4, // system description hash
-	}
-	expectedHash := sha256.Sum256(expectedBytes)
+
+	utBytes, err := ut.MarshalCBOR()
+	require.NoError(t, err)
+	expectedHash := sha256.Sum256(utBytes)
 	// test add to hasher too
 	hasher := crypto.SHA256.New()
 	abhasher := abhash.New(hasher)
 	ut.AddToHasher(abhasher)
+
 	require.EqualValues(t, expectedHash[:], hasher.Sum(nil))
 }
 

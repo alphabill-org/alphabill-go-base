@@ -77,13 +77,7 @@ func (utc *UnicityTreeCertificate) EvalAuthPath(shardTreeRoot []byte, hashAlgori
 }
 
 func (utc *UnicityTreeCertificate) AddToHasher(hasher abhash.Hasher) {
-	hasher.Write(utc.Version)
-	hasher.Write(utc.Partition.Bytes())
-	for _, hashStep := range utc.HashSteps {
-		hasher.Write(hashStep.Key)
-		hasher.Write(hashStep.Hash)
-	}
-	hasher.Write(utc.PDRHash)
+	hasher.Write(utc)
 }
 
 func (utc *UnicityTreeCertificate) GetVersion() ABVersion {

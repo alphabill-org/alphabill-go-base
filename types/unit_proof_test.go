@@ -130,7 +130,7 @@ func TestVerifyUnitStateProof(t *testing.T) {
 		uc, err := proof.getUCv1()
 		require.NoError(t, err)
 		uc.InputRecord = &InputRecord{SummaryValue: []byte{0, 0, 0, 0, 0, 0, 0, 0}}
-		hash, _ := hexutil.Decode("0xD89E72519019E9A93B1A3BE8C1E9593EC347E239DEC0C1AD73071055C144796C")
+		hash, _ := hexutil.Decode("0xF841D169C3E9BF49B31DFDC8F4984C92FEBB6202458B553455A08BE13C2FCBC0")
 		uc.InputRecord.Hash = hash
 		proof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
