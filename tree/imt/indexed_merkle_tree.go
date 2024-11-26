@@ -67,7 +67,11 @@ func New(hashAlgorithm crypto.Hash, leaves []LeafData) (*Tree, error) {
 	pairs := make([]pair, len(leaves))
 	for i, l := range leaves {
 		l.AddToHasher(hasher)
-		pairs[i] = pair{key: l.Key(), dataHash: rawHasher.Sum(nil)}
+		h, err := hasher.Sum()
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate leaf hash: %w", err)
+		}
+		pairs[i] = pair{key: l.Key(), dataHash: h}
 		rawHasher.Reset()
 	}
 	return &Tree{root: createMerkleTree(pairs, rawHasher), dataLength: len(pairs)}, nil
