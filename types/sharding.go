@@ -141,10 +141,6 @@ func (id *ShardID) UnmarshalCBOR(data []byte) (err error) {
 
 type ShardingScheme []ShardID
 
-func (sh ShardingScheme) AddToHasher(h abhash.Hasher) {
-	h.Write(sh)
-}
-
 /*
 All returns iterator over all shard IDs in the sharding scheme.
 
