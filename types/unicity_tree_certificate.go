@@ -61,16 +61,19 @@ EvalAuthPath aka Compute Unicity Tree Certificate.
 
 The shardTreeRoot is output of the CompShardTreeCert function.
 */
-func (utc *UnicityTreeCertificate) EvalAuthPath(shardTreeRoot []byte, hashAlgorithm crypto.Hash) []byte {
+func (utc *UnicityTreeCertificate) EvalAuthPath(shardTreeRoot []byte, hashAlgorithm crypto.Hash) ([]byte, error) {
 	// restore the merkle path with the first hash step
-	h := hashAlgorithm.New()
-	hasher := abhash.New(h)
+	hasher := abhash.New(hashAlgorithm.New())
 	(&UnicityTreeData{
 		Partition:     utc.Partition,
 		ShardTreeRoot: shardTreeRoot,
 		PDRHash:       utc.PDRHash,
 	}).AddToHasher(hasher)
-	hashSteps := append([]*imt.PathItem{{Key: utc.Partition.Bytes(), Hash: h.Sum(nil)}}, utc.HashSteps...)
+	h, err := hasher.Sum()
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate leaf hash: %w", err)
+	}
+	hashSteps := append([]*imt.PathItem{{Key: utc.Partition.Bytes(), Hash: h}}, utc.HashSteps...)
 
 	// calculate root hash from the merkle path
 	return imt.IndexTreeOutput(hashSteps, utc.Partition.Bytes(), hashAlgorithm)

@@ -50,7 +50,7 @@ func TestGetCertificate_Ok(t *testing.T) {
 	hashSteps := []*imt.PathItem{{Key: data[0].Partition.Bytes(), Hash: h.Sum(nil)}}
 	hashSteps = append(hashSteps, cert.HashSteps...)
 
-	root := imt.IndexTreeOutput(hashSteps, key1.Bytes(), crypto.SHA256)
+	root, err := imt.IndexTreeOutput(hashSteps, key1.Bytes(), crypto.SHA256)
 	require.NoError(t, err)
 	require.Equal(t, unicityTree.RootHash(), root)
 	// system id 0 is illegal

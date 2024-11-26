@@ -10,6 +10,8 @@ import (
 type Hasher interface {
 	Write(any)
 	WriteRaw([]byte)
+	Reset()
+	Sum() ([]byte, error)
 }
 
 /*

@@ -57,7 +57,10 @@ func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, par
 	if err != nil {
 		return err
 	}
-	treeRoot := x.UnicityTreeCertificate.EvalAuthPath(strh, algorithm)
+	treeRoot, err := x.UnicityTreeCertificate.EvalAuthPath(strh, algorithm)
+	if err != nil {
+		return fmt.Errorf("evaluating unicity tree certificate: %w", err)
+	}
 	rootHash := x.UnicitySeal.Hash
 	if !bytes.Equal(treeRoot, rootHash) {
 		return fmt.Errorf("unicity seal hash %X does not match with the root hash of the unicity tree %X", rootHash, treeRoot)

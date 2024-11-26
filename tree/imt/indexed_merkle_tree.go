@@ -3,8 +3,8 @@ package imt
 import (
 	"bytes"
 	"crypto"
+	"errors"
 	"fmt"
-	"hash"
 
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
@@ -14,6 +14,8 @@ const (
 	tagNode byte = 0
 	tagLeaf byte = 1
 )
+
+var ErrTreeEmpty = errors.New("tree is empty")
 
 type (
 	Tree struct {
@@ -61,8 +63,7 @@ func New(hashAlgorithm crypto.Hash, leaves []LeafData) (*Tree, error) {
 			return nil, fmt.Errorf("data is not sorted by key in strictly ascending order")
 		}
 	}
-	rawHasher := hashAlgorithm.New()
-	hasher := abhash.New(rawHasher)
+	hasher := abhash.New(hashAlgorithm.New())
 	// calculate data hash for leaves
 	pairs := make([]pair, len(leaves))
 	for i, l := range leaves {
@@ -72,23 +73,30 @@ func New(hashAlgorithm crypto.Hash, leaves []LeafData) (*Tree, error) {
 			return nil, fmt.Errorf("failed to calculate leaf hash: %w", err)
 		}
 		pairs[i] = pair{key: l.Key(), dataHash: h}
-		rawHasher.Reset()
+		hasher.Reset()
 	}
-	return &Tree{root: createMerkleTree(pairs, rawHasher), dataLength: len(pairs)}, nil
+	root, err := createMerkleTree(pairs, hasher)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create merkle tree: %w", err)
+	}
+	return &Tree{root: root, dataLength: len(pairs)}, nil
 }
 
 // IndexTreeOutput calculates the output hash of the index Merkle tree hash chain from hash chain, key and data hash.
-func IndexTreeOutput(merklePath []*PathItem, key []byte, hashAlgorithm crypto.Hash) []byte {
+func IndexTreeOutput(merklePath []*PathItem, key []byte, hashAlgorithm crypto.Hash) ([]byte, error) {
 	if len(merklePath) == 0 {
-		return nil
+		return nil, ErrTreeEmpty
 	}
 	leaf, merklePath := merklePath[0], merklePath[1:]
 
-	hasher := hashAlgorithm.New()
+	hasher := abhash.New(hashAlgorithm.New())
 	hasher.Write([]byte{tagLeaf})
 	hasher.Write(leaf.Key)
 	hasher.Write(leaf.Hash)
-	h := hasher.Sum(nil)
+	h, err := hasher.Sum()
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate leaf hash: %w", err)
+	}
 	// follow hash chain
 	for _, item := range merklePath {
 		hasher.Reset()
@@ -105,9 +113,12 @@ func IndexTreeOutput(merklePath []*PathItem, key []byte, hashAlgorithm crypto.Ha
 			hasher.Write(h)
 			hasher.Write(item.Hash)
 		}
-		h = hasher.Sum(nil)
+		h, err = hasher.Sum()
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate node hash: %w", err)
+		}
 	}
-	return h
+	return h, nil
 }
 
 // GetRootHash returns the root Hash of the indexed Merkle tree.
@@ -141,25 +152,39 @@ func (s *Tree) GetMerklePath(key []byte) ([]*PathItem, error) {
 	return z, nil
 }
 
-func createMerkleTree(pairs []pair, hasher hash.Hash) *node {
+func createMerkleTree(pairs []pair, hasher abhash.Hasher) (*node, error) {
 	if len(pairs) == 1 {
 		hasher.Reset()
 		hasher.Write([]byte{tagLeaf})
 		hasher.Write(pairs[0].key)
 		hasher.Write(pairs[0].dataHash)
-		return &node{key: pairs[0].key, dataHash: pairs[0].dataHash, hash: hasher.Sum(nil)}
+		h, err := hasher.Sum()
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate leaf hash: %w", err)
+		}
+		return &node{key: pairs[0].key, dataHash: pairs[0].dataHash, hash: h}, nil
 	}
 	m := (len(pairs) + 1) / 2
 	leftSub := pairs[:m]
 	rightSub := pairs[m:]
-	left := createMerkleTree(leftSub, hasher)
-	right := createMerkleTree(rightSub, hasher)
+	left, err := createMerkleTree(leftSub, hasher)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create left subtree: %w", err)
+	}
+	right, err := createMerkleTree(rightSub, hasher)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create right subtree: %w", err)
+	}
 	hasher.Reset()
 	hasher.Write([]byte{tagNode})
 	hasher.Write(leftSub[len(leftSub)-1].key)
 	hasher.Write(left.hash)
 	hasher.Write(right.hash)
-	return &node{key: leftSub[len(leftSub)-1].key, left: left, right: right, hash: hasher.Sum(nil)}
+	h, err := hasher.Sum()
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate node hash: %w", err)
+	}
+	return &node{key: leftSub[len(leftSub)-1].key, left: left, right: right, hash: h}, nil
 }
 
 // PrettyPrint returns a human-readable string representation of the indexed Merkle tree.
