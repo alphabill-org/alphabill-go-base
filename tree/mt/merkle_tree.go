@@ -52,7 +52,7 @@ func EvalMerklePath(merklePath []*PathItem, leaf Data, hashAlgorithm crypto.Hash
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash leaf: %w", err)
 	}
-	hasher := hashAlgorithm.New()
+	hasher := abhash.New(hashAlgorithm.New())
 	for _, item := range merklePath {
 		if item.DirectionLeft {
 			hasher.Write(h)
@@ -61,19 +61,23 @@ func EvalMerklePath(merklePath []*PathItem, leaf Data, hashAlgorithm crypto.Hash
 			hasher.Write(item.Hash)
 			hasher.Write(h)
 		}
-		h = hasher.Sum(nil)
+		h, err = hasher.Sum()
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate hash: %w", err)
+		}
 		hasher.Reset()
 	}
 	return h, nil
 }
 
 // PlainTreeOutput calculates the output hash of the chain.
-func PlainTreeOutput(merklePath []*PathItem, input []byte, hashAlgorithm crypto.Hash) []byte {
+func PlainTreeOutput(merklePath []*PathItem, input []byte, hashAlgorithm crypto.Hash) ([]byte, error) {
 	if len(merklePath) == 0 {
-		return input
+		return input, nil
 	}
-	hasher := hashAlgorithm.New()
+	hasher := abhash.New(hashAlgorithm.New())
 	h := input
+	var err error
 	for _, item := range merklePath {
 		if item.DirectionLeft {
 			hasher.Write(h)
@@ -82,10 +86,13 @@ func PlainTreeOutput(merklePath []*PathItem, input []byte, hashAlgorithm crypto.
 			hasher.Write(item.Hash)
 			hasher.Write(h)
 		}
-		h = hasher.Sum(nil)
+		h, err = hasher.Sum()
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate hash: %w", err)
+		}
 		hasher.Reset()
 	}
-	return h
+	return h, nil
 }
 
 // GetRootHash returns the root Hash of the Merkle Tree.
@@ -183,7 +190,11 @@ func createMerkleTree[T Data](data []T, hashAlgorithm crypto.Hash) (*node, error
 		return nil, err
 	}
 
-	return &node{left: left, right: right, hash: abhash.SumHashes(hashAlgorithm, left.hash, right.hash)}, nil
+	h, err := abhash.HashValues(hashAlgorithm, left.hash, right.hash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash child nodes: %w", err)
+	}
+	return &node{left: left, right: right, hash: h}, nil
 }
 
 // hibit floating-point-free equivalent of 2**math.floor(math.log(m, 2)),

@@ -128,19 +128,26 @@ func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *St
 
 func (u *UnitStateProof) CalculateStateTreeOutput(algorithm crypto.Hash) ([]byte, uint64, error) {
 	var z []byte
+	var err error
 	if u.UnitTreeCert.TransactionRecordHash == nil {
-		z = abhash.SumHashes(algorithm,
+		z, err = abhash.HashValues(algorithm,
 			u.UnitLedgerHash,
 			u.UnitTreeCert.UnitDataHash,
 		)
 	} else {
-		z = abhash.SumHashes(algorithm,
-			abhash.SumHashes(algorithm, u.UnitLedgerHash, u.UnitTreeCert.TransactionRecordHash),
-			u.UnitTreeCert.UnitDataHash,
-		)
+		z, err = abhash.HashValues(algorithm, u.UnitLedgerHash, u.UnitTreeCert.TransactionRecordHash)
+		if err == nil {
+			z, err = abhash.HashValues(algorithm, z, u.UnitTreeCert.UnitDataHash)
+		}
+	}
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to calculate input hash: %w", err)
 	}
 
-	logRoot := mt.PlainTreeOutput(u.UnitTreeCert.Path, z, algorithm)
+	logRoot, err := mt.PlainTreeOutput(u.UnitTreeCert.Path, z, algorithm)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to calculate log root: %w", err)
+	}
 	id := u.UnitID
 	sc := u.StateTreeCert
 	v := u.UnitValue + sc.LeftSummaryValue + sc.RightSummaryValue

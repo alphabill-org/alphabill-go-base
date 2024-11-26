@@ -54,7 +54,7 @@ func TestNewMTWithOddNumberOfLeaves(t *testing.T) {
 	mt, err := New(crypto.SHA256, data)
 	require.NoError(t, err)
 	require.NotNil(t, mt)
-	require.EqualValues(t, "47A288CB996BFAAA0703D976C338841884F938C06E62A161E4772D6FB68A4A69", fmt.Sprintf("%X", mt.GetRootHash()))
+	require.EqualValues(t, "7193803EC6A56B77DD2CDEC095724A0D60CBAE9D6D05174DF45941BF005739A9", fmt.Sprintf("%X", mt.GetRootHash()))
 }
 
 func TestNewMTWithEvenNumberOfLeaves(t *testing.T) {
@@ -65,7 +65,7 @@ func TestNewMTWithEvenNumberOfLeaves(t *testing.T) {
 	mt, err := New(crypto.SHA256, data)
 	require.NoError(t, err)
 	require.NotNil(t, mt)
-	require.EqualValues(t, "89A0F1577268CC19B0A39C7A69F804FD140640C699585EB635EBB03C06154CCE", fmt.Sprintf("%X", mt.GetRootHash()))
+	require.EqualValues(t, "69C4FDAA2C74647D4EDFCB41B86975647B7C3AB80F73EC36A77614F982FE1C1B", fmt.Sprintf("%X", mt.GetRootHash()))
 }
 
 func TestSingleNodeTreeMerklePath(t *testing.T) {
@@ -91,8 +91,8 @@ func TestMerklePath(t *testing.T) {
 			dataIdxToVerify: 0,
 			path: []*PathItem{
 				{DirectionLeft: true, Hash: decodeHex("0100000000000000000000000000000000000000000000000000000000000000")},
-				{DirectionLeft: true, Hash: decodeHex("0094579CFC7B716038D416A311465309BEA202BAA922B224A7B08F01599642FB")},
-				{DirectionLeft: true, Hash: decodeHex("633B26EE8A5D96D49A4861E9A5720492F0DB5B6AF305C0B5CFCC6A7EC9B676D4")},
+				{DirectionLeft: true, Hash: decodeHex("BC8737A9C46FA1B8A60AD63E70D1376E193F8059D0888458AFB4198454876E07")},
+				{DirectionLeft: true, Hash: decodeHex("A3B482CCC06795F7C9D87E40305899B2DAA334DF91A3A1FCD7C09A7354FD3EDD")},
 			},
 		},
 		{
@@ -101,8 +101,8 @@ func TestMerklePath(t *testing.T) {
 			dataIdxToVerify: 7,
 			path: []*PathItem{
 				{DirectionLeft: false, Hash: decodeHex("0600000000000000000000000000000000000000000000000000000000000000")},
-				{DirectionLeft: false, Hash: decodeHex("BD50456D5AD175AE99A1612A53CA229124B65D3EAABD9FF9C7AB979A385CF6B3")},
-				{DirectionLeft: false, Hash: decodeHex("BA94FFE7EDABF26EF12736F8EB5CE74D15BEDB6AF61444AE2906E926B1A95084")},
+				{DirectionLeft: false, Hash: decodeHex("F35E6B7B94801C39090A3621E798D4EB2E815955A719254FEFF472A814635B68")},
+				{DirectionLeft: false, Hash: decodeHex("22707D03671D5EDF80EE90C32DA947BF2CA3CF3AA71A20C1C86A7F117DAD1B6B")},
 			},
 		},
 		{
@@ -111,8 +111,8 @@ func TestMerklePath(t *testing.T) {
 			dataIdxToVerify: 4,
 			path: []*PathItem{
 				{DirectionLeft: true, Hash: decodeHex("0500000000000000000000000000000000000000000000000000000000000000")},
-				{DirectionLeft: true, Hash: decodeHex("FA670379E5C2212ED93FF09769622F81F98A91E1EC8FB114D607DD25220B9088")},
-				{DirectionLeft: false, Hash: decodeHex("BA94FFE7EDABF26EF12736F8EB5CE74D15BEDB6AF61444AE2906E926B1A95084")},
+				{DirectionLeft: true, Hash: decodeHex("540D0EB5979906647651AC1F57B42D51847F11F5FF7DBAD10A50E5170358F6E2")},
+				{DirectionLeft: false, Hash: decodeHex("22707D03671D5EDF80EE90C32DA947BF2CA3CF3AA71A20C1C86A7F117DAD1B6B")},
 			},
 		},
 		{
@@ -153,6 +153,7 @@ func TestMerklePath(t *testing.T) {
 				require.Equal(t, len(tt.path), len(merklePath))
 				for i := 0; i < len(tt.path); i++ {
 					require.EqualValues(t, tt.path[i].DirectionLeft, merklePath[i].DirectionLeft)
+					fmt.Printf("Actual: %X\n", merklePath[i].Hash)
 					require.EqualValues(t, tt.path[i].Hash, merklePath[i].Hash)
 				}
 			}
