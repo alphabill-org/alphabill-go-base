@@ -162,35 +162,18 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 		sigMap := make(SignatureMap)
 		for k, v := range sigs {
 			key, ok := k.(string)
-			if !ok {
+			if !ok || key == "" {
 				return fmt.Errorf("invalid key type: %T", k)
 			}
-			if value, ok := v.([]byte); ok || v == nil {
+			if value, ok := v.([]byte); ok {
 				sigMap[key] = value
 			} else {
 				return fmt.Errorf("invalid value type: %T", v)
 			}
-
 		}
 		x.Signatures = sigMap
 	} else if arr[5] != nil {
 		return fmt.Errorf("unicity seal: invalid signatures: %+v", arr[5])
 	}
 	return nil
-}
-
-func convertToSignatureMap(input map[any]any) (SignatureMap, error) {
-	sigMap := make(SignatureMap)
-	for k, v := range input {
-		key, ok := k.(string)
-		if !ok {
-			return nil, fmt.Errorf("invalid key type: %T", k)
-		}
-		value, ok := v.(hex.Bytes)
-		if !ok {
-			return nil, fmt.Errorf("invalid value type: %T", v)
-		}
-		sigMap[key] = value
-	}
-	return sigMap, nil
 }
