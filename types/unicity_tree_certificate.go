@@ -32,8 +32,8 @@ type UnicityTreeData struct {
 }
 
 func (t *UnicityTreeData) AddToHasher(hasher abhash.Hasher) {
-	hasher.WriteRaw(t.ShardTreeRoot)
-	hasher.WriteRaw(t.PDRHash)
+	hasher.Write(t.ShardTreeRoot)
+	hasher.Write(t.PDRHash)
 }
 
 func (t *UnicityTreeData) Key() []byte {

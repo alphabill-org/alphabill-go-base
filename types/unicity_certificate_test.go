@@ -216,7 +216,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := validUC(t, sid0, &ir0, trHash0)
 		uc.UnicitySeal.Hash = []byte{1, 2, 3}
 		require.EqualError(t, uc.Verify(tb, crypto.SHA256, pdr.PartitionIdentifier, pdrHash),
-			"unicity seal hash 010203 does not match with the root hash of the unicity tree F7B9C65B4D000BF45B0D1FA2CAE1D1D91336550BC689D8DE5DD4C33714E48BD3")
+			"unicity seal hash 010203 does not match with the root hash of the unicity tree 4245459C6CE01D9CA767AF3FA1E17D612EA8A644FF143FD9C68AB160D9424C67")
 	})
 }
 
