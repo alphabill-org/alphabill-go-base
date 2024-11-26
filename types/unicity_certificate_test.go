@@ -239,7 +239,7 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 	}
 	require.EqualValues(t, []byte{0, 0, 2}, uc.GetStateHash())
 	// everything is equal, this is the same UC and not repeat
-	require.False(t, isRepeat(uc, uc))
+	checkIsRepeat(t, uc, uc, false)
 	ruc := &UnicityCertificate{
 		Version:     1,
 		InputRecord: uc.InputRecord.NewRepeatIR(),
@@ -248,17 +248,16 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 			RootChainRoundNumber: uc.UnicitySeal.RootChainRoundNumber + 1,
 		},
 	}
-	require.True(t, ruc.IsRepeat(uc))
 	// now it is repeat of previous round
-	require.True(t, isRepeat(uc, ruc))
+	checkIsRepeat(t, uc, ruc, true)
 	ruc.UnicitySeal.RootChainRoundNumber++
 	// still is considered a repeat uc
-	require.True(t, isRepeat(uc, ruc))
+	checkIsRepeat(t, uc, ruc, true)
 	// with incremented round number, not a repeat uc
 	ruc.InputRecord.RoundNumber++
-	require.False(t, isRepeat(uc, ruc))
+	checkIsRepeat(t, uc, ruc, false)
 	// if anything else changes, it is no longer considered repeat
-	require.False(t, isRepeat(uc, &UnicityCertificate{
+	checkIsRepeat(t, uc, &UnicityCertificate{
 		Version: 1,
 		InputRecord: &InputRecord{
 			Version:         1,
@@ -268,8 +267,8 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 			RoundNumber:     6,
 			SumOfEarnedFees: 20,
 		},
-	}))
-	require.False(t, isRepeat(uc, &UnicityCertificate{
+	}, false)
+	checkIsRepeat(t, uc, &UnicityCertificate{
 		Version: 1,
 		InputRecord: &InputRecord{
 			Version:         1,
@@ -280,9 +279,16 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 			RoundNumber:     6,
 			SumOfEarnedFees: 2,
 		},
-	}))
+	}, false)
 	// also not if order is opposite
-	require.False(t, isRepeat(ruc, uc))
+	checkIsRepeat(t, ruc, uc, false)
+}
+
+func checkIsRepeat(t *testing.T, prevUC, newUC *UnicityCertificate, expected bool) {
+	t.Helper()
+	b, err := isRepeat(prevUC, newUC)
+	require.NoError(t, err)
+	require.Equal(t, expected, b)
 }
 
 func TestCheckNonEquivocatingCertificates(t *testing.T) {

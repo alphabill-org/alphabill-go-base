@@ -1,7 +1,6 @@
 package types
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"reflect"
 	"testing"
@@ -160,7 +159,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 33,
 		}
-		require.True(t, EqualIR(irA, irB))
+		require.True(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("Previous hash not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -171,7 +170,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 33,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("Hash not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -182,7 +181,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 33,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("Block hash not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -193,7 +192,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 33,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("Summary value not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -204,7 +203,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 33,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("RoundNumber not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -215,7 +214,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     1,
 			SumOfEarnedFees: 33,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("SumOfEarnedFees not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -226,7 +225,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 1,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 }
 
@@ -299,10 +298,16 @@ func Test_AssertEqualIR(t *testing.T) {
 func TestInputRecord_NewRepeatUC(t *testing.T) {
 	repeatUC := ir.NewRepeatIR()
 	require.NotNil(t, repeatUC)
-	require.True(t, bytes.Equal(ir.Bytes(), repeatUC.Bytes()))
+	require.True(t, isEqualIR(t, ir, repeatUC))
 	require.True(t, reflect.DeepEqual(ir, repeatUC))
 	ir.RoundNumber++
-	require.False(t, bytes.Equal(ir.Bytes(), repeatUC.Bytes()))
+	require.False(t, isEqualIR(t, ir, repeatUC))
+}
+
+func isEqualIR(t *testing.T, ir1, ir2 *InputRecord) bool {
+	b, err := EqualIR(ir1, ir2)
+	require.NoError(t, err)
+	return b
 }
 
 func TestStringer(t *testing.T) {

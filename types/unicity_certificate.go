@@ -138,7 +138,15 @@ func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 	}
 	// 1. uc.IR.n = uc′.IR.n - if the partition round number is the same then input records must also match
 	if newUC.GetRoundNumber() == prevUC.GetRoundNumber() {
-		if !bytes.Equal(newUC.InputRecord.Bytes(), prevUC.InputRecord.Bytes()) {
+		newIrBytes, err := newUC.InputRecord.Bytes()
+		if err != nil {
+			return fmt.Errorf("new certificate input record bytes: %w", err)
+		}
+		prevIrBytes, err := prevUC.InputRecord.Bytes()
+		if err != nil {
+			return fmt.Errorf("previous certificate input record bytes: %w", err)
+		}
+		if !bytes.Equal(newIrBytes, prevIrBytes) {
 			return fmt.Errorf("equivocating UC, different input records for same partition round %v", newUC.GetRoundNumber())
 		}
 		// it's a Repeat UC
@@ -184,15 +192,18 @@ func (x *UnicityCertificate) IsDuplicate(prevUC *UnicityCertificate) bool {
 	return x.GetRootRoundNumber() == prevUC.GetRootRoundNumber()
 }
 
-func (x *UnicityCertificate) IsRepeat(prevUC *UnicityCertificate) bool {
+func (x *UnicityCertificate) IsRepeat(prevUC *UnicityCertificate) (bool, error) {
 	return isRepeat(prevUC, x)
 }
 
 // isRepeat - check if newUC is a repeat of previous UC.
 // Everything else is the same except root round number may be bigger
-func isRepeat(prevUC, newUC *UnicityCertificate) bool {
-	return EqualIR(prevUC.InputRecord, newUC.InputRecord) &&
-		prevUC.UnicitySeal.RootChainRoundNumber < newUC.UnicitySeal.RootChainRoundNumber
+func isRepeat(prevUC, newUC *UnicityCertificate) (bool, error) {
+	eq, err := EqualIR(prevUC.InputRecord, newUC.InputRecord)
+	if err != nil {
+		return false, err
+	}
+	return eq && prevUC.UnicitySeal.RootChainRoundNumber < newUC.UnicitySeal.RootChainRoundNumber, nil
 }
 
 func (x *UnicityCertificate) GetVersion() ABVersion {

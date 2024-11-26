@@ -41,8 +41,16 @@ func isZeroHash(hash []byte) bool {
 	return true
 }
 
-func EqualIR(a, b *InputRecord) bool {
-	return bytes.Equal(a.Bytes(), b.Bytes())
+func EqualIR(a, b *InputRecord) (bool, error) {
+	aIrBytes, err := a.Bytes()
+	if err != nil {
+		return false, fmt.Errorf("new certificate input record bytes: %w", err)
+	}
+	bIrBytes, err := b.Bytes()
+	if err != nil {
+		return false, fmt.Errorf("previous certificate input record bytes: %w", err)
+	}
+	return bytes.Equal(aIrBytes, bIrBytes), nil
 }
 
 func AssertEqualIR(a, b *InputRecord) error {
@@ -109,12 +117,8 @@ func (x *InputRecord) AddToHasher(hasher abhash.Hasher) {
 	hasher.Write(x)
 }
 
-func (x *InputRecord) Bytes() []byte {
-	bs, err := x.MarshalCBOR()
-	if err != nil {
-		panic(fmt.Errorf("failed to marshal input record: %w", err))
-	}
-	return bs
+func (x *InputRecord) Bytes() ([]byte, error) {
+	return x.MarshalCBOR()
 }
 
 // NewRepeatIR - creates new repeat IR from current IR
