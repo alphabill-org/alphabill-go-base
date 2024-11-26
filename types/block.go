@@ -235,11 +235,7 @@ func (h *Header) Hash(algorithm crypto.Hash) ([]byte, error) {
 		return nil, errBlockHeaderIsNil
 	}
 	hasher := abhash.New(algorithm.New())
-	hasher.Write(h.Version)
-	hasher.Write(h.PartitionID)
-	h.ShardID.AddToHasher(hasher)
-	hasher.Write(h.PreviousBlockHash)
-	hasher.Write([]byte(h.ProposerID))
+	hasher.Write(h)
 	return hasher.Sum()
 }
 
