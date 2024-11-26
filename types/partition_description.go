@@ -23,10 +23,7 @@ type SystemTypeDescriptor struct {
 }
 
 func (std *SystemTypeDescriptor) AddToHasher(h abhash.Hasher) {
-	if std == nil {
-		h.Write(0)
-		return
-	}
+	h.Write(std)
 	// todo: hash field values
 }
 
