@@ -83,23 +83,9 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	return nil
 }
 
-func (pdr *PartitionDescriptionRecord) AddToHasher(h abhash.Hasher) {
-	h.Write(pdr.Version)
-	h.Write(pdr.NetworkIdentifier)
-	h.Write(pdr.PartitionIdentifier)
-	h.Write(pdr.TypeIdLen)
-	h.Write(pdr.UnitIdLen)
-	h.Write(pdr.T2Timeout.Nanoseconds())
-	h.Write(len(pdr.SummaryTrustBase))
-	h.Write(pdr.SummaryTrustBase)
-
-	pdr.Shards.AddToHasher(h)
-	pdr.SystemDescriptor.AddToHasher(h)
-}
-
 func (pdr *PartitionDescriptionRecord) Hash(hashAlgorithm crypto.Hash) ([]byte, error) {
 	hasher := abhash.New(hashAlgorithm.New())
-	pdr.AddToHasher(hasher)
+	hasher.Write(pdr)
 	return hasher.Sum()
 }
 
