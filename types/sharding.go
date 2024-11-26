@@ -142,13 +142,7 @@ func (id *ShardID) UnmarshalCBOR(data []byte) (err error) {
 type ShardingScheme []ShardID
 
 func (sh ShardingScheme) AddToHasher(h abhash.Hasher) {
-	h.Write(len(sh))
-
-	// todo: id-s must be sorted? lexically or topologically?
-	// or do we assume that the list is kept sorted?
-	for _, v := range sh {
-		v.AddToHasher(h)
-	}
+	h.Write(sh)
 }
 
 /*
