@@ -3,7 +3,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/alphabill-org/alphabill-go-base/crypto"
@@ -25,7 +24,7 @@ var (
 	ErrInvalidTimestamp          = errors.New("invalid timestamp")
 )
 
-type SignatureMap map[string]hex.Bytes
+type SignatureMap = map[string]hex.Bytes
 type UnicitySeal struct {
 	_                    struct{}     `cbor:",toarray"`
 	Version              ABVersion    `json:"version"`
@@ -34,57 +33,6 @@ type UnicitySeal struct {
 	PreviousHash         hex.Bytes    `json:"previousHash"`
 	Hash                 hex.Bytes    `json:"hash"`
 	Signatures           SignatureMap `json:"signatures"`
-}
-
-// Signatures are serialized as alphabetically sorted CBOR array
-type signaturesCBOR []*signature
-type signature struct {
-	_         struct{}  `cbor:",toarray"`
-	NodeID    string    `json:"nodeId"`
-	Signature hex.Bytes `json:"signature"`
-}
-
-func (s SignatureMap) MarshalCBOR() ([]byte, error) {
-	// shallow copy
-	authors := make([]string, 0, len(s))
-	for k := range s {
-		authors = append(authors, k)
-	}
-	sort.Strings(authors)
-	sCBOR := make(signaturesCBOR, len(s))
-	for i, author := range authors {
-		sCBOR[i] = &signature{NodeID: author, Signature: s[author]}
-	}
-	return Cbor.Marshal(sCBOR)
-}
-
-func (s *SignatureMap) UnmarshalCBOR(b []byte) error {
-	var sCBOR signaturesCBOR
-	if err := Cbor.Unmarshal(b, &sCBOR); err != nil {
-		return fmt.Errorf("cbor unmarshal failed, %w", err)
-	}
-	sigMap := make(SignatureMap)
-	for _, sig := range sCBOR {
-		sigMap[sig.NodeID] = sig.Signature
-	}
-	*s = sigMap
-	return nil
-}
-
-func (s SignatureMap) AddToHasher(hasher abhash.Hasher) {
-	if s == nil {
-		return
-	}
-	authors := make([]string, 0, len(s))
-	for k := range s {
-		authors = append(authors, k)
-	}
-	sort.Strings(authors)
-	for _, author := range authors {
-		sig := s[author]
-		hasher.Write(author)
-		hasher.Write(sig)
-	}
 }
 
 // NewTimestamp - returns timestamp in seconds from epoch
@@ -164,11 +112,11 @@ func (x *UnicitySeal) AddToHasher(hasher abhash.Hasher) {
 }
 
 func (x *UnicitySeal) MarshalCBOR() ([]byte, error) {
-	sigs, err := x.Signatures.MarshalCBOR()
-	if err != nil {
-		return nil, err
+	type alias UnicitySeal
+	if x.Version == 0 {
+		x.Version = x.GetVersion()
 	}
-	return Cbor.MarshalTagged(UnicitySealTag, x.GetVersion(), x.RootChainRoundNumber, x.Timestamp, x.PreviousHash, x.Hash, sigs)
+	return Cbor.MarshalTaggedValue(UnicitySealTag, (*alias)(x))
 }
 
 func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
@@ -210,14 +158,39 @@ func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
 	} else {
 		return fmt.Errorf("unicity seal: invalid hash: %+v", arr[4])
 	}
-	if sigs, ok := arr[5].([]byte); ok {
-		var sigMap SignatureMap
-		if err := sigMap.UnmarshalCBOR(sigs); err != nil {
-			return err
+	if sigs, ok := arr[5].(map[any]any); ok {
+		sigMap := make(SignatureMap)
+		for k, v := range sigs {
+			key, ok := k.(string)
+			if !ok {
+				return fmt.Errorf("invalid key type: %T", k)
+			}
+			if value, ok := v.([]byte); ok || v == nil {
+				sigMap[key] = value
+			} else {
+				return fmt.Errorf("invalid value type: %T", v)
+			}
+
 		}
 		x.Signatures = sigMap
 	} else if arr[5] != nil {
 		return fmt.Errorf("unicity seal: invalid signatures: %+v", arr[5])
 	}
 	return nil
+}
+
+func convertToSignatureMap(input map[any]any) (SignatureMap, error) {
+	sigMap := make(SignatureMap)
+	for k, v := range input {
+		key, ok := k.(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid key type: %T", k)
+		}
+		value, ok := v.(hex.Bytes)
+		if !ok {
+			return nil, fmt.Errorf("invalid value type: %T", v)
+		}
+		sigMap[key] = value
+	}
+	return sigMap, nil
 }

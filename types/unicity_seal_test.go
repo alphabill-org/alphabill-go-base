@@ -160,32 +160,6 @@ func Test_NewTimestamp(t *testing.T) {
 	require.NotZero(t, NewTimestamp())
 }
 
-func TestSignatureMap_Serialize(t *testing.T) {
-	t.Run("SignatureMap is empty", func(t *testing.T) {
-		smap := SignatureMap{}
-		data, err := smap.MarshalCBOR()
-		require.NoError(t, err)
-		res := SignatureMap{}
-		require.NoError(t, res.UnmarshalCBOR(data))
-		require.Empty(t, smap)
-	})
-	t.Run("SignatureMap normal", func(t *testing.T) {
-		smap := SignatureMap{"x": []byte{9, 9, 9}, "1": []byte{1, 2, 3}, "a": []byte{0, 0, 0}, "2": []byte{2, 3, 4}}
-		data, err := smap.MarshalCBOR()
-		require.NoError(t, err)
-		res := SignatureMap{}
-		require.NoError(t, res.UnmarshalCBOR(data))
-		require.EqualValues(t, smap, res)
-	})
-}
-
-func TestSignatureMap_AddToHasher_Nil(t *testing.T) {
-	var smap SignatureMap
-	hasher := crypto.SHA256.New()
-	smap.AddToHasher(abhash.New(hasher))
-	require.Nil(t, smap)
-}
-
 func TestSeal_AddToHasher(t *testing.T) {
 	seal := &UnicitySeal{
 		RootChainRoundNumber: 1,

@@ -847,7 +847,7 @@ func Test_UnicityCertificate_Cbor(t *testing.T) {
 		//uc := &UnicityCertificate{InputRecord: &InputRecord{}, TRHash: []byte{1}, UnicityTreeCertificate: &UnicityTreeCertificate{}, UnicitySeal: &UnicitySeal{}}
 		//_ucData, _ := uc.MarshalCBOR()
 		//fmt.Printf("ucData: 0x%X\n", _ucData)
-		ucData, err := hex.Decode([]byte("0xD903EF8601D903F08901F6F6F6F6000000004101824180F6D903F6840000F6F6D903E986010000F6F64180"))
+		ucData, err := hex.Decode([]byte("0xD903EF8601D903F08901F6F6F6F6000000004101824180F6D903F6840100F6F6D903E986010000F6F6F6"))
 		require.NoError(t, err)
 
 		uc1 := &UnicityCertificate{}
