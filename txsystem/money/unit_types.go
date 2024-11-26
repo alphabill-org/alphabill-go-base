@@ -1,6 +1,8 @@
 package money
 
 import (
+	"fmt"
+
 	"github.com/alphabill-org/alphabill-go-base/predicates/templates"
 	"github.com/alphabill-org/alphabill-go-base/txsystem/fc"
 	"github.com/alphabill-org/alphabill-go-base/types"
@@ -25,17 +27,20 @@ func NewFeeCreditRecordID(shardPart []byte, unitPart []byte) types.UnitID {
 	return types.NewUnitID(UnitIDLength, shardPart, unitPart, FeeCreditRecordUnitType)
 }
 
-func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, latestAdditionTime uint64) types.UnitID {
+func NewFeeCreditRecordIDFromPublicKey(shardPart, pubKey []byte, latestAdditionTime uint64) (types.UnitID, error) {
 	ownerPredicate := templates.NewP2pkh256BytesFromKey(pubKey)
 	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 
-func NewFeeCreditRecordIDFromPublicKeyHash(shardPart, pubKeyHash []byte, latestAdditionTime uint64) types.UnitID {
+func NewFeeCreditRecordIDFromPublicKeyHash(shardPart, pubKeyHash []byte, latestAdditionTime uint64) (types.UnitID, error) {
 	ownerPredicate := templates.NewP2pkh256BytesFromKeyHash(pubKeyHash)
 	return NewFeeCreditRecordIDFromOwnerPredicate(shardPart, ownerPredicate, latestAdditionTime)
 }
 
-func NewFeeCreditRecordIDFromOwnerPredicate(shardPart []byte, ownerPredicate []byte, latestAdditionTime uint64) types.UnitID {
-	unitPart := fc.NewFeeCreditRecordUnitPart(ownerPredicate, latestAdditionTime)
-	return NewFeeCreditRecordID(shardPart, unitPart)
+func NewFeeCreditRecordIDFromOwnerPredicate(shardPart []byte, ownerPredicate []byte, latestAdditionTime uint64) (types.UnitID, error) {
+	unitPart, err := fc.NewFeeCreditRecordUnitPart(ownerPredicate, latestAdditionTime)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create fee credit record unit part: %w", err)
+	}
+	return NewFeeCreditRecordID(shardPart, unitPart), nil
 }
