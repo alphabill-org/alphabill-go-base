@@ -33,7 +33,7 @@ func (id ShardID) Key() string {
 }
 
 func (id ShardID) AddToHasher(h abhash.Hasher) {
-	h.Write(id.Bytes())
+	h.Write(id)
 }
 
 func (id ShardID) String() (s string) {
@@ -119,7 +119,7 @@ func (id *ShardID) UnmarshalText(src []byte) error {
 }
 
 func (id ShardID) MarshalCBOR() ([]byte, error) {
-	return Cbor.Marshal(encodeBitstring(id.bits, id.length))
+	return Cbor.Marshal(id.Bytes())
 }
 
 func (id *ShardID) UnmarshalCBOR(data []byte) (err error) {
