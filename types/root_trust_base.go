@@ -5,7 +5,6 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
-	"sort"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
@@ -164,22 +163,7 @@ func (r *RootTrustBaseV1) Sign(nodeID string, signer abcrypto.Signer) error {
 // Hash hashes the entire structure including the signatures.
 func (r *RootTrustBaseV1) Hash(hashAlgo crypto.Hash) ([]byte, error) {
 	hasher := abhash.New(hashAlgo.New())
-
-	sb, err := r.SigBytes()
-	if err != nil {
-		return nil, err
-	}
-	hasher.WriteRaw(sb)
-
-	// hash signatures in deterministic order
-	var keys []string
-	for nodeID := range r.Signatures {
-		keys = append(keys, nodeID)
-	}
-	sort.Strings(keys)
-	for _, nodeID := range keys {
-		hasher.Write(r.Signatures[nodeID])
-	}
+	hasher.Write(r)
 	return hasher.Sum()
 }
 
