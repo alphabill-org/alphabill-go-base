@@ -18,6 +18,10 @@ func Sum256(data []byte) []byte {
 	return hsh[:]
 }
 
+func NewSha256() *Hash {
+	return New(crypto.SHA256.New())
+}
+
 func HashValues(hashAlgorithm crypto.Hash, values ...any) ([]byte, error) {
 	hasher := New(hashAlgorithm.New())
 	for _, value := range values {
