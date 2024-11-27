@@ -153,7 +153,6 @@ func TestMerklePath(t *testing.T) {
 				require.Equal(t, len(tt.path), len(merklePath))
 				for i := 0; i < len(tt.path); i++ {
 					require.EqualValues(t, tt.path[i].DirectionLeft, merklePath[i].DirectionLeft)
-					fmt.Printf("Actual: %X\n", merklePath[i].Hash)
 					require.EqualValues(t, tt.path[i].Hash, merklePath[i].Hash)
 				}
 			}

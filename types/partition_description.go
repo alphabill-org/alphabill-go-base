@@ -24,7 +24,6 @@ type SystemTypeDescriptor struct {
 
 func (std *SystemTypeDescriptor) AddToHasher(h abhash.Hasher) {
 	h.Write(std)
-	// todo: hash field values
 }
 
 type PartitionDescriptionRecord struct {
