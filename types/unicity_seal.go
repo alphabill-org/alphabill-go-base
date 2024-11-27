@@ -67,21 +67,21 @@ func (x *UnicitySeal) IsValid() error {
 	return nil
 }
 
-// Bytes - serialize everything except signatures (used for sign and verify)
-func (x UnicitySeal) Bytes() []byte {
+// SigBytes - serialize everything except signatures (used for sign and verify)
+func (x UnicitySeal) SigBytes() ([]byte, error) {
 	x.Signatures = nil
-	bs, err := x.MarshalCBOR()
-	if err != nil {
-		panic(fmt.Errorf("failed to marshal unicity seal: %w", err))
-	}
-	return bs
+	return x.MarshalCBOR()
 }
 
 func (x *UnicitySeal) Sign(id string, signer crypto.Signer) error {
 	if signer == nil {
 		return ErrSignerIsNil
 	}
-	sig, err := signer.SignBytes(x.Bytes())
+	bs, err := x.SigBytes()
+	if err != nil {
+		return fmt.Errorf("failed to marshal unicity seal: %w", err)
+	}
+	sig, err := signer.SignBytes(bs)
 	if err != nil {
 		return fmt.Errorf("sign failed, %w", err)
 	}
@@ -100,7 +100,11 @@ func (x *UnicitySeal) Verify(tb RootTrustBase) error {
 	if err := x.IsValid(); err != nil {
 		return fmt.Errorf("invalid unicity seal: %w", err)
 	}
-	if err, _ := tb.VerifyQuorumSignatures(x.Bytes(), x.Signatures); err != nil {
+	bs, err := x.SigBytes()
+	if err != nil {
+		return fmt.Errorf("failed to marshal unicity seal: %w", err)
+	}
+	if err, _ := tb.VerifyQuorumSignatures(bs, x.Signatures); err != nil {
 		return fmt.Errorf("verifying signatures: %w", err)
 	}
 	return nil
