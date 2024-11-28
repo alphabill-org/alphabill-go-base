@@ -30,6 +30,7 @@ const (
 	UnicityTreeCertificateTag
 	TransactionRecordTag
 	TransactionOrderTag
+	RootPartitionBlockDataTag
 )
 
 func ErrInvalidVersion(s Versioned) error {
