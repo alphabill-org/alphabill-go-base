@@ -12,6 +12,7 @@ type Hasher interface {
 	WriteRaw([]byte)
 	Reset()
 	Sum() ([]byte, error)
+	Size() int
 }
 
 /*
@@ -52,6 +53,10 @@ func (h *Hash) Reset() {
 	h.h.Reset()
 	h.err = nil
 	h.enc = encoderMode.NewEncoder(h.h)
+}
+
+func (h *Hash) Size() int {
+	return h.h.Size()
 }
 
 /*
