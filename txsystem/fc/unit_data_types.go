@@ -2,9 +2,8 @@ package fc
 
 import (
 	"bytes"
-	"fmt"
-	"hash"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
@@ -31,13 +30,8 @@ func NewFeeCreditRecord(balance uint64, ownerPredicate []byte, timeout uint64) *
 	}
 }
 
-func (b *FeeCreditRecord) Write(hasher hash.Hash) error {
-	res, err := types.Cbor.Marshal(b)
-	if err != nil {
-		return fmt.Errorf("fee credit serialization error: %w", err)
-	}
-	_, err = hasher.Write(res)
-	return err
+func (b *FeeCreditRecord) Write(hasher abhash.Hasher) {
+	hasher.Write(b)
 }
 
 func (b *FeeCreditRecord) SummaryValueInput() uint64 {

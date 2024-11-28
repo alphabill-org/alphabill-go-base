@@ -7,6 +7,14 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
+type Hasher interface {
+	Write(any)
+	WriteRaw([]byte)
+	Reset()
+	Sum() ([]byte, error)
+	Size() int
+}
+
 /*
 New creates "hash calculator" using given hash function.
 Values written to the hash are encoded as CBOR before hashing.
@@ -45,6 +53,10 @@ func (h *Hash) Reset() {
 	h.h.Reset()
 	h.err = nil
 	h.enc = encoderMode.NewEncoder(h.h)
+}
+
+func (h *Hash) Size() int {
+	return h.h.Size()
 }
 
 /*

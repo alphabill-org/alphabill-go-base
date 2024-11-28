@@ -152,7 +152,9 @@ func TestSignAndVerify(t *testing.T) {
 	require.Len(t, tb.Signatures, 1)
 	sig := tb.Signatures["1"]
 	require.NotEmpty(t, sig)
-	err = keys["1"].verifier.VerifyBytes(sig, tb.SigBytes())
+	sb, err := tb.SigBytes()
+	require.NoError(t, err)
+	err = keys["1"].verifier.VerifyBytes(sig, sb)
 	require.NoError(t, err)
 }
 

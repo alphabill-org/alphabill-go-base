@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
-	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var (
@@ -98,20 +98,26 @@ func BlockHash(algorithm crypto.Hash, h *Header, txs []*TransactionRecord, state
 	// calculate Merkle tree of transactions if any
 	if len(txs) > 0 {
 		// calculate merkle tree root hash from transactions
-		tree := mt.New(algorithm, txs)
+		tree, err := mt.New(algorithm, txs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Merkle tree: %w", err)
+		}
 		merkleRoot = tree.GetRootHash()
 	}
 	// header hash || UC.IR.h′ || UC.IR.h || 0H - block Merkle tree root 0H
-	headerHash := h.Hash(algorithm)
-	hasher := algorithm.New()
+	hasher := abhash.New(algorithm.New())
+	headerHash, err := h.Hash(algorithm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash block header: %w", err)
+	}
 	hasher.Write(headerHash)
 	hasher.Write(prevStateHash)
 	hasher.Write(stateHash)
 	hasher.Write(merkleRoot)
-	return hasher.Sum(nil), nil
+	return hasher.Sum()
 }
 
-func (b *Block) HeaderHash(algorithm crypto.Hash) []byte {
+func (b *Block) HeaderHash(algorithm crypto.Hash) ([]byte, error) {
 	return b.Header.Hash(algorithm)
 }
 
@@ -224,17 +230,13 @@ func (h *Header) UnmarshalCBOR(data []byte) error {
 	return EnsureVersion(h, h.Version, 1)
 }
 
-func (h *Header) Hash(algorithm crypto.Hash) []byte {
+func (h *Header) Hash(algorithm crypto.Hash) ([]byte, error) {
 	if h == nil {
-		return nil
+		return nil, errBlockHeaderIsNil
 	}
-	hasher := algorithm.New()
-	hasher.Write(util.Uint32ToBytes(h.Version))
-	hasher.Write(h.PartitionID.Bytes())
-	h.ShardID.AddToHasher(hasher)
-	hasher.Write(h.PreviousBlockHash)
-	hasher.Write([]byte(h.ProposerID))
-	return hasher.Sum(nil)
+	hasher := abhash.New(algorithm.New())
+	hasher.Write(h)
+	return hasher.Sum()
 }
 
 func (h *Header) IsValid() error {
