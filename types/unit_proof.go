@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/alphabill-org/alphabill-go-base/hash"
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/alphabill-org/alphabill-go-base/util"
@@ -105,12 +105,18 @@ func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *St
 	if err := ucv.Validate(uc); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
-	hash := unitData.Hash(algorithm)
+	hash, err := unitData.Hash(algorithm)
+	if err != nil {
+		return fmt.Errorf("failed to calculate unit data hash: %w", err)
+	}
 	if !bytes.Equal(u.UnitTreeCert.UnitDataHash, hash) {
 		return errors.New("unit data hash does not match hash in unit tree")
 	}
 	ir := uc.InputRecord
-	hash, summary := u.CalculateSateTreeOutput(algorithm)
+	hash, summary, err := u.CalculateStateTreeOutput(algorithm)
+	if err != nil {
+		return fmt.Errorf("failed to calculate state tree output: %w", err)
+	}
 	if !bytes.Equal(util.Uint64ToBytes(summary), ir.SummaryValue) {
 		return fmt.Errorf("invalid summary value: expected %X, got %X", ir.SummaryValue, util.Uint64ToBytes(summary))
 	}
@@ -120,35 +126,48 @@ func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *St
 	return nil
 }
 
-func (u *UnitStateProof) CalculateSateTreeOutput(algorithm crypto.Hash) ([]byte, uint64) {
+func (u *UnitStateProof) CalculateStateTreeOutput(algorithm crypto.Hash) ([]byte, uint64, error) {
 	var z []byte
+	var err error
 	if u.UnitTreeCert.TransactionRecordHash == nil {
-		z = hash.Sum(algorithm,
+		z, err = abhash.HashValues(algorithm,
 			u.UnitLedgerHash,
 			u.UnitTreeCert.UnitDataHash,
 		)
 	} else {
-		z = hash.Sum(algorithm,
-			hash.Sum(algorithm, u.UnitLedgerHash, u.UnitTreeCert.TransactionRecordHash),
-			u.UnitTreeCert.UnitDataHash,
-		)
+		z, err = abhash.HashValues(algorithm, u.UnitLedgerHash, u.UnitTreeCert.TransactionRecordHash)
+		if err == nil {
+			z, err = abhash.HashValues(algorithm, z, u.UnitTreeCert.UnitDataHash)
+		}
+	}
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to calculate input hash: %w", err)
 	}
 
-	logRoot := mt.PlainTreeOutput(u.UnitTreeCert.Path, z, algorithm)
+	logRoot, err := mt.PlainTreeOutput(u.UnitTreeCert.Path, z, algorithm)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to calculate log root: %w", err)
+	}
 	id := u.UnitID
 	sc := u.StateTreeCert
 	v := u.UnitValue + sc.LeftSummaryValue + sc.RightSummaryValue
-	h := computeHash(algorithm, id, logRoot, v, sc.LeftSummaryHash, sc.LeftSummaryValue, sc.RightSummaryHash, sc.RightSummaryValue)
+	h, err := computeHash(algorithm, id, logRoot, v, sc.LeftSummaryHash, sc.LeftSummaryValue, sc.RightSummaryHash, sc.RightSummaryValue)
+	if err != nil {
+		return nil, 0, err
+	}
 	for _, p := range sc.Path {
 		vv := p.Value + v + p.SiblingSummaryValue
 		if id.Compare(p.UnitID) == -1 {
-			h = computeHash(algorithm, p.UnitID, p.LogsHash, vv, h, v, p.SiblingSummaryHash, p.SiblingSummaryValue)
+			h, err = computeHash(algorithm, p.UnitID, p.LogsHash, vv, h, v, p.SiblingSummaryHash, p.SiblingSummaryValue)
 		} else {
-			h = computeHash(algorithm, p.UnitID, p.LogsHash, vv, p.SiblingSummaryHash, p.SiblingSummaryValue, h, v)
+			h, err = computeHash(algorithm, p.UnitID, p.LogsHash, vv, p.SiblingSummaryHash, p.SiblingSummaryValue, h, v)
+		}
+		if err != nil {
+			return nil, 0, err
 		}
 		v = vv
 	}
-	return h, v
+	return h, v, nil
 }
 
 func (up *UnitDataAndProof) UnmarshalUnitData(v any) error {
@@ -165,22 +184,22 @@ func (sd *StateUnitData) UnmarshalData(v any) error {
 	return Cbor.Unmarshal(sd.Data, v)
 }
 
-func (sd *StateUnitData) Hash(hashAlgo crypto.Hash) []byte {
-	hasher := hashAlgo.New()
-	hasher.Write(sd.Data)
-	return hasher.Sum(nil)
+func (sd *StateUnitData) Hash(hashAlgo crypto.Hash) ([]byte, error) {
+	hasher := abhash.New(hashAlgo.New())
+	hasher.WriteRaw(sd.Data)
+	return hasher.Sum()
 }
 
-func computeHash(algorithm crypto.Hash, id UnitID, logRoot []byte, summary uint64, leftHash []byte, leftSummary uint64, rightHash []byte, rightSummary uint64) []byte {
-	hasher := algorithm.New()
+func computeHash(algorithm crypto.Hash, id UnitID, logRoot []byte, summary uint64, leftHash []byte, leftSummary uint64, rightHash []byte, rightSummary uint64) ([]byte, error) {
+	hasher := abhash.New(algorithm.New())
 	hasher.Write(id)
 	hasher.Write(logRoot)
-	hasher.Write(util.Uint64ToBytes(summary))
+	hasher.Write(summary)
 	hasher.Write(leftHash)
-	hasher.Write(util.Uint64ToBytes(leftSummary))
+	hasher.Write(leftSummary)
 	hasher.Write(rightHash)
-	hasher.Write(util.Uint64ToBytes(rightSummary))
-	return hasher.Sum(nil)
+	hasher.Write(rightSummary)
+	return hasher.Sum()
 }
 
 func (u *UnitStateProof) GetVersion() ABVersion {

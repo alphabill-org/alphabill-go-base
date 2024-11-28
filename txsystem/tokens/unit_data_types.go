@@ -2,10 +2,9 @@ package tokens
 
 import (
 	"bytes"
-	"fmt"
-	"hash"
 	"strings"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
@@ -107,13 +106,8 @@ func NewFungibleTokenData(typeID types.UnitID, value uint64, ownerPredicate []by
 	}
 }
 
-func (n *NonFungibleTokenTypeData) Write(hasher hash.Hash) error {
-	res, err := types.Cbor.Marshal(n)
-	if err != nil {
-		return fmt.Errorf("nft type serialization error: %w", err)
-	}
-	_, err = hasher.Write(res)
-	return err
+func (n *NonFungibleTokenTypeData) Write(hasher abhash.Hasher) {
+	hasher.Write(n)
 }
 
 func (n *NonFungibleTokenTypeData) SummaryValueInput() uint64 {
@@ -140,13 +134,8 @@ func (n *NonFungibleTokenTypeData) Owner() []byte {
 	return nil
 }
 
-func (n *NonFungibleTokenData) Write(hasher hash.Hash) error {
-	res, err := types.Cbor.Marshal(n)
-	if err != nil {
-		return fmt.Errorf("nft data serialization error: %w", err)
-	}
-	_, err = hasher.Write(res)
-	return err
+func (n *NonFungibleTokenData) Write(hasher abhash.Hasher) {
+	hasher.Write(n)
 }
 
 func (n *NonFungibleTokenData) SummaryValueInput() uint64 {
@@ -181,13 +170,8 @@ func (n *NonFungibleTokenData) Owner() []byte {
 	return n.OwnerPredicate
 }
 
-func (f *FungibleTokenTypeData) Write(hasher hash.Hash) error {
-	res, err := types.Cbor.Marshal(f)
-	if err != nil {
-		return fmt.Errorf("ft type serialization error: %w", err)
-	}
-	_, err = hasher.Write(res)
-	return err
+func (f *FungibleTokenTypeData) Write(hasher abhash.Hasher) {
+	hasher.Write(f)
 }
 
 func (f *FungibleTokenTypeData) SummaryValueInput() uint64 {
@@ -214,13 +198,8 @@ func (f *FungibleTokenTypeData) Owner() []byte {
 	return nil
 }
 
-func (f *FungibleTokenData) Write(hasher hash.Hash) error {
-	res, err := types.Cbor.Marshal(f)
-	if err != nil {
-		return fmt.Errorf("ft data serialization error: %w", err)
-	}
-	_, err = hasher.Write(res)
-	return err
+func (f *FungibleTokenData) Write(hasher abhash.Hasher) {
+	hasher.Write(f)
 }
 
 func (f *FungibleTokenData) SummaryValueInput() uint64 {

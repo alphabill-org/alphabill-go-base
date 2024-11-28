@@ -120,14 +120,10 @@ func (t *TransactionOrder) UnmarshalAuthProof(v any) error {
 	return Cbor.Unmarshal(t.AuthProof, v)
 }
 
-func (t *TransactionOrder) Hash(algorithm crypto.Hash) []byte {
+func (t *TransactionOrder) Hash(algorithm crypto.Hash) ([]byte, error) {
 	h := abhash.New(algorithm.New())
 	h.Write(t)
-	hash, err := h.Sum()
-	if err != nil {
-		panic(fmt.Errorf("hashing transaction order: %w", err))
-	}
-	return hash
+	return h.Sum()
 }
 
 // SetAuthProof converts provided authProof struct to CBOR and sets the AuthProof field.

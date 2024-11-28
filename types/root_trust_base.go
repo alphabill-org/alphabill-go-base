@@ -5,9 +5,9 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
-	"sort"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/alphabill-org/alphabill-go-base/util"
 )
@@ -148,7 +148,11 @@ func (r *RootTrustBaseV1) Sign(nodeID string, signer abcrypto.Signer) error {
 	if signer == nil {
 		return errors.New("signer is nil")
 	}
-	sig, err := signer.SignBytes(r.SigBytes())
+	sb, err := r.SigBytes()
+	if err != nil {
+		return err
+	}
+	sig, err := signer.SignBytes(sb)
 	if err != nil {
 		return fmt.Errorf("signing failed: %w", err)
 	}
@@ -157,44 +161,20 @@ func (r *RootTrustBaseV1) Sign(nodeID string, signer abcrypto.Signer) error {
 }
 
 // Hash hashes the entire structure including the signatures.
-func (r *RootTrustBaseV1) Hash(hashAlgo crypto.Hash) []byte {
-	hasher := hashAlgo.New()
-	hasher.Write(r.SigBytes())
-
-	// hash signatures in deterministic order
-	var keys []string
-	for nodeID := range r.Signatures {
-		keys = append(keys, nodeID)
-	}
-	sort.Strings(keys)
-	for _, nodeID := range keys {
-		hasher.Write(r.Signatures[nodeID])
-	}
-	return hasher.Sum(nil)
+func (r *RootTrustBaseV1) Hash(hashAlgo crypto.Hash) ([]byte, error) {
+	hasher := abhash.New(hashAlgo.New())
+	hasher.Write(r)
+	return hasher.Sum()
 }
 
 // SigBytes serializes all fields expect for the signatures field.
-func (r *RootTrustBaseV1) SigBytes() []byte {
-	var b bytes.Buffer
-	b.Write(util.Uint32ToBytes(r.Version))
-	b.Write(util.Uint64ToBytes(r.Epoch))
-	b.Write(util.Uint64ToBytes(r.EpochStartRound))
-
-	// serialize node info in alphabetic order by node identifiers
-	var keys []string
-	for nodeID := range r.RootNodes {
-		keys = append(keys, nodeID)
+func (r RootTrustBaseV1) SigBytes() ([]byte, error) {
+	r.Signatures = nil
+	bs, err := r.MarshalCBOR()
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal root trust base: %w", err)
 	}
-	sort.Strings(keys)
-	for _, nodeID := range keys {
-		b.Write(r.RootNodes[nodeID].Bytes())
-	}
-
-	b.Write(util.Uint64ToBytes(r.QuorumThreshold))
-	b.Write(r.StateHash)
-	b.Write(r.ChangeRecordHash)
-	b.Write(r.PreviousEntryHash)
-	return b.Bytes()
+	return bs, nil
 }
 
 // VerifyQuorumSignatures verifies that the data is signed by enough root nodes so that quorum is reached,

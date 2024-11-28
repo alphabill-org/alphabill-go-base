@@ -1,5 +1,8 @@
 all: tools test gosec
 
+build:
+	go build ./...
+
 test:
 	go test ./... -coverpkg=./... -count=1 -coverprofile test-coverage.out
 
@@ -11,6 +14,7 @@ tools:
 
 .PHONY: \
 	all \
+	build \
 	tools \
 	test \
 	gosec

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
 )
 
@@ -52,8 +53,14 @@ func NewTxRecordProof(block *Block, txIndex int, algorithm crypto.Hash) (*TxReco
 	if txIndex < 0 || txIndex > len(block.Transactions)-1 {
 		return nil, fmt.Errorf("invalid tx index: %d", txIndex)
 	}
-	tree := mt.New(algorithm, block.Transactions)
-	headerHash := block.HeaderHash(algorithm)
+	tree, err := mt.New(algorithm, block.Transactions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create merkle tree: %w", err)
+	}
+	headerHash, err := block.HeaderHash(algorithm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate block header hash: %w", err)
+	}
 	chain, err := tree.GetMerklePath(txIndex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract merkle proof: %w", err)
@@ -110,14 +117,20 @@ func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 	// h ← plain_tree_output(C, H(P))
-	rootHash := mt.EvalMerklePath(merklePath, txRecord, hashAlgorithm)
-	hasher := hashAlgorithm.New()
+	rootHash, err := mt.EvalMerklePath(merklePath, txRecord, hashAlgorithm)
+	if err != nil {
+		return fmt.Errorf("failed to evaluate merkle path: %w", err)
+	}
+	hasher := abhash.New(hashAlgorithm.New())
 	hasher.Write(txProof.BlockHeaderHash)
 	hasher.Write(uc.InputRecord.PreviousHash)
 	hasher.Write(uc.InputRecord.Hash)
 	hasher.Write(rootHash)
 	//h ← H(h_h,h)
-	blockHash := hasher.Sum(nil)
+	blockHash, err := hasher.Sum()
+	if err != nil {
+		return fmt.Errorf("failed to calculate block hash: %w", err)
+	}
 
 	//UC.IR.hB = h
 	if !bytes.Equal(blockHash, uc.InputRecord.BlockHash) {

@@ -3,9 +3,9 @@ package imt
 import (
 	"crypto"
 	"fmt"
-	"hash"
 	"testing"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/util"
 	"github.com/stretchr/testify/require"
 )
@@ -15,8 +15,8 @@ type TestData struct {
 	data byte
 }
 
-func (t TestData) AddToHasher(hasher hash.Hash) {
-	hasher.Write([]byte{t.data})
+func (t TestData) AddToHasher(hasher abhash.Hasher) {
+	hasher.WriteRaw([]byte{t.data})
 }
 
 func (t TestData) Key() []byte {
@@ -35,7 +35,9 @@ func TestNewIMTWithNilData(t *testing.T) {
 	require.EqualError(t, err, "tree is empty")
 	require.Nil(t, path)
 	var merklePath []*PathItem = nil
-	require.Nil(t, IndexTreeOutput(merklePath, []byte{0}, crypto.SHA256))
+	treeHash, err := IndexTreeOutput(merklePath, []byte{0}, crypto.SHA256)
+	require.ErrorIs(t, err, ErrTreeEmpty)
+	require.Nil(t, treeHash)
 }
 
 func TestNewIMTWithEmptyData(t *testing.T) {
@@ -48,7 +50,9 @@ func TestNewIMTWithEmptyData(t *testing.T) {
 	require.EqualError(t, err, "tree is empty")
 	require.Nil(t, path)
 	var merklePath []*PathItem
-	require.Nil(t, IndexTreeOutput(merklePath, []byte{0}, crypto.SHA256))
+	treeHash, err := IndexTreeOutput(merklePath, []byte{0}, crypto.SHA256)
+	require.ErrorIs(t, err, ErrTreeEmpty)
+	require.Nil(t, treeHash)
 }
 
 func TestNewIMTWithSingleNode(t *testing.T) {
@@ -62,18 +66,22 @@ func TestNewIMTWithSingleNode(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, imt)
 	require.NotNil(t, imt.GetRootHash())
-	hasher := crypto.SHA256.New()
+	hasher := abhash.New(crypto.SHA256.New())
 	data[0].AddToHasher(hasher)
-	dataHash := hasher.Sum(nil)
+	dataHash, err := hasher.Sum()
+	require.NoError(t, err)
 	hasher.Reset()
 	hasher.Write([]byte{tagLeaf})
 	hasher.Write(data[0].Key())
 	hasher.Write(dataHash)
-	require.Equal(t, hasher.Sum(nil), imt.GetRootHash())
+	h, err := hasher.Sum()
+	require.NoError(t, err)
+	require.Equal(t, h, imt.GetRootHash())
 	path, err := imt.GetMerklePath(data[0].Key())
 	require.NoError(t, err)
-	h := IndexTreeOutput(path, data[0].Key(), crypto.SHA256)
-	require.Equal(t, h, imt.GetRootHash())
+	h2, err := IndexTreeOutput(path, data[0].Key(), crypto.SHA256)
+	require.NoError(t, err)
+	require.Equal(t, h2, imt.GetRootHash())
 }
 
 func TestNewIMTUnsortedInput(t *testing.T) {
@@ -138,29 +146,31 @@ func TestNewIMTYellowpaperExample(t *testing.T) {
 	imt, err := New(crypto.SHA256, data)
 	require.NoError(t, err)
 	require.NotNil(t, imt)
-	require.EqualValues(t, "4FBAE3CCCF457AA68E3F242FBC981989E9ABB9ACEFBE67D509C1617B39BEE03A", fmt.Sprintf("%X", imt.GetRootHash()))
+	require.EqualValues(t, "9D5EB6D41E8588BC7620841538AE510C5D15AFAD5A40AE4248FC017A5369BB2A", fmt.Sprintf("%X", imt.GetRootHash()))
 	/* See Yellowpaper appendix C.2.1 Figure 32. Keys of the nodes of an indexed hash tree.
-			┌──key: 0a, 08D4FA5D3E55BF5D9B62A4A42DBDDCBE9BFDC121D4A7B9722E53A24AC0C3291D
-		┌──key: 09, 71FE84320E781FE3801AF502382064AF0DFAB9E312014286DD519F355C6BDD18
-		│	└──key: 09, 6F9842322C9343721ED01CE894C9C35F291FE0237084914D780CF658CF9E7F13
-	┌──key: 07, 4FBAE3CCCF457AA68E3F242FBC981989E9ABB9ACEFBE67D509C1617B39BEE03A
-	│	│	┌──key: 07, 89982C789FBD76A9905DF9D0140EC8FD62891E6388059627BA65F2C51BD0B176
-	│	└──key: 03, 09B830E43D654AFDDF7573657171141D26320FA1629946AE03B1702D556A1E08
-	│		│	┌──key: 03, 5377F86D8DD6BA6A8B1F81DD0BE890E1376E27B3127EC780A47A9ACCA3059B71
-	│		└──key: 01, F772ACD488C7A878D1EEB22D1603DF00D95370CC4310E75B6A5EBEB191B6C526
-	│			└──key: 01, E5A827C8C45F8F4F226286E77F92A5315779467029F90F135FD7F45E14918995
+			┌──key: 0a, AFFD74304EBDDC98E2EE9104CEF58FA98BCA7242406D3E3B7816C0E8DB5678E5
+		┌──key: 09, B717C4B888BF5B1D9B47636DC8426F15C349DBA0D28437700C5B2AACA0E11C60
+		│	└──key: 09, 3BF2CF4FEE1823F5150CACCAF75CB03721CEE98AF6DE0338EDF59E2B906DB687
+	┌──key: 07, 9D5EB6D41E8588BC7620841538AE510C5D15AFAD5A40AE4248FC017A5369BB2A
+	│	│	┌──key: 07, C543D5DB839DDE7F3B5C98B7BCCC2AF7B967EFB979A04AC17E731B86869ED321
+	│	└──key: 03, DB8F6CD9959973E88079FFE6822455393DD3BB05B99879E4136A5CFB4CD60A34
+	│		│	┌──key: 03, FB04FC67680053F4F78D78662937D9935D4491C868C3158AA5C754EC3527CAA4
+	│		└──key: 01, 0B9FF05CCE9EE9E80AF558FFAA6C360F575DA1993F948929E81AF4EC718AE49F
+	│			└──key: 01, 662D89D82F15CD2DDFDCCCB221C9360636397BF0066A9F67D5A81551F7FD9C1F
 	*/
-	treeStr := "\t\t┌──key: 0a, 08D4FA5D3E55BF5D9B62A4A42DBDDCBE9BFDC121D4A7B9722E53A24AC0C3291D\n\t┌──key: 09, 71FE84320E781FE3801AF502382064AF0DFAB9E312014286DD519F355C6BDD18\n\t│\t└──key: 09, 6F9842322C9343721ED01CE894C9C35F291FE0237084914D780CF658CF9E7F13\n┌──key: 07, 4FBAE3CCCF457AA68E3F242FBC981989E9ABB9ACEFBE67D509C1617B39BEE03A\n│\t│\t┌──key: 07, 89982C789FBD76A9905DF9D0140EC8FD62891E6388059627BA65F2C51BD0B176\n│\t└──key: 03, 09B830E43D654AFDDF7573657171141D26320FA1629946AE03B1702D556A1E08\n│\t\t│\t┌──key: 03, 5377F86D8DD6BA6A8B1F81DD0BE890E1376E27B3127EC780A47A9ACCA3059B71\n│\t\t└──key: 01, F772ACD488C7A878D1EEB22D1603DF00D95370CC4310E75B6A5EBEB191B6C526\n│\t\t\t└──key: 01, E5A827C8C45F8F4F226286E77F92A5315779467029F90F135FD7F45E14918995\n"
+	treeStr := "\t\t┌──key: 0a, AFFD74304EBDDC98E2EE9104CEF58FA98BCA7242406D3E3B7816C0E8DB5678E5\n\t┌──key: 09, B717C4B888BF5B1D9B47636DC8426F15C349DBA0D28437700C5B2AACA0E11C60\n\t│\t└──key: 09, 3BF2CF4FEE1823F5150CACCAF75CB03721CEE98AF6DE0338EDF59E2B906DB687\n┌──key: 07, 9D5EB6D41E8588BC7620841538AE510C5D15AFAD5A40AE4248FC017A5369BB2A\n│\t│\t┌──key: 07, C543D5DB839DDE7F3B5C98B7BCCC2AF7B967EFB979A04AC17E731B86869ED321\n│\t└──key: 03, DB8F6CD9959973E88079FFE6822455393DD3BB05B99879E4136A5CFB4CD60A34\n│\t\t│\t┌──key: 03, FB04FC67680053F4F78D78662937D9935D4491C868C3158AA5C754EC3527CAA4\n│\t\t└──key: 01, 0B9FF05CCE9EE9E80AF558FFAA6C360F575DA1993F948929E81AF4EC718AE49F\n│\t\t\t└──key: 01, 662D89D82F15CD2DDFDCCCB221C9360636397BF0066A9F67D5A81551F7FD9C1F\n"
 	require.Equal(t, treeStr, imt.PrettyPrint())
 	// check tree node key values
 	for _, d := range data {
 		path, err := imt.GetMerklePath(d.Key())
 		require.NoError(t, err)
-		h := IndexTreeOutput(path, d.Key(), crypto.SHA256)
+		h, err := IndexTreeOutput(path, d.Key(), crypto.SHA256)
+		require.NoError(t, err)
 		require.EqualValues(t, h, imt.GetRootHash())
 		// verify data hash
 		hasher := crypto.SHA256.New()
-		d.AddToHasher(hasher)
+		abhasher := abhash.New(hasher)
+		d.AddToHasher(abhasher)
 		require.EqualValues(t, hasher.Sum(nil), path[0].Hash)
 	}
 	// test non-inclusion
@@ -169,7 +179,8 @@ func TestNewIMTYellowpaperExample(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqualValues(t, idx, path[0].Key)
 	// path still evaluates to root hash
-	h := IndexTreeOutput(path, idx, crypto.SHA256)
+	h, err := IndexTreeOutput(path, idx, crypto.SHA256)
+	require.NoError(t, err)
 	require.EqualValues(t, h, imt.GetRootHash())
 }
 
@@ -184,17 +195,19 @@ func TestNewIMTWithOddNumberOfLeaves(t *testing.T) {
 	imt, err := New(crypto.SHA256, data)
 	require.NoError(t, err)
 	require.NotNil(t, imt)
-	require.EqualValues(t, "F86304BB5987E61F341A4CC8B396C489321ABA0C601A18B951EB0C1CCB7F9800", fmt.Sprintf("%X", imt.GetRootHash()))
+	require.EqualValues(t, "2F6436F5C63FEEFF031CF8176434B4AD89B78C6B39218A262F1B36FB8A2FF1A1", fmt.Sprintf("%X", imt.GetRootHash()))
 	require.NotEmpty(t, imt.PrettyPrint())
 	// check the hash chain of all key nodes
 	for _, d := range data {
 		path, err := imt.GetMerklePath(d.Key())
 		require.NoError(t, err)
-		h := IndexTreeOutput(path, d.Key(), crypto.SHA256)
+		h, err := IndexTreeOutput(path, d.Key(), crypto.SHA256)
+		require.NoError(t, err)
 		require.EqualValues(t, h, imt.GetRootHash())
 		// verify data hash
 		hasher := crypto.SHA256.New()
-		d.AddToHasher(hasher)
+		abhasher := abhash.New(hasher)
+		d.AddToHasher(abhasher)
 		require.EqualValues(t, hasher.Sum(nil), path[0].Hash)
 	}
 	// non-inclusion
@@ -204,12 +217,14 @@ func TestNewIMTWithOddNumberOfLeaves(t *testing.T) {
 	}
 	path, err := imt.GetMerklePath(leaf.Key())
 	require.NoError(t, err)
-	h := IndexTreeOutput(path, leaf.Key(), crypto.SHA256)
+	h, err := IndexTreeOutput(path, leaf.Key(), crypto.SHA256)
+	require.NoError(t, err)
 	require.EqualValues(t, h, imt.GetRootHash())
 	// however, it is not from index 9
 	require.NotEqualValues(t, leaf.key, path[0].Key)
 	hasher := crypto.SHA256.New()
-	leaf.AddToHasher(hasher)
+	abhasher := abhash.New(hasher)
+	leaf.AddToHasher(abhasher)
 	require.NotEqualValues(t, hasher.Sum(nil), path[0].Hash)
 }
 
@@ -224,13 +239,14 @@ func TestNewIMTWithEvenNumberOfLeaves(t *testing.T) {
 	imt, err := New(crypto.SHA256, data)
 	require.NoError(t, err)
 	require.NotNil(t, imt)
-	require.EqualValues(t, "3D0A2AC54AAA9EC9E2D2A89BC271E36DCAF84087D13D85E5919BA2C88352830C", fmt.Sprintf("%X", imt.GetRootHash()))
+	require.EqualValues(t, "E88F7B394C21D899B725F3CB0134D1EB8003E8C5E03F4D766D523F2BC5A05C25", fmt.Sprintf("%X", imt.GetRootHash()))
 	require.NotEmpty(t, imt.PrettyPrint())
 	// check the hash chain of all key nodes
 	for _, d := range data {
 		path, err := imt.GetMerklePath(d.Key())
 		require.NoError(t, err)
-		h := IndexTreeOutput(path, d.Key(), crypto.SHA256)
+		h, err := IndexTreeOutput(path, d.Key(), crypto.SHA256)
+		require.NoError(t, err)
 		require.EqualValues(t, h, imt.GetRootHash())
 	}
 	// non-inclusion
@@ -241,11 +257,13 @@ func TestNewIMTWithEvenNumberOfLeaves(t *testing.T) {
 	path, err := imt.GetMerklePath(leaf.Key())
 	require.NoError(t, err)
 
-	h := IndexTreeOutput(path, leaf.Key(), crypto.SHA256)
+	h, err := IndexTreeOutput(path, leaf.Key(), crypto.SHA256)
+	require.NoError(t, err)
 	require.EqualValues(t, h, imt.GetRootHash())
 	// however, it is not from index 9
 	require.NotEqualValues(t, leaf.key, path[0].Key)
 	hasher := crypto.SHA256.New()
-	leaf.AddToHasher(hasher)
+	abhasher := abhash.New(hasher)
+	leaf.AddToHasher(abhasher)
 	require.NotEqualValues(t, hasher.Sum(nil), path[0].Hash)
 }

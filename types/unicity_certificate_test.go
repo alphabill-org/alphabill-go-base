@@ -130,7 +130,8 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		UnitIdLen:           256,
 		Shards:              ShardingScheme{sid0, sid1},
 	}
-	pdrHash := pdr.Hash(crypto.SHA256)
+	pdrHash, err := pdr.Hash(crypto.SHA256)
+	require.NoError(t, err)
 
 	trHash0 := bytes.Repeat([]byte{10}, 32)
 	trHash1 := bytes.Repeat([]byte{11}, 32)
@@ -215,7 +216,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := validUC(t, sid0, &ir0, trHash0)
 		uc.UnicitySeal.Hash = []byte{1, 2, 3}
 		require.EqualError(t, uc.Verify(tb, crypto.SHA256, pdr.PartitionIdentifier, pdrHash),
-			"unicity seal hash 010203 does not match with the root hash of the unicity tree 739339DB2095C09E833C39ADE3026248E4D761CFCEAB64BA21D18A668C375DF9")
+			"unicity seal hash 010203 does not match with the root hash of the unicity tree 42CDDF6D44AE484698B3B2DFA4786ADB2F39EBF138FB6559898050401763C4CA")
 	})
 }
 
@@ -238,7 +239,7 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 	}
 	require.EqualValues(t, []byte{0, 0, 2}, uc.GetStateHash())
 	// everything is equal, this is the same UC and not repeat
-	require.False(t, isRepeat(uc, uc))
+	checkIsRepeat(t, uc, uc, false)
 	ruc := &UnicityCertificate{
 		Version:     1,
 		InputRecord: uc.InputRecord.NewRepeatIR(),
@@ -247,17 +248,16 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 			RootChainRoundNumber: uc.UnicitySeal.RootChainRoundNumber + 1,
 		},
 	}
-	require.True(t, ruc.IsRepeat(uc))
 	// now it is repeat of previous round
-	require.True(t, isRepeat(uc, ruc))
+	checkIsRepeat(t, uc, ruc, true)
 	ruc.UnicitySeal.RootChainRoundNumber++
 	// still is considered a repeat uc
-	require.True(t, isRepeat(uc, ruc))
+	checkIsRepeat(t, uc, ruc, true)
 	// with incremented round number, not a repeat uc
 	ruc.InputRecord.RoundNumber++
-	require.False(t, isRepeat(uc, ruc))
+	checkIsRepeat(t, uc, ruc, false)
 	// if anything else changes, it is no longer considered repeat
-	require.False(t, isRepeat(uc, &UnicityCertificate{
+	checkIsRepeat(t, uc, &UnicityCertificate{
 		Version: 1,
 		InputRecord: &InputRecord{
 			Version:         1,
@@ -267,8 +267,8 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 			RoundNumber:     6,
 			SumOfEarnedFees: 20,
 		},
-	}))
-	require.False(t, isRepeat(uc, &UnicityCertificate{
+	}, false)
+	checkIsRepeat(t, uc, &UnicityCertificate{
 		Version: 1,
 		InputRecord: &InputRecord{
 			Version:         1,
@@ -279,9 +279,16 @@ func TestUnicityCertificate_isRepeat(t *testing.T) {
 			RoundNumber:     6,
 			SumOfEarnedFees: 2,
 		},
-	}))
+	}, false)
 	// also not if order is opposite
-	require.False(t, isRepeat(ruc, uc))
+	checkIsRepeat(t, ruc, uc, false)
+}
+
+func checkIsRepeat(t *testing.T, prevUC, newUC *UnicityCertificate, expected bool) {
+	t.Helper()
+	b, err := isRepeat(prevUC, newUC)
+	require.NoError(t, err)
+	require.Equal(t, expected, b)
 }
 
 func TestCheckNonEquivocatingCertificates(t *testing.T) {
@@ -729,31 +736,12 @@ func Test_UnicityCertificate_Hash(t *testing.T) {
 			Signatures:           map[string]hex.Bytes{"1": {1, 1, 1}},
 		},
 	}
-	// serialize manually
-	expectedBytes := []byte{
-		0, 0, 0, 1, // UC: version
-		0, 0, 0, 1, // IR: version
-		0, 0, 1, // IR: previous hash
-		0, 0, 2, // IR: hash
-		0, 0, 3, // IR: block hash
-		0, 0, 4, // IR: summary hash
-		0, 0, 0, 0, 0, 0, 0, 6, // IR: round
-		0, 0, 0, 0, 0, 0, 0, 0, // IR: epoch
-		0, 0, 0, 0, 0, 0, 0, 31, // IR: timestamp
-		0, 0, 0, 0, 0, 0, 0, 20, // IR: sum of fees
-		0, 0, 0, 1, // UT: version
-		1, 1, 1, 1, // UT: identifier
-		1, 1, 1, 1, 1, 2, 3, // UT: siblings key+hash
-		1, 2, 3, 4, // UT: system description hash
-		0, 0, 0, 1, // US: version
-		0, 0, 0, 0, 0, 0, 0, 1, // US: root round
-		0, 0, 0, 0, 0, 0, 0, 9, // US: timestamp
-		1, 2, 3, // US: previous hash
-		2, 3, 4, // US: hash
-		'1', 1, 1, 1, // US: signature
-	}
-	expectedHash := sha256.Sum256(expectedBytes)
-	require.EqualValues(t, expectedHash[:], uc.Hash(crypto.SHA256))
+
+	ucBytes, err := uc.MarshalCBOR()
+	require.NoError(t, err)
+	expectedHash := sha256.Sum256(ucBytes)
+
+	require.EqualValues(t, expectedHash[:], doHash(t, uc))
 }
 
 func TestUnicityCertificate_GetPreviousStateHash(t *testing.T) {
@@ -859,7 +847,7 @@ func Test_UnicityCertificate_Cbor(t *testing.T) {
 		//uc := &UnicityCertificate{InputRecord: &InputRecord{}, TRHash: []byte{1}, UnicityTreeCertificate: &UnicityTreeCertificate{}, UnicitySeal: &UnicitySeal{}}
 		//_ucData, _ := uc.MarshalCBOR()
 		//fmt.Printf("ucData: 0x%X\n", _ucData)
-		ucData, err := hex.Decode([]byte("0xD903EF8601D903F08901F6F6F6F6000000004101824180F6D903F6840000F6F6D903E986010000F6F64180"))
+		ucData, err := hex.Decode([]byte("0xD903EF8601D903F08901F6F6F6F6000000004101824180F6D903F6840100F6F6D903E986010000F6F6F6"))
 		require.NoError(t, err)
 
 		uc1 := &UnicityCertificate{}

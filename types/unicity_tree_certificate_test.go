@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"testing"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/stretchr/testify/require"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
@@ -50,7 +51,8 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 			PDRHash:       pdrHash,
 		}
 		hasher := crypto.SHA256.New()
-		leaf.AddToHasher(hasher)
+		abhasher := abhash.New(hasher)
+		leaf.AddToHasher(abhasher)
 		require.Equal(t, partitionID.Bytes(), leaf.Key())
 		uct := &UnicityTreeCertificate{
 			Version:   1,
@@ -89,16 +91,15 @@ func TestUnicityTreeCertificate_Hash(t *testing.T) {
 		HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: []byte{1, 2, 3}}},
 		PDRHash:   []byte{1, 2, 3, 4},
 	}
-	expectedBytes := []byte{
-		0, 0, 0, 1, // version
-		1, 1, 1, 1, //identifier
-		1, 1, 1, 1, 1, 2, 3, // siblings key+hash
-		1, 2, 3, 4, // system description hash
-	}
-	expectedHash := sha256.Sum256(expectedBytes)
+
+	utBytes, err := ut.MarshalCBOR()
+	require.NoError(t, err)
+	expectedHash := sha256.Sum256(utBytes)
 	// test add to hasher too
 	hasher := crypto.SHA256.New()
-	ut.AddToHasher(hasher)
+	abhasher := abhash.New(hasher)
+	ut.AddToHasher(abhasher)
+
 	require.EqualValues(t, expectedHash[:], hasher.Sum(nil))
 }
 
@@ -120,7 +121,7 @@ func createUnicityCertificate(
 	leaf := []*UnicityTreeData{{
 		Partition:     pdr.PartitionIdentifier,
 		ShardTreeRoot: sTree.RootHash(),
-		PDRHash:       pdr.Hash(crypto.SHA256),
+		PDRHash:       doHash(t, pdr),
 	}}
 	ut, err := NewUnicityTree(crypto.SHA256, leaf)
 	require.NoError(t, err)

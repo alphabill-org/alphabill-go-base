@@ -17,7 +17,9 @@ func TestTxProofFunctions(t *testing.T) {
 		txrProof, err := NewTxRecordProof(block, 0, crypto.SHA256)
 		require.NoError(t, err)
 		txProof := txrProof.TxProof
-		require.Equal(t, block.HeaderHash(crypto.SHA256), txProof.BlockHeaderHash)
+		hh, err := block.HeaderHash(crypto.SHA256)
+		require.NoError(t, err)
+		require.Equal(t, hh, txProof.BlockHeaderHash)
 		require.Len(t, txProof.Chain, 1)
 		require.Equal(t, block.UnicityCertificate, txProof.UnicityCertificate)
 		require.Len(t, block.Transactions, 2)

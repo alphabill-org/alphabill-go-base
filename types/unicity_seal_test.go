@@ -4,13 +4,13 @@ import (
 	"crypto"
 	"testing"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/stretchr/testify/require"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	test "github.com/alphabill-org/alphabill-go-base/testutils"
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
-	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var zeroHash = make([]byte, 32)
@@ -160,32 +160,6 @@ func Test_NewTimestamp(t *testing.T) {
 	require.NotZero(t, NewTimestamp())
 }
 
-func TestSignatureMap_Serialize(t *testing.T) {
-	t.Run("SignatureMap is empty", func(t *testing.T) {
-		smap := SignatureMap{}
-		data, err := smap.MarshalCBOR()
-		require.NoError(t, err)
-		res := SignatureMap{}
-		require.NoError(t, res.UnmarshalCBOR(data))
-		require.Empty(t, smap)
-	})
-	t.Run("SignatureMap normal", func(t *testing.T) {
-		smap := SignatureMap{"x": []byte{9, 9, 9}, "1": []byte{1, 2, 3}, "a": []byte{0, 0, 0}, "2": []byte{2, 3, 4}}
-		data, err := smap.MarshalCBOR()
-		require.NoError(t, err)
-		res := SignatureMap{}
-		require.NoError(t, res.UnmarshalCBOR(data))
-		require.EqualValues(t, smap, res)
-	})
-}
-
-func TestSignatureMap_AddToHasher_Nil(t *testing.T) {
-	var smap SignatureMap
-	hasher := crypto.SHA256.New()
-	smap.AddToHasher(hasher)
-	require.Nil(t, smap)
-}
-
 func TestSeal_AddToHasher(t *testing.T) {
 	seal := &UnicitySeal{
 		RootChainRoundNumber: 1,
@@ -194,22 +168,21 @@ func TestSeal_AddToHasher(t *testing.T) {
 		Hash:                 zeroHash,
 		Signatures:           map[string]hex.Bytes{"xxx": {1, 1, 1}, "aaa": {2, 2, 2}},
 	}
-	hasher := crypto.SHA256.New()
+	hasher := abhash.New(crypto.SHA256.New())
 	seal.AddToHasher(hasher)
-	hash := hasher.Sum(nil)
+	hash, err := hasher.Sum()
+	require.NoError(t, err)
+
 	// serialize manually
 	hasher.Reset()
-	hasher.Write(util.Uint32ToBytes(seal.GetVersion()))
-	hasher.Write(util.Uint64ToBytes(seal.RootChainRoundNumber))
-	hasher.Write(util.Uint64ToBytes(seal.Timestamp))
-	hasher.Write(seal.PreviousHash)
-	hasher.Write(seal.Hash)
-	// add signatures, in lexical order
-	hasher.Write([]byte("aaa"))
-	hasher.Write([]byte{2, 2, 2})
-	hasher.Write([]byte("xxx"))
-	hasher.Write([]byte{1, 1, 1})
-	require.Equal(t, hash, hasher.Sum(nil))
+	sealBytes, err := seal.MarshalCBOR()
+	require.NoError(t, err)
+	hasher.WriteRaw(sealBytes)
+
+	hash2, err := hasher.Sum()
+	require.NoError(t, err)
+
+	require.Equal(t, hash, hash2)
 }
 
 func TestUnicitySeal_cbor(t *testing.T) {

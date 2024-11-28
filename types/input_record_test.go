@@ -1,11 +1,11 @@
 package types
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"reflect"
 	"testing"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/stretchr/testify/require"
 )
 
@@ -135,9 +135,10 @@ func TestInputRecord_AddToHasher(t *testing.T) {
 		SumOfEarnedFees: 20,
 	}
 	hasher := sha256.New()
-	ir.AddToHasher(hasher)
+	abhasher := abhash.New(hasher)
+	ir.AddToHasher(abhasher)
 	hash := hasher.Sum(nil)
-	require.Equal(t, []byte{0x8e, 0x69, 0xf2, 0xce, 0xf3, 0x45, 0x7f, 0xcd, 0x79, 0x62, 0x7b, 0xfa, 0x15, 0x36, 0xa7, 0x8b, 0x5, 0x92, 0x24, 0x7e, 0x62, 0x4b, 0xec, 0xa2, 0x5a, 0x77, 0xe5, 0xdb, 0xa, 0x7, 0x91, 0xf6}, hash)
+	require.Equal(t, []byte{0x51, 0xb6, 0x6f, 0x91, 0x65, 0x3a, 0xc0, 0x63, 0x1b, 0xe4, 0x73, 0x6f, 0x4, 0x76, 0xb9, 0xf7, 0x45, 0xbb, 0x80, 0x9b, 0xf4, 0xba, 0xd8, 0x24, 0x2, 0xdc, 0x80, 0x83, 0x2d, 0x31, 0xf4, 0x19}, hash)
 }
 
 func Test_EqualIR(t *testing.T) {
@@ -158,7 +159,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 33,
 		}
-		require.True(t, EqualIR(irA, irB))
+		require.True(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("Previous hash not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -169,7 +170,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 33,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("Hash not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -180,7 +181,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 33,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("Block hash not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -191,7 +192,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 33,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("Summary value not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -202,7 +203,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 33,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("RoundNumber not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -213,7 +214,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     1,
 			SumOfEarnedFees: 33,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 	t.Run("SumOfEarnedFees not equal", func(t *testing.T) {
 		irB := &InputRecord{
@@ -224,7 +225,7 @@ func Test_EqualIR(t *testing.T) {
 			RoundNumber:     2,
 			SumOfEarnedFees: 1,
 		}
-		require.False(t, EqualIR(irA, irB))
+		require.False(t, isEqualIR(t, irA, irB))
 	})
 }
 
@@ -297,10 +298,16 @@ func Test_AssertEqualIR(t *testing.T) {
 func TestInputRecord_NewRepeatUC(t *testing.T) {
 	repeatUC := ir.NewRepeatIR()
 	require.NotNil(t, repeatUC)
-	require.True(t, bytes.Equal(ir.Bytes(), repeatUC.Bytes()))
+	require.True(t, isEqualIR(t, ir, repeatUC))
 	require.True(t, reflect.DeepEqual(ir, repeatUC))
 	ir.RoundNumber++
-	require.False(t, bytes.Equal(ir.Bytes(), repeatUC.Bytes()))
+	require.False(t, isEqualIR(t, ir, repeatUC))
+}
+
+func isEqualIR(t *testing.T, ir1, ir2 *InputRecord) bool {
+	b, err := EqualIR(ir1, ir2)
+	require.NoError(t, err)
+	return b
 }
 
 func TestStringer(t *testing.T) {

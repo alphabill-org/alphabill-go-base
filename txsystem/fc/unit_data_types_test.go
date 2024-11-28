@@ -1,9 +1,9 @@
 package fc
 
 import (
-	"crypto"
 	"testing"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types"
 
 	"github.com/stretchr/testify/require"
@@ -18,16 +18,18 @@ func TestFCR_HashIsCalculatedCorrectly(t *testing.T) {
 		Locked:         3,
 	}
 	// calculate actual hash
-	hasher := crypto.SHA256.New()
-	require.NoError(t, fcr.Write(hasher))
-	actualHash := hasher.Sum(nil)
+	hasher := abhash.NewSha256()
+	fcr.Write(hasher)
+	actualHash, err := hasher.Sum()
+	require.NoError(t, err)
 
 	// calculate expected hash
 	hasher.Reset()
 	res, err := types.Cbor.Marshal(fcr)
 	require.NoError(t, err)
-	hasher.Write(res)
-	expectedHash := hasher.Sum(nil)
+	hasher.WriteRaw(res)
+	expectedHash, err := hasher.Sum()
+	require.NoError(t, err)
 	require.Equal(t, expectedHash, actualHash)
 
 	// check all fields serialized

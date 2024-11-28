@@ -3,8 +3,8 @@ package money
 import (
 	"bytes"
 	"fmt"
-	"hash"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/txsystem/fc"
 	"github.com/alphabill-org/alphabill-go-base/types"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
@@ -37,13 +37,8 @@ func NewBillData(value uint64, ownerPredicate []byte) *BillData {
 	}
 }
 
-func (b *BillData) Write(hasher hash.Hash) error {
-	res, err := types.Cbor.Marshal(b)
-	if err != nil {
-		return fmt.Errorf("unit data encode error: %w", err)
-	}
-	_, err = hasher.Write(res)
-	return err
+func (b *BillData) Write(hasher abhash.Hasher) {
+	hasher.Write(b)
 }
 
 func (b *BillData) SummaryValueInput() uint64 {

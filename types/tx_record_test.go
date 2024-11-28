@@ -1,7 +1,6 @@
 package types
 
 import (
-	"crypto"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -23,7 +22,7 @@ func TestTransactionRecordFunctions(t *testing.T) {
 	txr.ServerMetadata.ProcessingDetails = processingDetailsCBOR
 
 	t.Run("Test Hash", func(t *testing.T) {
-		require.NotEmpty(t, txr.Hash(crypto.SHA256))
+		require.NotEmpty(t, doHash(t, txr))
 	})
 
 	t.Run("Test Bytes", func(t *testing.T) {

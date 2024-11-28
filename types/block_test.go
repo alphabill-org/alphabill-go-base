@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alphabill-org/alphabill-go-base/tree/mt"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/stretchr/testify/require"
 
@@ -193,7 +194,9 @@ func TestBlock_IsValid(t *testing.T) {
 		uc, err = createUnicityCertificate(t, "test", signer, inputRecord, make([]byte, 32), sdrs).MarshalCBOR()
 		require.NoError(t, err)
 		b.UnicityCertificate = uc
-		require.NoError(t, b.IsValid(crypto.SHA256, sdrs.Hash(crypto.SHA256)))
+		h, err := sdrs.Hash(crypto.SHA256)
+		require.NoError(t, err)
+		require.NoError(t, b.IsValid(crypto.SHA256, h))
 	})
 	t.Run("invalid block hash", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
@@ -233,7 +236,9 @@ func TestBlock_IsValid(t *testing.T) {
 		b.UnicityCertificate = uc
 		// remove a tx from block and make sure that the validation fails
 		b.Transactions = b.Transactions[1:]
-		require.EqualError(t, b.IsValid(crypto.SHA256, sdrs.Hash(crypto.SHA256)), "block hash does not match to the block hash in the unicity certificate input record")
+		h, err := sdrs.Hash(crypto.SHA256)
+		require.NoError(t, err)
+		require.EqualError(t, b.IsValid(crypto.SHA256, h), "block hash does not match to the block hash in the unicity certificate input record")
 	})
 }
 
@@ -479,24 +484,34 @@ func TestHeader_Hash(t *testing.T) {
 		ProposerID:        "test",
 		PreviousBlockHash: []byte{2, 2, 2},
 	}
-	headerHash := hdr.Hash(crypto.SHA256)
+	headerHash, err := hdr.Hash(crypto.SHA256)
+	require.NoError(t, err)
 
 	// each call must return the same value
-	require.EqualValues(t, headerHash, hdr.Hash(crypto.SHA256))
+	require.EqualValues(t, headerHash, doHash(t, &hdr))
 	// different hash algorithm should return different value
-	require.NotEqualValues(t, headerHash, hdr.Hash(crypto.SHA512))
+	h2, err := hdr.Hash(crypto.SHA512)
+	require.NoError(t, err)
+	require.NotEqualValues(t, headerHash, h2)
 
 	// make a copy of the struct - must get the same value as original
 	hdr2 := hdr // note that "hdr" is not a pointer!
-	require.EqualValues(t, headerHash, hdr2.Hash(crypto.SHA256))
+	require.EqualValues(t, headerHash, doHash(t, &hdr2))
 
 	// change field value in the copy - hash must change
 	hdr2.ProposerID = "foo"
-	require.NotEqualValues(t, headerHash, hdr2.Hash(crypto.SHA256))
+	require.NotEqualValues(t, headerHash, doHash(t, &hdr2))
 
 	hdr2.ProposerID = hdr.ProposerID // restore original value
 	hdr2.ShardID, _ = hdr.ShardID.Split()
-	require.NotEqualValues(t, headerHash, hdr2.Hash(crypto.SHA256))
+	require.NotEqualValues(t, headerHash, doHash(t, &hdr2))
+}
+
+func doHash(t *testing.T, data mt.Data) []byte {
+	t.Helper()
+	h, err := data.Hash(crypto.SHA256)
+	require.NoError(t, err)
+	return h
 }
 
 func TestBlock_InputRecord(t *testing.T) {

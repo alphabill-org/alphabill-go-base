@@ -47,6 +47,11 @@ func Test_Hash(t *testing.T) {
 		_, err := h.Sum()
 		require.EqualError(t, err, `nope, can't do`)
 	})
+
+	t.Run("size", func(t *testing.T) {
+		h := New(crypto.SHA256.New())
+		require.Equal(t, h.Size(), crypto.SHA256.Size())
+	})
 }
 
 type cborableData struct {

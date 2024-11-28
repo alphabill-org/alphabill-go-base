@@ -2,13 +2,12 @@ package types
 
 import (
 	"crypto"
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"hash"
 	"slices"
 	"time"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
@@ -23,12 +22,8 @@ type SystemTypeDescriptor struct {
 	// so the actual field list is not needed...
 }
 
-func (std *SystemTypeDescriptor) AddToHasher(h hash.Hash) {
-	if std == nil {
-		h.Write([]byte{0})
-		return
-	}
-	// todo: hash field values
+func (std *SystemTypeDescriptor) AddToHasher(h abhash.Hasher) {
+	h.Write(std)
 }
 
 type PartitionDescriptionRecord struct {
@@ -87,26 +82,10 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	return nil
 }
 
-func (pdr *PartitionDescriptionRecord) AddToHasher(h hash.Hash) {
-	var buf []byte
-	buf = binary.BigEndian.AppendUint32(buf, pdr.Version)
-	buf = binary.BigEndian.AppendUint16(buf, uint16(pdr.NetworkIdentifier))
-	buf = binary.BigEndian.AppendUint32(buf, uint32(pdr.PartitionIdentifier))
-	buf = binary.BigEndian.AppendUint32(buf, pdr.TypeIdLen)
-	buf = binary.BigEndian.AppendUint32(buf, pdr.UnitIdLen)
-	buf = binary.BigEndian.AppendUint64(buf, uint64(pdr.T2Timeout.Nanoseconds()))
-	buf = binary.BigEndian.AppendUint32(buf, uint32(len(pdr.SummaryTrustBase)))
-	h.Write(buf)
-
-	h.Write(pdr.SummaryTrustBase)
-	pdr.Shards.AddToHasher(h)
-	pdr.SystemDescriptor.AddToHasher(h)
-}
-
-func (pdr *PartitionDescriptionRecord) Hash(hashAlgorithm crypto.Hash) []byte {
-	hasher := hashAlgorithm.New()
-	pdr.AddToHasher(hasher)
-	return hasher.Sum(nil)
+func (pdr *PartitionDescriptionRecord) Hash(hashAlgorithm crypto.Hash) ([]byte, error) {
+	hasher := abhash.New(hashAlgorithm.New())
+	hasher.Write(pdr)
+	return hasher.Sum()
 }
 
 func (pdr *PartitionDescriptionRecord) GetNetworkIdentifier() NetworkID {

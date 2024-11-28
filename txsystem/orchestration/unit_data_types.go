@@ -1,9 +1,7 @@
 package orchestration
 
 import (
-	"fmt"
-	"hash"
-
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
@@ -15,13 +13,8 @@ type VarData struct {
 	EpochNumber uint64   // epoch number from the validator assignment record
 }
 
-func (b *VarData) Write(hasher hash.Hash) error {
-	res, err := types.Cbor.Marshal(b)
-	if err != nil {
-		return fmt.Errorf("validator assignment record data encode error: %w", err)
-	}
-	_, err = hasher.Write(res)
-	return err
+func (b *VarData) Write(hasher abhash.Hasher) {
+	hasher.Write(b)
 }
 
 func (b *VarData) SummaryValueInput() uint64 {

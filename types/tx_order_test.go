@@ -1,7 +1,6 @@
 package types
 
 import (
-	"crypto"
 	"encoding/hex"
 	"testing"
 
@@ -133,7 +132,7 @@ func TestUnmarshalAttributes(t *testing.T) {
 	require.Equal(t, transactionType, txo.Type)
 	require.Equal(t, feeCreditRecordID, txo.FeeCreditRecordID())
 	require.Equal(t, maxFee, txo.MaxFee())
-	require.NotNil(t, txo.Hash(crypto.SHA256))
+	require.NotNil(t, doHash(t, txo))
 }
 
 func TestHasStateLock(t *testing.T) {

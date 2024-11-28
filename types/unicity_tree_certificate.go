@@ -5,11 +5,10 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
-	"hash"
 
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
-	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 var (
@@ -32,7 +31,7 @@ type UnicityTreeData struct {
 	PDRHash       []byte // PartitionDescriptionRecord hash
 }
 
-func (t *UnicityTreeData) AddToHasher(hasher hash.Hash) {
+func (t *UnicityTreeData) AddToHasher(hasher abhash.Hasher) {
 	hasher.Write(t.ShardTreeRoot)
 	hasher.Write(t.PDRHash)
 }
@@ -62,28 +61,26 @@ EvalAuthPath aka Compute Unicity Tree Certificate.
 
 The shardTreeRoot is output of the CompShardTreeCert function.
 */
-func (utc *UnicityTreeCertificate) EvalAuthPath(shardTreeRoot []byte, hashAlgorithm crypto.Hash) []byte {
+func (utc *UnicityTreeCertificate) EvalAuthPath(shardTreeRoot []byte, hashAlgorithm crypto.Hash) ([]byte, error) {
 	// restore the merkle path with the first hash step
-	h := hashAlgorithm.New()
+	hasher := abhash.New(hashAlgorithm.New())
 	(&UnicityTreeData{
 		Partition:     utc.Partition,
 		ShardTreeRoot: shardTreeRoot,
 		PDRHash:       utc.PDRHash,
-	}).AddToHasher(h)
-	hashSteps := append([]*imt.PathItem{{Key: utc.Partition.Bytes(), Hash: h.Sum(nil)}}, utc.HashSteps...)
+	}).AddToHasher(hasher)
+	h, err := hasher.Sum()
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate leaf hash: %w", err)
+	}
+	hashSteps := append([]*imt.PathItem{{Key: utc.Partition.Bytes(), Hash: h}}, utc.HashSteps...)
 
 	// calculate root hash from the merkle path
 	return imt.IndexTreeOutput(hashSteps, utc.Partition.Bytes(), hashAlgorithm)
 }
 
-func (utc *UnicityTreeCertificate) AddToHasher(hasher hash.Hash) {
-	hasher.Write(util.Uint32ToBytes(utc.Version))
-	hasher.Write(utc.Partition.Bytes())
-	for _, hashStep := range utc.HashSteps {
-		hasher.Write(hashStep.Key)
-		hasher.Write(hashStep.Hash)
-	}
-	hasher.Write(utc.PDRHash)
+func (utc *UnicityTreeCertificate) AddToHasher(hasher abhash.Hasher) {
+	hasher.Write(utc)
 }
 
 func (utc *UnicityTreeCertificate) GetVersion() ABVersion {
