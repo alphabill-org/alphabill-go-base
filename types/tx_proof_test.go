@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTxProofFunctions(t *testing.T) {
+func TestNewTxProof(t *testing.T) {
 	t.Run("Test NewTxProof OK", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
-		block := createBlock(t, "test", signer)
+		block := createBlock(t, "test", signer, createTx(t), createTx(t))
 		txrProof, err := NewTxRecordProof(block, 0, crypto.SHA256)
 		require.NoError(t, err)
 		txProof := txrProof.TxProof
@@ -37,48 +37,32 @@ func TestTxProofFunctions(t *testing.T) {
 		require.Nil(t, proof)
 		require.ErrorContains(t, err, "invalid tx index")
 	})
+}
 
-	t.Run("Test VerifyTxProof ok", func(t *testing.T) {
+func TestVerifyInc(t *testing.T) {
+	t.Run("Test ok", func(t *testing.T) {
 		signer, verifier := testsig.CreateSignerAndVerifier(t)
-		block := createBlock(t, "test", signer)
+		block := createBlock(t, "test", signer, createTx(t))
 		proof, err := NewTxRecordProof(block, 0, crypto.SHA256)
 		require.NoError(t, err)
-
 		tb := NewTrustBase(t, verifier)
-		require.NoError(t, VerifyTxProof(proof, tb, crypto.SHA256))
+
+		require.NoError(t, VerifyInc(proof, tb, crypto.SHA256))
 	})
 
 	t.Run("Test tx record proof is nil", func(t *testing.T) {
 		_, verifier := testsig.CreateSignerAndVerifier(t)
 		tb := NewTrustBase(t, verifier)
-		require.EqualError(t, VerifyTxProof(nil, tb, crypto.SHA256), "transaction record proof is nil")
+
+		require.EqualError(t, VerifyInc(nil, tb, crypto.SHA256), "transaction record proof is nil")
 	})
 
 	t.Run("Test tx record is nil", func(t *testing.T) {
 		_, verifier := testsig.CreateSignerAndVerifier(t)
 		tb := NewTrustBase(t, verifier)
 		proof := &TxRecordProof{TxProof: &TxProof{Version: 1}}
-		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "transaction record is nil")
-	})
 
-	t.Run("Test tx has failed", func(t *testing.T) {
-		_, verifier := testsig.CreateSignerAndVerifier(t)
-		tb := NewTrustBase(t, verifier)
-		txo, err := (&TransactionOrder{Version: 1}).MarshalCBOR()
-		require.NoError(t, err)
-		txr := &TransactionRecord{Version: 1, ServerMetadata: &ServerMetadata{SuccessIndicator: TxStatusFailed}, TransactionOrder: txo}
-		proof := &TxRecordProof{TxRecord: txr, TxProof: &TxProof{Version: 1}}
-		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "transaction failed")
-	})
-
-	t.Run("Test tx out of gas", func(t *testing.T) {
-		_, verifier := testsig.CreateSignerAndVerifier(t)
-		tb := NewTrustBase(t, verifier)
-		txo, err := (&TransactionOrder{Version: 1}).MarshalCBOR()
-		require.NoError(t, err)
-		txr := &TransactionRecord{Version: 1, ServerMetadata: &ServerMetadata{SuccessIndicator: TxErrOutOfGas}, TransactionOrder: txo}
-		proof := &TxRecordProof{TxRecord: txr, TxProof: &TxProof{Version: 1}}
-		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "transaction failed")
+		require.EqualError(t, VerifyInc(proof, tb, crypto.SHA256), "transaction record is nil")
 	})
 
 	t.Run("Test tx order is nil", func(t *testing.T) {
@@ -86,38 +70,75 @@ func TestTxProofFunctions(t *testing.T) {
 		tb := NewTrustBase(t, verifier)
 		txr := &TransactionRecord{Version: 1, ServerMetadata: &ServerMetadata{SuccessIndicator: TxStatusSuccessful}}
 		proof := &TxRecordProof{TxRecord: txr, TxProof: &TxProof{Version: 1}}
-		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "transaction order is nil")
+
+		require.EqualError(t, VerifyInc(proof, tb, crypto.SHA256), "transaction order is nil")
 	})
 
-	t.Run("Test VerifyTxProof error, invalid system id", func(t *testing.T) {
+	t.Run("Test invalid system id", func(t *testing.T) {
 		signer, verifier := testsig.CreateSignerAndVerifier(t)
-		block := createBlock(t, "test", signer)
+		block := createBlock(t, "test", signer, createTx(t))
 		proof, err := NewTxRecordProof(block, 0, crypto.SHA256)
 		require.NoError(t, err)
-
 		tb := NewTrustBase(t, verifier)
 		uc, err := proof.TxProof.getUCv1()
 		require.NoError(t, err)
 		uc.UnicityTreeCertificate.Partition = 1
 		proof.TxProof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
-		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256),
+
+		require.EqualError(t, VerifyInc(proof, tb, crypto.SHA256),
 			"invalid unicity certificate: invalid unicity certificate: unicity tree certificate validation failed: invalid partition identifier: expected 01000001, got 00000001")
 	})
 
-	t.Run("Test VerifyTxProof error, invalid block hash", func(t *testing.T) {
+	t.Run("Test invalid block hash", func(t *testing.T) {
 		signer, verifier := testsig.CreateSignerAndVerifier(t)
-		block := createBlock(t, "test", signer)
+		block := createBlock(t, "test", signer, createTx(t))
 		proof, err := NewTxRecordProof(block, 0, crypto.SHA256)
 		require.NoError(t, err)
-
 		tb := NewTrustBase(t, verifier)
 		proof.TxProof.BlockHeaderHash = make([]byte, 32)
-		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "proof block hash does not match to block hash in unicity certificate")
+
+		require.EqualError(t, VerifyInc(proof, tb, crypto.SHA256), "proof block hash does not match to block hash in unicity certificate")
 	})
 }
 
-func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
+func TestVerifyTxProof(t *testing.T) {
+	t.Run("Test VerifyTxProof ok", func(t *testing.T) {
+		signer, verifier := testsig.CreateSignerAndVerifier(t)
+		block := createBlock(t, "test", signer, createTx(t))
+		proof, err := NewTxRecordProof(block, 0, crypto.SHA256)
+		require.NoError(t, err)
+		tb := NewTrustBase(t, verifier)
+
+		require.NoError(t, VerifyInc(proof, tb, crypto.SHA256))
+	})
+
+	t.Run("Test tx has failed", func(t *testing.T) {
+		signer, verifier := testsig.CreateSignerAndVerifier(t)
+		txr := createTx(t)
+		txr.ServerMetadata.SuccessIndicator = TxStatusFailed
+		block := createBlock(t, "test", signer, txr)
+		proof, err := NewTxRecordProof(block, 0, crypto.SHA256)
+		require.NoError(t, err)
+		tb := NewTrustBase(t, verifier)
+
+		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "transaction failed")
+	})
+
+	t.Run("Test tx out of gas", func(t *testing.T) {
+		signer, verifier := testsig.CreateSignerAndVerifier(t)
+		txr := createTx(t)
+		txr.ServerMetadata.SuccessIndicator = TxErrOutOfGas
+		block := createBlock(t, "test", signer, txr)
+		proof, err := NewTxRecordProof(block, 0, crypto.SHA256)
+		require.NoError(t, err)
+		tb := NewTrustBase(t, verifier)
+
+		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256), "transaction failed")
+	})
+}
+
+func createBlock(t *testing.T, id string, signer abcrypto.Signer, txs ...*TransactionRecord) *Block {
 	sdrs := &PartitionDescriptionRecord{
 		Version:             1,
 		PartitionIdentifier: partitionID,
@@ -132,8 +153,6 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 		SumOfEarnedFees: 2,
 		Timestamp:       NewTimestamp(),
 	}
-	txr1 := createTransactionRecord(t, createTransactionOrder(t), 1)
-	txr2 := createTransactionRecord(t, createTransactionOrder(t), 1)
 	uc, err := (&UnicityCertificate{Version: 1, InputRecord: inputRecord}).MarshalCBOR()
 	require.NoError(t, err)
 	block := &Block{
@@ -143,7 +162,7 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 			ProposerID:        "proposer123",
 			PreviousBlockHash: []byte{1, 2, 3},
 		},
-		Transactions:       []*TransactionRecord{txr1, txr2},
+		Transactions:       txs,
 		UnicityCertificate: uc,
 	}
 	// calculate block hash
@@ -152,4 +171,8 @@ func createBlock(t *testing.T, id string, signer abcrypto.Signer) *Block {
 	block.UnicityCertificate, err = createUnicityCertificate(t, id, signer, inputRecord, make([]byte, 32), sdrs).MarshalCBOR()
 	require.NoError(t, err)
 	return block
+}
+
+func createTx(t *testing.T) *TransactionRecord {
+	return createTransactionRecord(t, createTransactionOrder(t), 1)
 }
