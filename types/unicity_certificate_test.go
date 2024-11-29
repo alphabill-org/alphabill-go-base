@@ -204,7 +204,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		// check that IsValid is called
 		uc := UnicityCertificate{Version: 1}
 		require.EqualError(t, uc.Verify(nil, crypto.SHA256, 0, nil),
-			"invalid unicity certificate: input record error: input record is nil")
+			"invalid unicity certificate: invalid input record: input record is nil")
 	})
 
 	t.Run("tb is nil", func(t *testing.T) {

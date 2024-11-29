@@ -156,7 +156,7 @@ func TestBlock_IsValid(t *testing.T) {
 			Transactions:       make([]*TransactionRecord, 0),
 			UnicityCertificate: uc,
 		}
-		require.EqualError(t, b.IsValid(crypto.SHA256, nil), "unicity certificate validation failed: input record error: input record is nil")
+		require.EqualError(t, b.IsValid(crypto.SHA256, nil), "unicity certificate validation failed: invalid input record: input record is nil")
 	})
 	t.Run("valid block", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)

@@ -17,8 +17,8 @@ type (
 		_                  struct{}       `cbor:",toarray"`
 		Version            ABVersion      `json:"version"`
 		UnitID             UnitID         `json:"unitId"`
-		UnitValue          uint64         `json:"unitValue,string"`
-		UnitLedgerHash     hex.Bytes      `json:"unitLedgerHash"`
+		UnitValue          uint64         `json:"unitValue,string"` // V0 - data summary of type PD.V
+		UnitLedgerHash     hex.Bytes      `json:"unitLedgerHash"`   // x_ - previous state hash of type H ∪ {⊥}
 		UnitTreeCert       *UnitTreeCert  `json:"unitTreeCert"`
 		StateTreeCert      *StateTreeCert `json:"stateTreeCert"`
 		UnicityCertificate TaggedCBOR     `json:"unicityCert"`
@@ -79,25 +79,14 @@ func (u *UnitStateProof) getUCv1() (*UnicityCertificate, error) {
 	return uc, nil
 }
 
-func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *StateUnitData, ucv UnicityCertificateValidator) error {
-	if u == nil {
-		return errors.New("unit state proof is nil")
-	}
-	if u.UnitID == nil {
-		return errors.New("unit ID is nil")
-	}
-	if u.UnitTreeCert == nil {
-		return errors.New("unit tree cert is nil")
-	}
-	if u.StateTreeCert == nil {
-		return errors.New("state tree cert is nil")
-	}
-	if u.UnicityCertificate == nil {
-		return errors.New("unicity certificate is nil")
+func (u *UnitStateProof) Verify(algorithm crypto.Hash, unitData *StateUnitData, ucv UnicityCertificateValidator) error {
+	if err := u.IsValid(); err != nil {
+		return fmt.Errorf("invalid unit state proof: %w", err)
 	}
 	if unitData == nil {
 		return errors.New("unit data is nil")
 	}
+
 	uc, err := u.getUCv1()
 	if err != nil {
 		return fmt.Errorf("failed to get unicity certificate: %w", err)
@@ -105,6 +94,7 @@ func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *St
 	if err := ucv.Validate(uc); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
+
 	hash, err := unitData.Hash(algorithm)
 	if err != nil {
 		return fmt.Errorf("failed to calculate unit data hash: %w", err)
@@ -112,17 +102,19 @@ func VerifyUnitStateProof(u *UnitStateProof, algorithm crypto.Hash, unitData *St
 	if !bytes.Equal(u.UnitTreeCert.UnitDataHash, hash) {
 		return errors.New("unit data hash does not match hash in unit tree")
 	}
-	ir := uc.InputRecord
+
 	hash, summary, err := u.CalculateStateTreeOutput(algorithm)
 	if err != nil {
 		return fmt.Errorf("failed to calculate state tree output: %w", err)
 	}
+	ir := uc.InputRecord
 	if !bytes.Equal(util.Uint64ToBytes(summary), ir.SummaryValue) {
 		return fmt.Errorf("invalid summary value: expected %X, got %X", ir.SummaryValue, util.Uint64ToBytes(summary))
 	}
 	if !bytes.Equal(hash, ir.Hash) {
 		return fmt.Errorf("invalid state root hash: expected %X, got %X", ir.Hash, hash)
 	}
+
 	return nil
 }
 
@@ -200,6 +192,25 @@ func computeHash(algorithm crypto.Hash, id UnitID, logRoot []byte, summary uint6
 	hasher.Write(rightHash)
 	hasher.Write(rightSummary)
 	return hasher.Sum()
+}
+
+func (u *UnitStateProof) IsValid() error {
+	if u == nil {
+		return errors.New("unit state proof is nil")
+	}
+	if len(u.UnitID) == 0 {
+		return errors.New("unit ID is unassigned")
+	}
+	if u.UnitTreeCert == nil {
+		return errors.New("unit tree cert is nil")
+	}
+	if u.StateTreeCert == nil {
+		return errors.New("state tree cert is nil")
+	}
+	if u.UnicityCertificate == nil {
+		return errors.New("unicity certificate is nil")
+	}
+	return nil
 }
 
 func (u *UnitStateProof) GetVersion() ABVersion {

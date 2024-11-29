@@ -102,7 +102,7 @@ func TestTxProofFunctions(t *testing.T) {
 		proof.TxProof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
 		require.EqualError(t, VerifyTxProof(proof, tb, crypto.SHA256),
-			"invalid unicity certificate: invalid unicity certificate: unicity tree certificate validation failed: invalid partition identifier: expected 01000001, got 00000001")
+			"invalid unicity certificate: invalid unicity certificate: invalid unicity tree certificate: invalid partition identifier: expected 01000001, got 00000001")
 	})
 
 	t.Run("Test VerifyTxProof error, invalid block hash", func(t *testing.T) {
