@@ -83,15 +83,13 @@ func NewTxRecordProof(block *Block, txIndex int, algorithm crypto.Hash) (*TxReco
 	}, nil
 }
 
-func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm crypto.Hash) error {
+// VerifyTxInclusion checks if the transaction is included in the block.
+func VerifyTxInclusion(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm crypto.Hash) error {
 	if err := txRecordProof.IsValid(); err != nil {
 		return err
 	}
 	txRecord := txRecordProof.TxRecord
 	txProof := txRecordProof.TxProof
-	if !txRecord.IsSuccessful() {
-		return errors.New("transaction failed")
-	}
 	merklePath := make([]*mt.PathItem, len(txProof.Chain))
 	for i, item := range txProof.Chain {
 		merklePath[i] = &mt.PathItem{
@@ -135,6 +133,17 @@ func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm
 	//UC.IR.hB = h
 	if !bytes.Equal(blockHash, uc.InputRecord.BlockHash) {
 		return fmt.Errorf("proof block hash does not match to block hash in unicity certificate")
+	}
+	return nil
+}
+
+// VerifyTxProof checks if the transaction is included in the block and was successfully executed.
+func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm crypto.Hash) error {
+	if err := VerifyTxInclusion(txRecordProof, tb, hashAlgorithm); err != nil {
+		return fmt.Errorf("verify inc: %w", err)
+	}
+	if !txRecordProof.TxRecord.IsSuccessful() {
+		return errors.New("transaction failed")
 	}
 	return nil
 }
