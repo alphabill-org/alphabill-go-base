@@ -83,8 +83,8 @@ func NewTxRecordProof(block *Block, txIndex int, algorithm crypto.Hash) (*TxReco
 	}, nil
 }
 
-// VerifyInc checks if the transaction is included in the block.
-func VerifyInc(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm crypto.Hash) error {
+// VerifyTxInclusion checks if the transaction is included in the block.
+func VerifyTxInclusion(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm crypto.Hash) error {
 	if err := txRecordProof.IsValid(); err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func VerifyInc(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm cry
 
 // VerifyTxProof checks if the transaction is included in the block and was successfully executed.
 func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm crypto.Hash) error {
-	if err := VerifyInc(txRecordProof, tb, hashAlgorithm); err != nil {
+	if err := VerifyTxInclusion(txRecordProof, tb, hashAlgorithm); err != nil {
 		return fmt.Errorf("verify inc: %w", err)
 	}
 	if !txRecordProof.TxRecord.IsSuccessful() {

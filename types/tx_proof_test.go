@@ -47,14 +47,14 @@ func TestVerifyInc(t *testing.T) {
 		require.NoError(t, err)
 		tb := NewTrustBase(t, verifier)
 
-		require.NoError(t, VerifyInc(proof, tb, crypto.SHA256))
+		require.NoError(t, VerifyTxInclusion(proof, tb, crypto.SHA256))
 	})
 
 	t.Run("Test tx record proof is nil", func(t *testing.T) {
 		_, verifier := testsig.CreateSignerAndVerifier(t)
 		tb := NewTrustBase(t, verifier)
 
-		require.EqualError(t, VerifyInc(nil, tb, crypto.SHA256), "transaction record proof is nil")
+		require.EqualError(t, VerifyTxInclusion(nil, tb, crypto.SHA256), "transaction record proof is nil")
 	})
 
 	t.Run("Test tx record is nil", func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestVerifyInc(t *testing.T) {
 		tb := NewTrustBase(t, verifier)
 		proof := &TxRecordProof{TxProof: &TxProof{Version: 1}}
 
-		require.EqualError(t, VerifyInc(proof, tb, crypto.SHA256), "transaction record is nil")
+		require.EqualError(t, VerifyTxInclusion(proof, tb, crypto.SHA256), "transaction record is nil")
 	})
 
 	t.Run("Test tx order is nil", func(t *testing.T) {
@@ -71,7 +71,7 @@ func TestVerifyInc(t *testing.T) {
 		txr := &TransactionRecord{Version: 1, ServerMetadata: &ServerMetadata{SuccessIndicator: TxStatusSuccessful}}
 		proof := &TxRecordProof{TxRecord: txr, TxProof: &TxProof{Version: 1}}
 
-		require.EqualError(t, VerifyInc(proof, tb, crypto.SHA256), "transaction order is nil")
+		require.EqualError(t, VerifyTxInclusion(proof, tb, crypto.SHA256), "transaction order is nil")
 	})
 
 	t.Run("Test invalid system id", func(t *testing.T) {
@@ -86,7 +86,7 @@ func TestVerifyInc(t *testing.T) {
 		proof.TxProof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
 
-		require.EqualError(t, VerifyInc(proof, tb, crypto.SHA256),
+		require.EqualError(t, VerifyTxInclusion(proof, tb, crypto.SHA256),
 			"invalid unicity certificate: invalid unicity certificate: unicity tree certificate validation failed: invalid partition identifier: expected 01000001, got 00000001")
 	})
 
@@ -98,7 +98,7 @@ func TestVerifyInc(t *testing.T) {
 		tb := NewTrustBase(t, verifier)
 		proof.TxProof.BlockHeaderHash = make([]byte, 32)
 
-		require.EqualError(t, VerifyInc(proof, tb, crypto.SHA256), "proof block hash does not match to block hash in unicity certificate")
+		require.EqualError(t, VerifyTxInclusion(proof, tb, crypto.SHA256), "proof block hash does not match to block hash in unicity certificate")
 	})
 }
 
@@ -110,7 +110,7 @@ func TestVerifyTxProof(t *testing.T) {
 		require.NoError(t, err)
 		tb := NewTrustBase(t, verifier)
 
-		require.NoError(t, VerifyInc(proof, tb, crypto.SHA256))
+		require.NoError(t, VerifyTxInclusion(proof, tb, crypto.SHA256))
 	})
 
 	t.Run("Test tx has failed", func(t *testing.T) {
