@@ -21,8 +21,8 @@ type UnicityTreeCertificate struct {
 	_         struct{}        `cbor:",toarray"`
 	Version   ABVersion       `json:"version"`
 	Partition PartitionID     `json:"partitionIdentifier"`
-	HashSteps []*imt.PathItem `json:"hashSteps"`
 	PDRHash   hex.Bytes       `json:"partitionDescriptionHash"`
+	HashSteps []*imt.PathItem `json:"hashSteps"`
 }
 
 type UnicityTreeData struct {
