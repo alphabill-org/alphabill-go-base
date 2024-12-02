@@ -85,9 +85,8 @@ func TestVerifyInc(t *testing.T) {
 		uc.UnicityTreeCertificate.Partition = 1
 		proof.TxProof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
-
 		require.EqualError(t, VerifyTxInclusion(proof, tb, crypto.SHA256),
-			"invalid unicity certificate: invalid unicity certificate: unicity tree certificate validation failed: invalid partition identifier: expected 01000001, got 00000001")
+			"invalid unicity certificate: invalid unicity certificate: invalid unicity tree certificate: invalid partition identifier: expected 01000001, got 00000001")
 	})
 
 	t.Run("Test invalid block hash", func(t *testing.T) {
