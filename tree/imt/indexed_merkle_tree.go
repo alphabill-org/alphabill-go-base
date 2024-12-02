@@ -31,6 +31,7 @@ type (
 	}
 	// PathItem helper struct for proof extraction, contains Hash and Key of node
 	PathItem struct {
+		_    struct{}  `cbor:",toarray"`
 		Key  hex.Bytes `json:"key"`
 		Hash hex.Bytes `json:"hash"`
 	}

@@ -26,6 +26,7 @@ type UnicityTreeCertificate struct {
 }
 
 type UnicityTreeData struct {
+	_             struct{} `cbor:",toarray"`
 	Partition     PartitionID
 	ShardTreeRoot []byte // root hash of the partition shard tree
 	PDRHash       []byte // PartitionDescriptionRecord hash
