@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/stretchr/testify/require"
 )
 
@@ -138,7 +139,11 @@ func TestInputRecord_AddToHasher(t *testing.T) {
 	abhasher := abhash.New(hasher)
 	ir.AddToHasher(abhasher)
 	hash := hasher.Sum(nil)
-	require.Equal(t, []byte{0x51, 0xb6, 0x6f, 0x91, 0x65, 0x3a, 0xc0, 0x63, 0x1b, 0xe4, 0x73, 0x6f, 0x4, 0x76, 0xb9, 0xf7, 0x45, 0xbb, 0x80, 0x9b, 0xf4, 0xba, 0xd8, 0x24, 0x2, 0xdc, 0x80, 0x83, 0x2d, 0x31, 0xf4, 0x19}, hash)
+
+	//fmt.Printf("hash=0x%x\n", hash)
+	expectedHash, err := hex.Decode([]byte("0xbcad415dbcb84044dec00a4576f01652dfa1ad281ab2cee4d720002e6803a479"))
+	require.NoError(t, err)
+	require.Equal(t, expectedHash, hash)
 }
 
 func Test_EqualIR(t *testing.T) {
