@@ -40,7 +40,7 @@ func (t *UnicityTreeData) Key() []byte {
 	return t.Partition.Bytes()
 }
 
-func (utc *UnicityTreeCertificate) IsValid(partition PartitionID, systemDescriptionHash []byte) error {
+func (utc *UnicityTreeCertificate) IsValid(partition PartitionID, pdrHash []byte) error {
 	if utc == nil {
 		return ErrUnicityTreeCertificateIsNil
 	}
@@ -50,8 +50,8 @@ func (utc *UnicityTreeCertificate) IsValid(partition PartitionID, systemDescript
 	if utc.Partition != partition {
 		return fmt.Errorf("invalid partition identifier: expected %s, got %s", partition, utc.Partition)
 	}
-	if !bytes.Equal(systemDescriptionHash, utc.PDRHash) {
-		return fmt.Errorf("invalid system description hash: expected %X, got %X", systemDescriptionHash, utc.PDRHash)
+	if !bytes.Equal(pdrHash, utc.PDRHash) {
+		return fmt.Errorf("invalid partition description hash: expected %X, got %X", pdrHash, utc.PDRHash)
 	}
 	return nil
 }

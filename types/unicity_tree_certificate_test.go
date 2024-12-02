@@ -33,7 +33,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 			"invalid partition identifier: expected 01010100, got 01010101")
 	})
 
-	t.Run("invalid system description hash", func(t *testing.T) {
+	t.Run("invalid partition description hash", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
 			Version:   1,
 			Partition: partitionID,
@@ -41,7 +41,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 			PDRHash:   []byte{1, 1, 1, 1},
 		}
 		require.EqualError(t, uct.IsValid(partitionID, []byte{1, 1, 1, 2}),
-			"invalid system description hash: expected 01010102, got 01010101")
+			"invalid partition description hash: expected 01010102, got 01010101")
 	})
 
 	t.Run("ok", func(t *testing.T) {
