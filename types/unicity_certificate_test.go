@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
-	"github.com/alphabill-org/alphabill-go-base/tree/imt"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
@@ -725,7 +724,7 @@ func Test_UnicityCertificate_Hash(t *testing.T) {
 			Version:   1,
 			Partition: partitionID,
 			PDRHash:   []byte{1, 2, 3, 4},
-			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: []byte{1, 2, 3}}},
+			HashSteps: []*PathItem{{Key: partitionID, Hash: []byte{1, 2, 3}}},
 		},
 		UnicitySeal: &UnicitySeal{
 			Version:              1,

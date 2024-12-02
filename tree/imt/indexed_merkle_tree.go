@@ -83,6 +83,13 @@ func New(hashAlgorithm crypto.Hash, leaves []LeafData) (*Tree, error) {
 	return &Tree{root: root, dataLength: len(pairs)}, nil
 }
 
+func NewPathItem(key []byte, hash []byte) *PathItem {
+	return &PathItem{
+		Key:  key,
+		Hash: hash,
+	}
+}
+
 // IndexTreeOutput calculates the output hash of the index Merkle tree hash chain from hash chain, key and data hash.
 func IndexTreeOutput(merklePath []*PathItem, key []byte, hashAlgorithm crypto.Hash) ([]byte, error) {
 	if len(merklePath) == 0 {

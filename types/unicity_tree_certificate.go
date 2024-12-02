@@ -18,11 +18,11 @@ var (
 )
 
 type UnicityTreeCertificate struct {
-	_         struct{}        `cbor:",toarray"`
-	Version   ABVersion       `json:"version"`
-	Partition PartitionID     `json:"partitionIdentifier"`
-	PDRHash   hex.Bytes       `json:"partitionDescriptionHash"`
-	HashSteps []*imt.PathItem `json:"hashSteps"`
+	_         struct{}    `cbor:",toarray"`
+	Version   ABVersion   `json:"version"`
+	Partition PartitionID `json:"partitionIdentifier"`
+	PDRHash   hex.Bytes   `json:"partitionDescriptionHash"`
+	HashSteps []*PathItem `json:"hashSteps"`
 }
 
 type UnicityTreeData struct {
@@ -30,6 +30,12 @@ type UnicityTreeData struct {
 	Partition     PartitionID
 	ShardTreeRoot []byte // root hash of the partition shard tree
 	PDRHash       []byte // PartitionDescriptionRecord hash
+}
+
+type PathItem struct {
+	_    struct{} `cbor:",toarray"`
+	Key  PartitionID
+	Hash hex.Bytes
 }
 
 func (t *UnicityTreeData) AddToHasher(hasher abhash.Hasher) {
@@ -74,7 +80,10 @@ func (utc *UnicityTreeCertificate) EvalAuthPath(shardTreeRoot []byte, hashAlgori
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate leaf hash: %w", err)
 	}
-	hashSteps := append([]*imt.PathItem{{Key: utc.Partition.Bytes(), Hash: h}}, utc.HashSteps...)
+	hashSteps := []*imt.PathItem{imt.NewPathItem(utc.Partition.Bytes(), h)}
+	for _, s := range utc.HashSteps {
+		hashSteps = append(hashSteps, s.ToIMTPathItem())
+	}
 
 	// calculate root hash from the merkle path
 	return imt.IndexTreeOutput(hashSteps, utc.Partition.Bytes(), hashAlgorithm)
@@ -105,4 +114,8 @@ func (utc *UnicityTreeCertificate) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 	return EnsureVersion(utc, utc.Version, 1)
+}
+
+func (p *PathItem) ToIMTPathItem() *imt.PathItem {
+	return imt.NewPathItem(p.Key.Bytes(), p.Hash)
 }
