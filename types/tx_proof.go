@@ -140,7 +140,7 @@ func VerifyTxInclusion(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgor
 // VerifyTxProof checks if the transaction is included in the block and was successfully executed.
 func VerifyTxProof(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgorithm crypto.Hash) error {
 	if err := VerifyTxInclusion(txRecordProof, tb, hashAlgorithm); err != nil {
-		return fmt.Errorf("verify inc: %w", err)
+		return fmt.Errorf("verify tx inclusion: %w", err)
 	}
 	if !txRecordProof.TxRecord.IsSuccessful() {
 		return errors.New("transaction failed")
