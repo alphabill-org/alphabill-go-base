@@ -5,12 +5,10 @@ import (
 	"crypto/sha256"
 	"testing"
 
-	abhash "github.com/alphabill-org/alphabill-go-base/hash"
-	"github.com/stretchr/testify/require"
-
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	test "github.com/alphabill-org/alphabill-go-base/testutils"
-	"github.com/alphabill-org/alphabill-go-base/tree/imt"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUnicityTreeCertificate_IsValid(t *testing.T) {
@@ -26,7 +24,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		uct := &UnicityTreeCertificate{
 			Version:   1,
 			Partition: partitionID,
-			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: test.RandomBytes(32)}},
+			HashSteps: []*PathItem{{Key: partitionID, Hash: test.RandomBytes(32)}},
 			PDRHash:   pdrHash,
 		}
 		require.EqualError(t, uct.IsValid(0x01010100, pdrHash),
@@ -37,7 +35,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		uct := &UnicityTreeCertificate{
 			Version:   1,
 			Partition: partitionID,
-			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: test.RandomBytes(32)}},
+			HashSteps: []*PathItem{{Key: partitionID, Hash: test.RandomBytes(32)}},
 			PDRHash:   []byte{1, 1, 1, 1},
 		}
 		require.EqualError(t, uct.IsValid(partitionID, []byte{1, 1, 1, 2}),
@@ -57,7 +55,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		uct := &UnicityTreeCertificate{
 			Version:   1,
 			Partition: partitionID,
-			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: hasher.Sum(nil)}},
+			HashSteps: []*PathItem{{Key: partitionID, Hash: hasher.Sum(nil)}},
 			PDRHash:   pdrHash,
 		}
 		require.NoError(t, uct.IsValid(partitionID, pdrHash))
@@ -73,7 +71,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		uct := &UnicityTreeCertificate{
 			Version:   2,
 			Partition: partitionID,
-			HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: test.RandomBytes(32)}},
+			HashSteps: []*PathItem{{Key: partitionID, Hash: test.RandomBytes(32)}},
 			PDRHash:   pdrHash,
 		}
 		uctBytes, err := uct.MarshalCBOR()
@@ -88,7 +86,7 @@ func TestUnicityTreeCertificate_Hash(t *testing.T) {
 	ut := &UnicityTreeCertificate{
 		Version:   1,
 		Partition: partitionID,
-		HashSteps: []*imt.PathItem{{Key: partitionID.Bytes(), Hash: []byte{1, 2, 3}}},
+		HashSteps: []*PathItem{{Key: partitionID, Hash: []byte{1, 2, 3}}},
 		PDRHash:   []byte{1, 2, 3, 4},
 	}
 

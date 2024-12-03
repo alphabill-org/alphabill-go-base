@@ -23,8 +23,9 @@ type (
 
 	// PathItem helper struct for proof extraction, contains Hash and Direction from parent node
 	PathItem struct {
-		Hash          hex.Bytes `json:"hash"`
+		_             struct{}  `cbor:",toarray"`
 		DirectionLeft bool      `json:"directionLeft"` // true - left from parent, false - right from parent
+		Hash          hex.Bytes `json:"hash"`
 	}
 
 	node struct {
