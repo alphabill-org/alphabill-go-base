@@ -69,7 +69,7 @@ func (u *UnicityTree) Certificate(partition PartitionID) (*UnicityTreeCertificat
 }
 
 func NewPathItems(pathItems []*imt.PathItem) ([]*PathItem, error) {
-	var path []*PathItem
+	path := make([]*PathItem, 0, len(pathItems))
 	for _, pathItem := range pathItems {
 		p, err := NewPathItem(pathItem)
 		if err != nil {
