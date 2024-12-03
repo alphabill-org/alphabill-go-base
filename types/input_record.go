@@ -22,13 +22,13 @@ var (
 type InputRecord struct {
 	_               struct{}  `cbor:",toarray"`
 	Version         ABVersion `json:"version"`
-	PreviousHash    hex.Bytes `json:"previousHash"`    // previously certified state hash
-	Hash            hex.Bytes `json:"hash"`            // state hash to be certified
-	BlockHash       hex.Bytes `json:"blockHash"`       // hash of the block
-	SummaryValue    hex.Bytes `json:"summaryValue"`    // summary value to certified
-	Timestamp       uint64    `json:"timestamp"`       // reference time for transaction validation
 	RoundNumber     uint64    `json:"roundNumber"`     // shard's round number
 	Epoch           uint64    `json:"epoch"`           // shard’s epoch number
+	PreviousHash    hex.Bytes `json:"previousHash"`    // previously certified state hash
+	Hash            hex.Bytes `json:"hash"`            // state hash to be certified
+	SummaryValue    hex.Bytes `json:"summaryValue"`    // summary value to certified
+	Timestamp       uint64    `json:"timestamp"`       // reference time for transaction validation
+	BlockHash       hex.Bytes `json:"blockHash"`       // hash of the block
 	SumOfEarnedFees uint64    `json:"sumOfEarnedFees"` // sum of the actual fees over all transaction records in the block
 }
 

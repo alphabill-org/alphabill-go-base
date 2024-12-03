@@ -26,8 +26,8 @@ type (
 
 	GenericChainItem struct {
 		_    struct{} `cbor:",toarray"`
-		Hash []byte
 		Left bool
+		Hash []byte
 	}
 )
 

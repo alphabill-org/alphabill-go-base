@@ -31,6 +31,7 @@ type (
 	}
 	// PathItem helper struct for proof extraction, contains Hash and Key of node
 	PathItem struct {
+		_    struct{}  `cbor:",toarray"`
 		Key  hex.Bytes `json:"key"`
 		Hash hex.Bytes `json:"hash"`
 	}
@@ -80,6 +81,13 @@ func New(hashAlgorithm crypto.Hash, leaves []LeafData) (*Tree, error) {
 		return nil, fmt.Errorf("failed to create merkle tree: %w", err)
 	}
 	return &Tree{root: root, dataLength: len(pairs)}, nil
+}
+
+func NewPathItem(key []byte, hash []byte) *PathItem {
+	return &PathItem{
+		Key:  key,
+		Hash: hash,
+	}
 }
 
 // IndexTreeOutput calculates the output hash of the index Merkle tree hash chain from hash chain, key and data hash.
