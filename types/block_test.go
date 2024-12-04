@@ -161,9 +161,9 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("valid block", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		sdrs := &PartitionDescriptionRecord{
-			Version:             1,
-			PartitionIdentifier: partitionID,
-			T2Timeout:           2500 * time.Millisecond,
+			Version:     1,
+			PartitionID: partitionID,
+			T2Timeout:   2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
 			Version:         1,
@@ -201,9 +201,9 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("invalid block hash", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		sdrs := &PartitionDescriptionRecord{
-			Version:             1,
-			PartitionIdentifier: partitionID,
-			T2Timeout:           2500 * time.Millisecond,
+			Version:     1,
+			PartitionID: partitionID,
+			T2Timeout:   2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
 			Version:         1,

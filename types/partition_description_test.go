@@ -10,11 +10,11 @@ import (
 
 func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
 	pdr := PartitionDescriptionRecord{
-		Version:             1,
-		PartitionIdentifier: 1,
-		TypeIdLen:           8,
-		UnitIdLen:           256,
-		T2Timeout:           2500 * time.Millisecond,
+		Version:     1,
+		PartitionID: 1,
+		TypeIdLen:   8,
+		UnitIdLen:   256,
+		T2Timeout:   2500 * time.Millisecond,
 	}
 	pdrHash := doHash(t, &pdr)
 
@@ -37,12 +37,12 @@ func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
 func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 	validPDR := func() *PartitionDescriptionRecord {
 		return &PartitionDescriptionRecord{
-			Version:             1,
-			NetworkIdentifier:   5,
-			PartitionIdentifier: 1,
-			TypeIdLen:           8,
-			UnitIdLen:           256,
-			T2Timeout:           2500 * time.Millisecond,
+			Version:           1,
+			NetworkIdentifier: 5,
+			PartitionID:       1,
+			TypeIdLen:         8,
+			UnitIdLen:         256,
+			T2Timeout:         2500 * time.Millisecond,
 		}
 	}
 
@@ -63,11 +63,11 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 
 	t.Run("partition identifier", func(t *testing.T) {
 		pdr := validPDR()
-		pdr.PartitionIdentifier = 0
+		pdr.PartitionID = 0
 		require.EqualError(t, pdr.IsValid(), "invalid partition identifier: 00000000")
 
-		pdr.PartitionIdentifier = 3
-		require.EqualValues(t, 3, pdr.GetPartitionIdentifier())
+		pdr.PartitionID = 3
+		require.EqualValues(t, 3, pdr.GetPartitionID())
 	})
 
 	t.Run("type id length", func(t *testing.T) {
@@ -101,12 +101,12 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 	t.Run("empty scheme", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
-			Version:             1,
-			PartitionIdentifier: 1,
-			TypeIdLen:           8,
-			UnitIdLen:           256,
-			T2Timeout:           2500 * time.Millisecond,
-			Shards:              nil,
+			Version:     1,
+			PartitionID: 1,
+			TypeIdLen:   8,
+			UnitIdLen:   256,
+			T2Timeout:   2500 * time.Millisecond,
+			Shards:      nil,
 		}
 
 		// empty sharding scheme - only empty id is valid
@@ -118,11 +118,11 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 
 	t.Run("non empty scheme", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
-			Version:             1,
-			PartitionIdentifier: 1,
-			TypeIdLen:           8,
-			UnitIdLen:           256,
-			T2Timeout:           2500 * time.Millisecond,
+			Version:     1,
+			PartitionID: 1,
+			TypeIdLen:   8,
+			UnitIdLen:   256,
+			T2Timeout:   2500 * time.Millisecond,
 			Shards: ShardingScheme{
 				ShardID{bits: []byte{0}, length: 1},
 				ShardID{bits: []byte{1}, length: 1},
@@ -144,11 +144,11 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 
 	t.Run("shard id longer than unit id", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
-			Version:             1,
-			PartitionIdentifier: 1,
-			TypeIdLen:           8,
-			UnitIdLen:           8,
-			T2Timeout:           2500 * time.Millisecond,
+			Version:     1,
+			PartitionID: 1,
+			TypeIdLen:   8,
+			UnitIdLen:   8,
+			T2Timeout:   2500 * time.Millisecond,
 			Shards: ShardingScheme{
 				ShardID{bits: []byte{0}, length: 1},
 				ShardID{bits: []byte{1}, length: 1},
@@ -162,11 +162,11 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 	t.Run("unit ID length", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
-			Version:             1,
-			PartitionIdentifier: 1,
-			TypeIdLen:           8,
-			UnitIdLen:           8,
-			T2Timeout:           2500 * time.Millisecond,
+			Version:     1,
+			PartitionID: 1,
+			TypeIdLen:   8,
+			UnitIdLen:   8,
+			T2Timeout:   2500 * time.Millisecond,
 		}
 		vf := pdr.UnitIdValidator(ShardID{})
 
@@ -181,11 +181,11 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 
 	t.Run("matching shard ID", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
-			Version:             1,
-			PartitionIdentifier: 1,
-			TypeIdLen:           8,
-			UnitIdLen:           8,
-			T2Timeout:           2500 * time.Millisecond,
+			Version:     1,
+			PartitionID: 1,
+			TypeIdLen:   8,
+			UnitIdLen:   8,
+			T2Timeout:   2500 * time.Millisecond,
 			Shards: ShardingScheme{
 				ShardID{bits: []byte{0}, length: 1},
 				ShardID{bits: []byte{1}, length: 1},
@@ -204,12 +204,12 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 
 func Test_PartitionDescriptionRecord_CBOR(t *testing.T) {
 	pdr := &PartitionDescriptionRecord{
-		Version:             1,
-		PartitionIdentifier: 1,
-		NetworkIdentifier:   5,
-		TypeIdLen:           8,
-		UnitIdLen:           256,
-		T2Timeout:           2500 * time.Millisecond,
+		Version:           1,
+		PartitionID:       1,
+		NetworkIdentifier: 5,
+		TypeIdLen:         8,
+		UnitIdLen:         256,
+		T2Timeout:         2500 * time.Millisecond,
 	}
 
 	t.Run("Marshal - ok", func(t *testing.T) {

@@ -30,7 +30,7 @@ type PartitionDescriptionRecord struct {
 	_                   struct{}    `cbor:",toarray"`
 	Version             ABVersion   `json:"version"`
 	NetworkIdentifier   NetworkID   `json:"networkIdentifier"`
-	PartitionIdentifier PartitionID `json:"partitionIdentifier"`
+	PartitionID         PartitionID `json:"partitionIdentifier"`
 	// System Type Descriptor is only used (ie is not nil) when PartitionIdentifier == 0
 	SystemDescriptor *SystemTypeDescriptor `json:"systemTypeDescriptor,omitempty"`
 	TypeIdLen        uint32                `json:"typeIdLength"`
@@ -60,8 +60,8 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	}
 	// we currently do not support custom System Type Descriptors so allow
 	// only non-zero System IDs
-	if pdr.PartitionIdentifier == 0 {
-		return fmt.Errorf("invalid partition identifier: %s", pdr.PartitionIdentifier)
+	if pdr.PartitionID == 0 {
+		return fmt.Errorf("invalid partition identifier: %s", pdr.PartitionID)
 	}
 	if pdr.SystemDescriptor != nil {
 		return errors.New("custom SystemDescriptor is not supported")
@@ -92,8 +92,8 @@ func (pdr *PartitionDescriptionRecord) GetNetworkIdentifier() NetworkID {
 	return pdr.NetworkIdentifier
 }
 
-func (pdr *PartitionDescriptionRecord) GetPartitionIdentifier() PartitionID {
-	return pdr.PartitionIdentifier
+func (pdr *PartitionDescriptionRecord) GetPartitionID() PartitionID {
+	return pdr.PartitionID
 }
 
 /*
