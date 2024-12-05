@@ -27,18 +27,18 @@ func (std *PartitionType) AddToHasher(h abhash.Hasher) {
 }
 
 type PartitionDescriptionRecord struct {
-	_                 struct{}        `cbor:",toarray"`
-	Version           ABVersion       `json:"version"`
-	NetworkIdentifier NetworkID       `json:"networkIdentifier"`
-	PartitionID       PartitionID     `json:"partitionId"`
-	PartitionTypeID   PartitionTypeID `json:"partitionTypeId"`
-	PartitionType     *PartitionType  `json:"partitionType,omitempty"` // non-nil only if PartitionID == 0
-	TypeIdLen         uint32          `json:"typeIdLength"`
-	UnitIdLen         uint32          `json:"unitIdLength"`
-	Shards            ShardingScheme  `json:"shardingScheme"`
-	SummaryTrustBase  hex.Bytes       `json:"summaryTrustBase"`
-	T2Timeout         time.Duration   `json:"t2timeout"`
-	FeeCreditBill     *FeeCreditBill  `json:"feeCreditBill"`
+	_                struct{}        `cbor:",toarray"`
+	Version          ABVersion       `json:"version"`
+	NetworkID        NetworkID       `json:"networkId"`
+	PartitionID      PartitionID     `json:"partitionId"`
+	PartitionTypeID  PartitionTypeID `json:"partitionTypeId"`
+	PartitionType    *PartitionType  `json:"partitionType,omitempty"` // non-nil only if PartitionID == 0
+	TypeIdLen        uint32          `json:"typeIdLength"`
+	UnitIdLen        uint32          `json:"unitIdLength"`
+	Shards           ShardingScheme  `json:"shardingScheme"`
+	SummaryTrustBase hex.Bytes       `json:"summaryTrustBase"`
+	T2Timeout        time.Duration   `json:"t2timeout"`
+	FeeCreditBill    *FeeCreditBill  `json:"feeCreditBill"`
 	//todo: Transaction cost function
 }
 
@@ -55,8 +55,8 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if pdr.Version != 1 {
 		return ErrInvalidVersion(pdr)
 	}
-	if pdr.NetworkIdentifier == 0 {
-		return fmt.Errorf("invalid network identifier: %d", pdr.NetworkIdentifier)
+	if pdr.NetworkID == 0 {
+		return fmt.Errorf("invalid network identifier: %d", pdr.NetworkID)
 	}
 	// we currently do not support custom System Type Descriptors so allow
 	// only non-zero System IDs
@@ -88,8 +88,8 @@ func (pdr *PartitionDescriptionRecord) Hash(hashAlgorithm crypto.Hash) ([]byte, 
 	return hasher.Sum()
 }
 
-func (pdr *PartitionDescriptionRecord) GetNetworkIdentifier() NetworkID {
-	return pdr.NetworkIdentifier
+func (pdr *PartitionDescriptionRecord) GetNetworkID() NetworkID {
+	return pdr.NetworkID
 }
 
 func (pdr *PartitionDescriptionRecord) GetPartitionID() PartitionID {

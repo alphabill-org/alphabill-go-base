@@ -20,7 +20,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		require.ErrorIs(t, uct.IsValid(2, pdrHash), ErrUnicityTreeCertificateIsNil)
 	})
 
-	t.Run("invalid system identifier", func(t *testing.T) {
+	t.Run("invalid partition identifier", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
 			Version:   1,
 			Partition: partitionID,

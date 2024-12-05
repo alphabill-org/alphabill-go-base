@@ -16,7 +16,7 @@ const (
 
 const (
 	PartitionIDLength = 4
-	NetworkIdentifierLength   = 2
+	NetworkIDLength   = 2
 )
 
 type (
@@ -100,7 +100,7 @@ func (sid PartitionID) String() string {
 }
 
 func (nid NetworkID) Bytes() []byte {
-	b := make([]byte, NetworkIdentifierLength)
+	b := make([]byte, NetworkIDLength)
 	binary.BigEndian.PutUint16(b, uint16(nid))
 	return b
 }
