@@ -15,30 +15,30 @@ var (
 	ErrSystemDescriptionIsNil = errors.New("system description record is nil")
 )
 
-type SystemTypeDescriptor struct {
+type PartitionType struct {
 	// This is just a placeholder right now so that we can add
-	// the field into the SystemDescriptionRecord - for the fast track
-	// solution we do not expect to have non nil SystemTypeDescriptor
+	// the field into the PartitionDescriptionRecord - for the fast track
+	// solution we do not expect to have non nil PartitionType
 	// so the actual field list is not needed...
 }
 
-func (std *SystemTypeDescriptor) AddToHasher(h abhash.Hasher) {
+func (std *PartitionType) AddToHasher(h abhash.Hasher) {
 	h.Write(std)
 }
 
 type PartitionDescriptionRecord struct {
-	_                   struct{}    `cbor:",toarray"`
-	Version             ABVersion   `json:"version"`
-	NetworkIdentifier   NetworkID   `json:"networkIdentifier"`
-	PartitionID         PartitionID `json:"partitionIdentifier"`
-	// System Type Descriptor is only used (ie is not nil) when PartitionIdentifier == 0
-	SystemDescriptor *SystemTypeDescriptor `json:"systemTypeDescriptor,omitempty"`
-	TypeIdLen        uint32                `json:"typeIdLength"`
-	UnitIdLen        uint32                `json:"unitIdLength"`
-	Shards           ShardingScheme        `json:"shardingScheme"`
-	SummaryTrustBase hex.Bytes             `json:"summaryTrustBase"`
-	T2Timeout        time.Duration         `json:"t2timeout"`
-	FeeCreditBill    *FeeCreditBill        `json:"feeCreditBill"`
+	_                 struct{}        `cbor:",toarray"`
+	Version           ABVersion       `json:"version"`
+	NetworkIdentifier NetworkID       `json:"networkIdentifier"`
+	PartitionID       PartitionID     `json:"partitionId"`
+	PartitionTypeID   PartitionTypeID `json:"partitionTypeId"`
+	PartitionType     *PartitionType  `json:"partitionType,omitempty"` // non-nil only if PartitionID == 0
+	TypeIdLen         uint32          `json:"typeIdLength"`
+	UnitIdLen         uint32          `json:"unitIdLength"`
+	Shards            ShardingScheme  `json:"shardingScheme"`
+	SummaryTrustBase  hex.Bytes       `json:"summaryTrustBase"`
+	T2Timeout         time.Duration   `json:"t2timeout"`
+	FeeCreditBill     *FeeCreditBill  `json:"feeCreditBill"`
 	//todo: Transaction cost function
 }
 
@@ -63,7 +63,7 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if pdr.PartitionID == 0 {
 		return fmt.Errorf("invalid partition identifier: %s", pdr.PartitionID)
 	}
-	if pdr.SystemDescriptor != nil {
+	if pdr.PartitionType != nil {
 		return errors.New("custom SystemDescriptor is not supported")
 	}
 	if n := len(pdr.Shards); n > 0 {
