@@ -12,8 +12,8 @@ func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
 	pdr := PartitionDescriptionRecord{
 		Version:     1,
 		PartitionID: 1,
-		TypeIdLen:   8,
-		UnitIdLen:   256,
+		TypeIDLen:   8,
+		UnitIDLen:   256,
 		T2Timeout:   2500 * time.Millisecond,
 	}
 	pdrHash := doHash(t, &pdr)
@@ -40,8 +40,8 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 			Version:     1,
 			NetworkID:   5,
 			PartitionID: 1,
-			TypeIdLen:   8,
-			UnitIdLen:   256,
+			TypeIDLen:   8,
+			UnitIDLen:   256,
 			T2Timeout:   2500 * time.Millisecond,
 		}
 	}
@@ -72,16 +72,16 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 
 	t.Run("type id length", func(t *testing.T) {
 		pdr := validPDR()
-		pdr.TypeIdLen = 33
+		pdr.TypeIDLen = 33
 		require.EqualError(t, pdr.IsValid(), "type id length can be up to 32 bits, got 33")
 	})
 
 	t.Run("unit id length", func(t *testing.T) {
 		pdr := validPDR()
-		pdr.UnitIdLen = 63
+		pdr.UnitIDLen = 63
 		require.EqualError(t, pdr.IsValid(), "unit id length must be 64..512 bits, got 63")
 
-		pdr.UnitIdLen = 513
+		pdr.UnitIDLen = 513
 		require.EqualError(t, pdr.IsValid(), "unit id length must be 64..512 bits, got 513")
 	})
 
@@ -103,8 +103,8 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
 			Version:     1,
 			PartitionID: 1,
-			TypeIdLen:   8,
-			UnitIdLen:   256,
+			TypeIDLen:   8,
+			UnitIDLen:   256,
 			T2Timeout:   2500 * time.Millisecond,
 			Shards:      nil,
 		}
@@ -120,8 +120,8 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
 			Version:     1,
 			PartitionID: 1,
-			TypeIdLen:   8,
-			UnitIdLen:   256,
+			TypeIDLen:   8,
+			UnitIDLen:   256,
 			T2Timeout:   2500 * time.Millisecond,
 			Shards: ShardingScheme{
 				ShardID{bits: []byte{0}, length: 1},
@@ -146,8 +146,8 @@ func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
 			Version:     1,
 			PartitionID: 1,
-			TypeIdLen:   8,
-			UnitIdLen:   8,
+			TypeIDLen:   8,
+			UnitIDLen:   8,
 			T2Timeout:   2500 * time.Millisecond,
 			Shards: ShardingScheme{
 				ShardID{bits: []byte{0}, length: 1},
@@ -164,11 +164,11 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
 			Version:     1,
 			PartitionID: 1,
-			TypeIdLen:   8,
-			UnitIdLen:   8,
+			TypeIDLen:   8,
+			UnitIDLen:   8,
 			T2Timeout:   2500 * time.Millisecond,
 		}
-		vf := pdr.UnitIdValidator(ShardID{})
+		vf := pdr.UnitIDValidator(ShardID{})
 
 		require.EqualError(t, vf(nil), `expected 2 byte unit ID, got 0 bytes`)
 
@@ -183,8 +183,8 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
 			Version:     1,
 			PartitionID: 1,
-			TypeIdLen:   8,
-			UnitIdLen:   8,
+			TypeIDLen:   8,
+			UnitIDLen:   8,
 			T2Timeout:   2500 * time.Millisecond,
 			Shards: ShardingScheme{
 				ShardID{bits: []byte{0}, length: 1},
@@ -192,7 +192,7 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 			},
 		}
 		// validator for shard "1"
-		vf := pdr.UnitIdValidator(ShardID{bits: []byte{128}, length: 1})
+		vf := pdr.UnitIDValidator(ShardID{bits: []byte{128}, length: 1})
 
 		// unit ID in the shard "0"
 		require.EqualError(t, vf([]byte{0b0111_0000, 1}), `unit doesn't belong into the shard`)
@@ -207,8 +207,8 @@ func Test_PartitionDescriptionRecord_CBOR(t *testing.T) {
 		Version:     1,
 		PartitionID: 1,
 		NetworkID:   5,
-		TypeIdLen:   8,
-		UnitIdLen:   256,
+		TypeIDLen:   8,
+		UnitIDLen:   256,
 		T2Timeout:   2500 * time.Millisecond,
 	}
 

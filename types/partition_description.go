@@ -33,8 +33,8 @@ type PartitionDescriptionRecord struct {
 	PartitionID      PartitionID     `json:"partitionId"`
 	PartitionTypeID  PartitionTypeID `json:"partitionTypeId"`
 	PartitionType    *PartitionType  `json:"partitionType,omitempty"` // non-nil only if PartitionID == 0
-	TypeIdLen        uint32          `json:"typeIdLength"`
-	UnitIdLen        uint32          `json:"unitIdLength"`
+	TypeIDLen        uint32          `json:"typeIdLength"`
+	UnitIDLen        uint32          `json:"unitIdLength"`
 	Shards           ShardingScheme  `json:"shardingScheme"`
 	SummaryTrustBase hex.Bytes       `json:"summaryTrustBase"`
 	T2Timeout        time.Duration   `json:"t2timeout"`
@@ -69,11 +69,11 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if n := len(pdr.Shards); n > 0 {
 		return fmt.Errorf("currently only single shard partitions are supported, got sharding scheme with %d shards", n)
 	}
-	if pdr.TypeIdLen > 32 {
-		return fmt.Errorf("type id length can be up to 32 bits, got %d", pdr.TypeIdLen)
+	if pdr.TypeIDLen > 32 {
+		return fmt.Errorf("type id length can be up to 32 bits, got %d", pdr.TypeIDLen)
 	}
-	if 64 > pdr.UnitIdLen || pdr.UnitIdLen > 512 {
-		return fmt.Errorf("unit id length must be 64..512 bits, got %d", pdr.UnitIdLen)
+	if 64 > pdr.UnitIDLen || pdr.UnitIDLen > 512 {
+		return fmt.Errorf("unit id length must be 64..512 bits, got %d", pdr.UnitIDLen)
 	}
 	if pdr.T2Timeout < 800*time.Millisecond || pdr.T2Timeout > 10*time.Second {
 		return fmt.Errorf("t2 timeout value out of allowed range: %s", pdr.T2Timeout)
@@ -106,8 +106,8 @@ func (pdr *PartitionDescriptionRecord) IsValidShard(id ShardID) error {
 	if len(pdr.Shards) != 0 && id.Length() == 0 {
 		return errors.New("empty shard ID is not valid in multi-shard sharding scheme")
 	}
-	if pdr.UnitIdLen < uint32(id.Length()) {
-		return fmt.Errorf("partition has %d bit unit IDs but shard ID is %d bits", pdr.UnitIdLen, id.Length())
+	if pdr.UnitIDLen < uint32(id.Length()) {
+		return fmt.Errorf("partition has %d bit unit IDs but shard ID is %d bits", pdr.UnitIDLen, id.Length())
 	}
 	if id.Length() != 0 && !slices.ContainsFunc(pdr.Shards, func(x ShardID) bool { return id.Equal(x) }) {
 		return fmt.Errorf("shard ID %s doesn't belong into the sharding scheme", id)
@@ -116,13 +116,13 @@ func (pdr *PartitionDescriptionRecord) IsValidShard(id ShardID) error {
 }
 
 /*
-UnitIdValidator returns function which checks that unit ID passed as argument
+UnitIDValidator returns function which checks that unit ID passed as argument
 has correct length and that the unit belongs into the given shard.
 */
-func (pdr *PartitionDescriptionRecord) UnitIdValidator(sid ShardID) func(unitID UnitID) error {
+func (pdr *PartitionDescriptionRecord) UnitIDValidator(sid ShardID) func(unitID UnitID) error {
 	shardMatcher := sid.Comparator()
-	idLen := int(pdr.TypeIdLen+pdr.UnitIdLen) / 8
-	if (pdr.TypeIdLen+pdr.UnitIdLen)%8 > 0 {
+	idLen := int(pdr.TypeIDLen+pdr.UnitIDLen) / 8
+	if (pdr.TypeIDLen+pdr.UnitIDLen)%8 > 0 {
 		idLen++
 	}
 

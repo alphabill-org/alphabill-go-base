@@ -125,8 +125,8 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 	pdr := PartitionDescriptionRecord{
 		Version:     1,
 		PartitionID: 0x0f0f0f0f,
-		TypeIdLen:   8,
-		UnitIdLen:   256,
+		TypeIDLen:   8,
+		UnitIDLen:   256,
 		Shards:      ShardingScheme{sid0, sid1},
 	}
 	pdrHash, err := pdr.Hash(crypto.SHA256)
