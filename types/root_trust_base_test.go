@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestNewTrustBaseGenesis(t *testing.T) {
-	keys := genKeys(3)
+	keys := genKeys(4)
 	type args struct {
 		nodes               []*NodeInfo
 		unicityTreeRootHash []byte
@@ -68,7 +69,75 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 			},
 		},
 		{
-			name: "custom quorum threshold ok",
+			name: "custom quorum threshold ok (4 of 4 nodes)",
+			args: args{
+				nodes: []*NodeInfo{
+					{
+						NodeID:    "1",
+						PublicKey: keys["1"].publicKey,
+						Stake:     1,
+					},
+					{
+						NodeID:    "2",
+						PublicKey: keys["2"].publicKey,
+						Stake:     1,
+					},
+					{
+						NodeID:    "3",
+						PublicKey: keys["3"].publicKey,
+						Stake:     1,
+					},
+					{
+						NodeID:    "3",
+						PublicKey: keys["3"].publicKey,
+						Stake:     1,
+					},
+					{
+						NodeID:    "4",
+						PublicKey: keys["4"].publicKey,
+						Stake:     1,
+					},
+				},
+				unicityTreeRootHash: []byte{1},
+				opts:                []Option{WithQuorumThreshold(4)},
+			},
+			verifyFunc: func(t *testing.T, tb *RootTrustBaseV1) {
+				require.EqualValues(t, 4, tb.GetQuorumThreshold())
+				require.EqualValues(t, 0, tb.GetMaxFaultyNodes())
+			},
+		},
+		{
+			name: "custom quorum threshold too low",
+			args: args{
+				nodes: []*NodeInfo{
+					{
+						NodeID:    "1",
+						PublicKey: keys["1"].publicKey,
+						Stake:     1,
+					},
+					{
+						NodeID:    "2",
+						PublicKey: keys["2"].publicKey,
+						Stake:     1,
+					},
+					{
+						NodeID:    "3",
+						PublicKey: keys["3"].publicKey,
+						Stake:     1,
+					},
+					{
+						NodeID:    "4",
+						PublicKey: keys["4"].publicKey,
+						Stake:     1,
+					},
+				},
+				unicityTreeRootHash: []byte{1},
+				opts:                []Option{WithQuorumThreshold(2)},
+			},
+			wantErrStr: fmt.Sprintf("quorum threshold must be at least '2/3+1' (min threshold %d got %d)", 3, 2),
+		},
+		{
+			name: "custom quorum threshold too high",
 			args: args{
 				nodes: []*NodeInfo{
 					{
@@ -88,12 +157,9 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 					},
 				},
 				unicityTreeRootHash: []byte{1},
-				opts:                []Option{WithQuorumThreshold(2)},
+				opts:                []Option{WithQuorumThreshold(4)},
 			},
-			verifyFunc: func(t *testing.T, tb *RootTrustBaseV1) {
-				require.EqualValues(t, 2, tb.GetQuorumThreshold())
-				require.EqualValues(t, 1, tb.GetMaxFaultyNodes())
-			},
+			wantErrStr: fmt.Sprintf("quorum threshold cannot exceed the total staked amount (max threshold %d got %d)", 3, 4),
 		},
 	}
 	for _, tt := range tests {
