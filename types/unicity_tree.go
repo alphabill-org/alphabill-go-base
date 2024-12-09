@@ -45,13 +45,13 @@ func (u *UnicityTree) RootHash() []byte {
 	return bytes.Clone(u.imt.GetRootHash())
 }
 
-// Certificate returns an unicity tree certificate for given system identifier.
-func (u *UnicityTree) Certificate(partition PartitionID) (*UnicityTreeCertificate, error) {
-	pdrh, found := u.pdrhMap[partition]
+// Certificate returns an unicity tree certificate for given partition identifier.
+func (u *UnicityTree) Certificate(partitionID PartitionID) (*UnicityTreeCertificate, error) {
+	pdrh, found := u.pdrhMap[partitionID]
 	if !found {
-		return nil, fmt.Errorf("certificate for partition %s not found", partition)
+		return nil, fmt.Errorf("certificate for partition %s not found", partitionID)
 	}
-	pathItems, err := u.imt.GetMerklePath(partition.Bytes())
+	pathItems, err := u.imt.GetMerklePath(partitionID.Bytes())
 	if err != nil {
 		return nil, fmt.Errorf("creating index tree chain: %w", err)
 	}
@@ -62,7 +62,7 @@ func (u *UnicityTree) Certificate(partition PartitionID) (*UnicityTreeCertificat
 	}
 	return &UnicityTreeCertificate{
 		Version:   1,
-		Partition: partition,
+		Partition: partitionID,
 		PDRHash:   pdrh,
 		HashSteps: path[1:], // drop redundant first hash step; path is guaranteed to have size > 0
 	}, nil

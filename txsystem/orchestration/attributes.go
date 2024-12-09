@@ -3,10 +3,11 @@ package orchestration
 import "github.com/alphabill-org/alphabill-go-base/types"
 
 const (
+	PartitionTypeID    types.PartitionTypeID = 4
+	DefaultPartitionID types.PartitionID     = 4
+
 	TransactionTypeAddVAR uint16 = 1
 )
-
-const DefaultPartitionID types.PartitionID = 4
 
 type (
 	AddVarAttributes struct {

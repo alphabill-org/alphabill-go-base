@@ -20,7 +20,7 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 		require.ErrorIs(t, uct.IsValid(2, pdrHash), ErrUnicityTreeCertificateIsNil)
 	})
 
-	t.Run("invalid system identifier", func(t *testing.T) {
+	t.Run("invalid partition identifier", func(t *testing.T) {
 		uct := &UnicityTreeCertificate{
 			Version:   1,
 			Partition: partitionID,
@@ -117,13 +117,13 @@ func createUnicityCertificate(
 	require.NoError(t, err)
 
 	leaf := []*UnicityTreeData{{
-		Partition:     pdr.PartitionIdentifier,
+		Partition:     pdr.PartitionID,
 		ShardTreeRoot: sTree.RootHash(),
 		PDRHash:       doHash(t, pdr),
 	}}
 	ut, err := NewUnicityTree(crypto.SHA256, leaf)
 	require.NoError(t, err)
-	utCert, err := ut.Certificate(pdr.PartitionIdentifier)
+	utCert, err := ut.Certificate(pdr.PartitionID)
 	require.NoError(t, err)
 
 	unicitySeal := &UnicitySeal{

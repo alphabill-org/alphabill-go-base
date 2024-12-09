@@ -15,13 +15,14 @@ const (
 )
 
 const (
-	PartitionIdentifierLength = 4
-	NetworkIdentifierLength   = 2
+	PartitionIDLength = 4
+	NetworkIDLength   = 2
 )
 
 type (
-	NetworkID   uint16
-	PartitionID uint32
+	NetworkID       uint16
+	PartitionID     uint32
+	PartitionTypeID uint32
 
 	// UnitID is the extended identifier, combining the type and the unit identifiers.
 	UnitID []byte
@@ -81,15 +82,15 @@ func (uid *UnitID) UnmarshalText(src []byte) error {
 }
 
 func BytesToPartitionID(b []byte) (PartitionID, error) {
-	if len(b) != PartitionIdentifierLength {
-		return 0, fmt.Errorf("partition ID length must be %d bytes, got %d bytes", PartitionIdentifierLength, len(b))
+	if len(b) != PartitionIDLength {
+		return 0, fmt.Errorf("partition ID length must be %d bytes, got %d bytes", PartitionIDLength, len(b))
 	}
 
 	return PartitionID(binary.BigEndian.Uint32(b)), nil
 }
 
 func (sid PartitionID) Bytes() []byte {
-	b := make([]byte, PartitionIdentifierLength)
+	b := make([]byte, PartitionIDLength)
 	binary.BigEndian.PutUint32(b, uint32(sid))
 	return b
 }
@@ -99,7 +100,7 @@ func (sid PartitionID) String() string {
 }
 
 func (nid NetworkID) Bytes() []byte {
-	b := make([]byte, NetworkIdentifierLength)
+	b := make([]byte, NetworkIDLength)
 	binary.BigEndian.PutUint16(b, uint16(nid))
 	return b
 }

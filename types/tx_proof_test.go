@@ -139,9 +139,9 @@ func TestVerifyTxProof(t *testing.T) {
 
 func createBlock(t *testing.T, id string, signer abcrypto.Signer, txs ...*TransactionRecord) *Block {
 	sdrs := &PartitionDescriptionRecord{
-		Version:             1,
-		PartitionIdentifier: partitionID,
-		T2Timeout:           2500 * time.Millisecond,
+		Version:     1,
+		PartitionID: partitionID,
+		T2Timeout:   2500 * time.Millisecond,
 	}
 	inputRecord := &InputRecord{
 		Version:         1,

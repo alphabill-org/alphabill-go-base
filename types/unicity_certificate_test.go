@@ -123,11 +123,11 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 func TestUnicityCertificate_Verify(t *testing.T) {
 	sid0, sid1 := ShardID{}.Split()
 	pdr := PartitionDescriptionRecord{
-		Version:             1,
-		PartitionIdentifier: 0x0f0f0f0f,
-		TypeIdLen:           8,
-		UnitIdLen:           256,
-		Shards:              ShardingScheme{sid0, sid1},
+		Version:     1,
+		PartitionID: 0x0f0f0f0f,
+		TypeIDLen:   8,
+		UnitIDLen:   256,
+		Shards:      ShardingScheme{sid0, sid1},
 	}
 	pdrHash, err := pdr.Hash(crypto.SHA256)
 	require.NoError(t, err)
@@ -165,12 +165,12 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 	require.NoError(t, err)
 
 	ut, err := NewUnicityTree(crypto.SHA256, []*UnicityTreeData{{
-		Partition:     pdr.PartitionIdentifier,
+		Partition:     pdr.PartitionID,
 		ShardTreeRoot: sTree.RootHash(),
 		PDRHash:       pdrHash,
 	}})
 	require.NoError(t, err)
-	utCert, err := ut.Certificate(pdr.PartitionIdentifier)
+	utCert, err := ut.Certificate(pdr.PartitionID)
 	require.NoError(t, err)
 
 	validUC := func(t *testing.T, sid ShardID, ir *InputRecord, trHash []byte) *UnicityCertificate {
@@ -196,8 +196,8 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		}
 	}
 
-	require.NoError(t, validUC(t, sid0, &ir0, trHash0).Verify(tb, crypto.SHA256, pdr.PartitionIdentifier, pdrHash))
-	require.NoError(t, validUC(t, sid1, &ir1, trHash1).Verify(tb, crypto.SHA256, pdr.PartitionIdentifier, pdrHash))
+	require.NoError(t, validUC(t, sid0, &ir0, trHash0).Verify(tb, crypto.SHA256, pdr.PartitionID, pdrHash))
+	require.NoError(t, validUC(t, sid1, &ir1, trHash1).Verify(tb, crypto.SHA256, pdr.PartitionID, pdrHash))
 
 	t.Run("IsValid", func(t *testing.T) {
 		// check that IsValid is called
@@ -208,14 +208,14 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 
 	t.Run("tb is nil", func(t *testing.T) {
 		uc := validUC(t, sid0, &ir0, trHash0)
-		require.EqualError(t, uc.Verify(nil, crypto.SHA256, pdr.PartitionIdentifier, pdrHash), "verifying unicity seal: root node info is missing")
+		require.EqualError(t, uc.Verify(nil, crypto.SHA256, pdr.PartitionID, pdrHash), "verifying unicity seal: root node info is missing")
 	})
 
 	t.Run("invalid root hash", func(t *testing.T) {
 		uc := validUC(t, sid0, &ir0, trHash0)
 		uc.UnicitySeal.Hash = []byte{1, 2, 3}
-		require.EqualError(t, uc.Verify(tb, crypto.SHA256, pdr.PartitionIdentifier, pdrHash),
-			"unicity seal hash 010203 does not match with the root hash of the unicity tree AA05FEF642727D2A88B4AB8D863EA5D62173751231DC96BC0AFD8DB812A402F0")
+		require.EqualError(t, uc.Verify(tb, crypto.SHA256, pdr.PartitionID, pdrHash),
+			"unicity seal hash 010203 does not match with the root hash of the unicity tree D11EB8E155C043A082640326EAC89A24C7845380A44BE66439CF3A99F7B1F0CE")
 	})
 }
 

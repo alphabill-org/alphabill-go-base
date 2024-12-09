@@ -98,11 +98,11 @@ func TestBlock_PartitionID(t *testing.T) {
 		b := &Block{}
 		require.EqualValues(t, 0, b.PartitionID())
 	})
-	t.Run("PartitionIdentifier not set", func(t *testing.T) {
+	t.Run("PartitionID not set", func(t *testing.T) {
 		b := &Block{Header: &Header{Version: 1}}
 		require.EqualValues(t, 0, b.PartitionID())
 	})
-	t.Run("PartitionIdentifier equal", func(t *testing.T) {
+	t.Run("PartitionID equal", func(t *testing.T) {
 		b := &Block{Header: &Header{
 			Version:     1,
 			PartitionID: 5,
@@ -161,9 +161,9 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("valid block", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		sdrs := &PartitionDescriptionRecord{
-			Version:             1,
-			PartitionIdentifier: partitionID,
-			T2Timeout:           2500 * time.Millisecond,
+			Version:     1,
+			PartitionID: partitionID,
+			T2Timeout:   2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
 			Version:         1,
@@ -201,9 +201,9 @@ func TestBlock_IsValid(t *testing.T) {
 	t.Run("invalid block hash", func(t *testing.T) {
 		signer, _ := testsig.CreateSignerAndVerifier(t)
 		sdrs := &PartitionDescriptionRecord{
-			Version:             1,
-			PartitionIdentifier: partitionID,
-			T2Timeout:           2500 * time.Millisecond,
+			Version:     1,
+			PartitionID: partitionID,
+			T2Timeout:   2500 * time.Millisecond,
 		}
 		inputRecord := &InputRecord{
 			Version:         1,

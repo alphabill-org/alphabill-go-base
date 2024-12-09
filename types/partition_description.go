@@ -15,30 +15,30 @@ var (
 	ErrSystemDescriptionIsNil = errors.New("system description record is nil")
 )
 
-type SystemTypeDescriptor struct {
+type PartitionType struct {
 	// This is just a placeholder right now so that we can add
-	// the field into the SystemDescriptionRecord - for the fast track
-	// solution we do not expect to have non nil SystemTypeDescriptor
+	// the field into the PartitionDescriptionRecord - for the fast track
+	// solution we do not expect to have non nil PartitionType
 	// so the actual field list is not needed...
 }
 
-func (std *SystemTypeDescriptor) AddToHasher(h abhash.Hasher) {
+func (std *PartitionType) AddToHasher(h abhash.Hasher) {
 	h.Write(std)
 }
 
 type PartitionDescriptionRecord struct {
-	_                   struct{}    `cbor:",toarray"`
-	Version             ABVersion   `json:"version"`
-	NetworkIdentifier   NetworkID   `json:"networkIdentifier"`
-	PartitionIdentifier PartitionID `json:"partitionIdentifier"`
-	// System Type Descriptor is only used (ie is not nil) when PartitionIdentifier == 0
-	SystemDescriptor *SystemTypeDescriptor `json:"systemTypeDescriptor,omitempty"`
-	TypeIdLen        uint32                `json:"typeIdLength"`
-	UnitIdLen        uint32                `json:"unitIdLength"`
-	Shards           ShardingScheme        `json:"shardingScheme"`
-	SummaryTrustBase hex.Bytes             `json:"summaryTrustBase"`
-	T2Timeout        time.Duration         `json:"t2timeout"`
-	FeeCreditBill    *FeeCreditBill        `json:"feeCreditBill"`
+	_                struct{}        `cbor:",toarray"`
+	Version          ABVersion       `json:"version"`
+	NetworkID        NetworkID       `json:"networkId"`
+	PartitionID      PartitionID     `json:"partitionId"`
+	PartitionTypeID  PartitionTypeID `json:"partitionTypeId"`
+	PartitionType    *PartitionType  `json:"partitionType,omitempty"` // non-nil only if PartitionID == 0
+	TypeIDLen        uint32          `json:"typeIdLength"`
+	UnitIDLen        uint32          `json:"unitIdLength"`
+	Shards           ShardingScheme  `json:"shardingScheme"`
+	SummaryTrustBase hex.Bytes       `json:"summaryTrustBase"`
+	T2Timeout        time.Duration   `json:"t2timeout"`
+	FeeCreditBill    *FeeCreditBill  `json:"feeCreditBill"`
 	//todo: Transaction cost function
 }
 
@@ -55,25 +55,25 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if pdr.Version != 1 {
 		return ErrInvalidVersion(pdr)
 	}
-	if pdr.NetworkIdentifier == 0 {
-		return fmt.Errorf("invalid network identifier: %d", pdr.NetworkIdentifier)
+	if pdr.NetworkID == 0 {
+		return fmt.Errorf("invalid network identifier: %d", pdr.NetworkID)
 	}
 	// we currently do not support custom System Type Descriptors so allow
 	// only non-zero System IDs
-	if pdr.PartitionIdentifier == 0 {
-		return fmt.Errorf("invalid partition identifier: %s", pdr.PartitionIdentifier)
+	if pdr.PartitionID == 0 {
+		return fmt.Errorf("invalid partition identifier: %s", pdr.PartitionID)
 	}
-	if pdr.SystemDescriptor != nil {
+	if pdr.PartitionType != nil {
 		return errors.New("custom SystemDescriptor is not supported")
 	}
 	if n := len(pdr.Shards); n > 0 {
 		return fmt.Errorf("currently only single shard partitions are supported, got sharding scheme with %d shards", n)
 	}
-	if pdr.TypeIdLen > 32 {
-		return fmt.Errorf("type id length can be up to 32 bits, got %d", pdr.TypeIdLen)
+	if pdr.TypeIDLen > 32 {
+		return fmt.Errorf("type id length can be up to 32 bits, got %d", pdr.TypeIDLen)
 	}
-	if 64 > pdr.UnitIdLen || pdr.UnitIdLen > 512 {
-		return fmt.Errorf("unit id length must be 64..512 bits, got %d", pdr.UnitIdLen)
+	if 64 > pdr.UnitIDLen || pdr.UnitIDLen > 512 {
+		return fmt.Errorf("unit id length must be 64..512 bits, got %d", pdr.UnitIDLen)
 	}
 	if pdr.T2Timeout < 800*time.Millisecond || pdr.T2Timeout > 10*time.Second {
 		return fmt.Errorf("t2 timeout value out of allowed range: %s", pdr.T2Timeout)
@@ -88,12 +88,12 @@ func (pdr *PartitionDescriptionRecord) Hash(hashAlgorithm crypto.Hash) ([]byte, 
 	return hasher.Sum()
 }
 
-func (pdr *PartitionDescriptionRecord) GetNetworkIdentifier() NetworkID {
-	return pdr.NetworkIdentifier
+func (pdr *PartitionDescriptionRecord) GetNetworkID() NetworkID {
+	return pdr.NetworkID
 }
 
-func (pdr *PartitionDescriptionRecord) GetPartitionIdentifier() PartitionID {
-	return pdr.PartitionIdentifier
+func (pdr *PartitionDescriptionRecord) GetPartitionID() PartitionID {
+	return pdr.PartitionID
 }
 
 /*
@@ -106,8 +106,8 @@ func (pdr *PartitionDescriptionRecord) IsValidShard(id ShardID) error {
 	if len(pdr.Shards) != 0 && id.Length() == 0 {
 		return errors.New("empty shard ID is not valid in multi-shard sharding scheme")
 	}
-	if pdr.UnitIdLen < uint32(id.Length()) {
-		return fmt.Errorf("partition has %d bit unit IDs but shard ID is %d bits", pdr.UnitIdLen, id.Length())
+	if pdr.UnitIDLen < uint32(id.Length()) {
+		return fmt.Errorf("partition has %d bit unit IDs but shard ID is %d bits", pdr.UnitIDLen, id.Length())
 	}
 	if id.Length() != 0 && !slices.ContainsFunc(pdr.Shards, func(x ShardID) bool { return id.Equal(x) }) {
 		return fmt.Errorf("shard ID %s doesn't belong into the sharding scheme", id)
@@ -116,13 +116,13 @@ func (pdr *PartitionDescriptionRecord) IsValidShard(id ShardID) error {
 }
 
 /*
-UnitIdValidator returns function which checks that unit ID passed as argument
+UnitIDValidator returns function which checks that unit ID passed as argument
 has correct length and that the unit belongs into the given shard.
 */
-func (pdr *PartitionDescriptionRecord) UnitIdValidator(sid ShardID) func(unitID UnitID) error {
+func (pdr *PartitionDescriptionRecord) UnitIDValidator(sid ShardID) func(unitID UnitID) error {
 	shardMatcher := sid.Comparator()
-	idLen := int(pdr.TypeIdLen+pdr.UnitIdLen) / 8
-	if (pdr.TypeIdLen+pdr.UnitIdLen)%8 > 0 {
+	idLen := int(pdr.TypeIDLen+pdr.UnitIDLen) / 8
+	if (pdr.TypeIDLen+pdr.UnitIDLen)%8 > 0 {
 		idLen++
 	}
 

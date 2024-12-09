@@ -20,7 +20,7 @@ var (
 type UnicityTreeCertificate struct {
 	_         struct{}    `cbor:",toarray"`
 	Version   ABVersion   `json:"version"`
-	Partition PartitionID `json:"partitionIdentifier"`
+	Partition PartitionID `json:"partitionId"`
 	PDRHash   hex.Bytes   `json:"partitionDescriptionHash"`
 	HashSteps []*PathItem `json:"hashSteps"`
 }
