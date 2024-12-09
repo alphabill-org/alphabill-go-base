@@ -4,9 +4,10 @@ import (
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
-const DefaultPartitionID types.PartitionID = 1
-
 const (
+	PartitionTypeID    types.PartitionTypeID = 1
+	DefaultPartitionID types.PartitionID     = 1
+
 	TransactionTypeTransfer uint16 = 1
 	TransactionTypeSplit    uint16 = 2
 	TransactionTypeTransDC  uint16 = 3

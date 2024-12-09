@@ -10,9 +10,12 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-const DefaultPartitionID types.PartitionID = 3
+const (
+	PartitionTypeID    types.PartitionTypeID = 3
+	DefaultPartitionID types.PartitionID     = 3
 
-const TransactionTypeEVMCall uint16 = 1
+	TransactionTypeEVMCall uint16 = 1
+)
 
 type (
 	TxAttributes struct {
