@@ -64,15 +64,20 @@ func NewTrustBaseGenesis(nodes []*NodeInfo, unicityTreeRootHash []byte, opts ...
 	}
 
 	// calculate quorum threshold
-	if c.quorumThreshold == 0 {
-		var stakedSum uint64
-		for _, n := range nodes {
-			stakedSum += n.Stake
-		}
-		c.quorumThreshold = stakedSum*2/3 + 1
+	var totalStake uint64
+	for _, n := range nodes {
+		totalStake += n.Stake
 	}
+	minStake := totalStake*2/3 + 1
+
 	if c.quorumThreshold == 0 {
-		return nil, errors.New("calculated quorum threshold cannot be zero")
+		c.quorumThreshold = minStake // set quorum threshold to minimum if no threshold was configured
+	}
+	if c.quorumThreshold < minStake {
+		return nil, fmt.Errorf("quorum threshold must be at least '2/3+1' (min threshold %d got %d)", minStake, c.quorumThreshold)
+	}
+	if c.quorumThreshold > totalStake {
+		return nil, fmt.Errorf("quorum threshold cannot exceed the total staked amount (max threshold %d got %d)", totalStake, c.quorumThreshold)
 	}
 
 	// create node info list
