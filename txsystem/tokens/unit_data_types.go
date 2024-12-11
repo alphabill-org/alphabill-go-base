@@ -52,12 +52,12 @@ type NonFungibleTokenData struct {
 
 type FungibleTokenData struct {
 	_              struct{}     `cbor:",toarray"`
-	TokenType      types.UnitID `json:"tokenType"`      // the type of this token
-	Value          uint64       `json:"value,string"`   // the value of this token
-	OwnerPredicate hex.Bytes    `json:"ownerPredicate"` // the owner predicate of this token
-	Locked         uint64       `json:"locked,string"`  // the lock status of this token (non-zero value means locked)
-	Counter        uint64       `json:"counter,string"` // the transaction counter of this token
-	Timeout        uint64       `json:"timeout,string"` // the earliest round number when this token may be deleted if the balance goes to zero
+	TokenType      types.UnitID `json:"tokenType"`          // the type of this token
+	Value          uint64       `json:"value,string"`       // the value of this token
+	OwnerPredicate hex.Bytes    `json:"ownerPredicate"`     // the owner predicate of this token
+	Locked         uint64       `json:"locked,string"`      // the lock status of this token (non-zero value means locked)
+	Counter        uint64       `json:"counter,string"`     // the transaction counter of this token
+	MinLifetime    uint64       `json:"minLifetime,string"` // the earliest round number when this token may be deleted if the balance goes to zero
 }
 
 func NewFungibleTokenTypeData(attr *DefineFungibleTokenAttributes) types.UnitData {
@@ -97,12 +97,12 @@ func NewNonFungibleTokenData(typeID types.UnitID, attr *MintNonFungibleTokenAttr
 	}
 }
 
-func NewFungibleTokenData(typeID types.UnitID, value uint64, ownerPredicate []byte, timeout uint64) types.UnitData {
+func NewFungibleTokenData(typeID types.UnitID, value uint64, ownerPredicate []byte, minLifetime uint64) types.UnitData {
 	return &FungibleTokenData{
 		TokenType:      typeID,
 		Value:          value,
 		OwnerPredicate: ownerPredicate,
-		Timeout:        timeout,
+		MinLifetime:    minLifetime,
 	}
 }
 
@@ -216,7 +216,7 @@ func (f *FungibleTokenData) Copy() types.UnitData {
 		OwnerPredicate: bytes.Clone(f.OwnerPredicate),
 		Locked:         f.Locked,
 		Counter:        f.Counter,
-		Timeout:        f.Timeout,
+		MinLifetime:    f.MinLifetime,
 	}
 }
 
