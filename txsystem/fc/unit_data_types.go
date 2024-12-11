@@ -15,18 +15,18 @@ var _ types.UnitData = (*FeeCreditRecord)(nil)
 // not to be confused with fee credit bills which contain aggregate fees for a given partition.
 type FeeCreditRecord struct {
 	_              struct{}  `cbor:",toarray"`
-	Balance        uint64    `json:"balance,string"` // current balance
-	OwnerPredicate hex.Bytes `json:"ownerPredicate"` // the owner predicate of this fee credit record
-	Locked         uint64    `json:"locked,string"`  // the lock status of the fee credit record (non-zero value means locked); locked free credit does not prevent spending the fee credit
-	Counter        uint64    `json:"counter,string"` // transaction counter; incremented with each “addFC”, "closeFC", "lockFC" or "unlockFC" transaction; spending fee credit does not change this value
-	Timeout        uint64    `json:"timeout,string"` // the earliest round number when this record may be deleted if the balance goes to zero
+	Balance        uint64    `json:"balance,string"`     // current balance
+	OwnerPredicate hex.Bytes `json:"ownerPredicate"`     // the owner predicate of this fee credit record
+	Locked         uint64    `json:"locked,string"`      // the lock status of the fee credit record (non-zero value means locked); locked free credit does not prevent spending the fee credit
+	Counter        uint64    `json:"counter,string"`     // transaction counter; incremented with each “addFC”, "closeFC", "lockFC" or "unlockFC" transaction; spending fee credit does not change this value
+	MinLifetime    uint64    `json:"minLifetime,string"` // the earliest round number when this record may be deleted if the balance goes to zero
 }
 
-func NewFeeCreditRecord(balance uint64, ownerPredicate []byte, timeout uint64) *FeeCreditRecord {
+func NewFeeCreditRecord(balance uint64, ownerPredicate []byte, minLifetime uint64) *FeeCreditRecord {
 	return &FeeCreditRecord{
 		Balance:        balance,
 		OwnerPredicate: ownerPredicate,
-		Timeout:        timeout,
+		MinLifetime:    minLifetime,
 	}
 }
 
@@ -44,7 +44,7 @@ func (b *FeeCreditRecord) Copy() types.UnitData {
 		OwnerPredicate: bytes.Clone(b.OwnerPredicate),
 		Locked:         b.Locked,
 		Counter:        b.Counter,
-		Timeout:        b.Timeout,
+		MinLifetime:    b.MinLifetime,
 	}
 }
 
