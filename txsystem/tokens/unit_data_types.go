@@ -40,7 +40,7 @@ type FungibleTokenTypeData struct {
 
 type NonFungibleTokenData struct {
 	_                   struct{}     `cbor:",toarray"`
-	TypeID              types.UnitID `json:"typeID"`              // the type of this token
+	TypeID              types.UnitID `json:"typeId"`              // the type of this token
 	Name                string       `json:"name"`                // the optional long name of this token
 	URI                 string       `json:"uri"`                 // the optional URI of an external resource associated with this token
 	Data                hex.Bytes    `json:"data"`                // the optional data associated with this token
