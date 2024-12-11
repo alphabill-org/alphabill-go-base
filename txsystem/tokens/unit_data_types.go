@@ -40,7 +40,7 @@ type FungibleTokenTypeData struct {
 
 type NonFungibleTokenData struct {
 	_                   struct{}     `cbor:",toarray"`
-	TypeID              types.UnitID `json:"typeID"`              // the type of this token
+	TypeID              types.UnitID `json:"typeId"`              // the type of this token
 	Name                string       `json:"name"`                // the optional long name of this token
 	URI                 string       `json:"uri"`                 // the optional URI of an external resource associated with this token
 	Data                hex.Bytes    `json:"data"`                // the optional data associated with this token
@@ -52,7 +52,7 @@ type NonFungibleTokenData struct {
 
 type FungibleTokenData struct {
 	_              struct{}     `cbor:",toarray"`
-	TokenType      types.UnitID `json:"tokenType"`          // the type of this token
+	TypeID         types.UnitID `json:"typeId"`             // the type of this token
 	Value          uint64       `json:"value,string"`       // the value of this token
 	OwnerPredicate hex.Bytes    `json:"ownerPredicate"`     // the owner predicate of this token
 	Locked         uint64       `json:"locked,string"`      // the lock status of this token (non-zero value means locked)
@@ -99,7 +99,7 @@ func NewNonFungibleTokenData(typeID types.UnitID, attr *MintNonFungibleTokenAttr
 
 func NewFungibleTokenData(typeID types.UnitID, value uint64, ownerPredicate []byte, minLifetime uint64) types.UnitData {
 	return &FungibleTokenData{
-		TokenType:      typeID,
+		TypeID:         typeID,
 		Value:          value,
 		OwnerPredicate: ownerPredicate,
 		MinLifetime:    minLifetime,
@@ -211,7 +211,7 @@ func (f *FungibleTokenData) Copy() types.UnitData {
 		return nil
 	}
 	return &FungibleTokenData{
-		TokenType:      bytes.Clone(f.TokenType),
+		TypeID:         bytes.Clone(f.TypeID),
 		Value:          f.Value,
 		OwnerPredicate: bytes.Clone(f.OwnerPredicate),
 		Locked:         f.Locked,
