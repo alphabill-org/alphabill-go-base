@@ -20,13 +20,19 @@ type BillData struct {
 	Counter        uint64    `json:"counter,string"` // The transaction counter of this bill
 }
 
-func NewUnitData(unitID types.UnitID) (types.UnitData, error) {
-	if unitID.HasType(BillUnitType) {
-		return &BillData{}, nil
+func NewUnitData(unitID types.UnitID, pdr *types.PartitionDescriptionRecord) (types.UnitData, error) {
+	typeID, err := pdr.ExtractUnitType(unitID)
+	if err != nil {
+		return nil, fmt.Errorf("extracting unit type: %w", err)
 	}
-	if unitID.HasType(FeeCreditRecordUnitType) {
+
+	switch typeID {
+	case BillUnitType:
+		return &BillData{}, nil
+	case FeeCreditRecordUnitType:
 		return &fc.FeeCreditRecord{}, nil
 	}
+
 	return nil, fmt.Errorf("unknown unit type in UnitID %s", unitID)
 }
 

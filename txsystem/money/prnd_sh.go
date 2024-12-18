@@ -2,6 +2,7 @@ package money
 
 import (
 	"crypto"
+	"fmt"
 
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
@@ -15,17 +16,28 @@ type billHashData struct {
 	SplitIndex     uint32
 }
 
-// HashForNewBillID generates a new bill ID (unit part of the extended identifier) from the transaction order.
-// Use NewBillID to generate the extended identifier from the unit part.
-func HashForNewBillID(tx *types.TransactionOrder, splitIndex uint32, hashAlgorithm crypto.Hash) ([]byte, error) {
-	if tx == nil {
-		return nil, types.ErrTransactionOrderIsNil
-	}
+/*
+PrndSh returns function which generates pseudo-random byte sequence based on the transaction order.
+Meant to be used as unit identifier generator. Can be called multiple times, each subsequent call
+will return different byte sequence (to generate unit IDs for bill splitting)
+*/
+func PrndSh(txo *types.TransactionOrder) func(buf []byte) error {
 	hashData := billHashData{
-		UnitID:         tx.UnitID,
-		Attributes:     tx.Attributes,
-		ClientMetadata: tx.ClientMetadata,
-		SplitIndex:     splitIndex,
+		UnitID:         txo.UnitID,
+		Attributes:     txo.Attributes,
+		ClientMetadata: txo.ClientMetadata,
+		SplitIndex:     0,
 	}
-	return types.HashCBOR(hashData, hashAlgorithm)
+
+	return func(buf []byte) error {
+		h, err := types.HashCBOR(hashData, crypto.SHA256)
+		if err != nil {
+			return fmt.Errorf("hashing txo data: %w", err)
+		}
+		if n := copy(buf, h); n != len(buf) {
+			return fmt.Errorf("requested %d bytes but got %d", len(buf), n)
+		}
+		hashData.SplitIndex++
+		return nil
+	}
 }

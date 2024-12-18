@@ -33,7 +33,7 @@ type (
 		NetworkID      NetworkID
 		PartitionID    PartitionID
 		UnitID         UnitID
-		Type           uint16
+		Type           uint16  // transaction type, ie mint, transfer,...
 		Attributes     RawCBOR // transaction type specific attributes
 		StateLock      *StateLock
 		ClientMetadata *ClientMetadata // metadata about the transaction added by the client

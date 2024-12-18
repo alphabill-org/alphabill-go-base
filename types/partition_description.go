@@ -32,7 +32,7 @@ type PartitionDescriptionRecord struct {
 	NetworkID        NetworkID       `json:"networkId"`
 	PartitionID      PartitionID     `json:"partitionId"`
 	PartitionTypeID  PartitionTypeID `json:"partitionTypeId"`
-	PartitionType    *PartitionType  `json:"partitionType,omitempty"` // non-nil only if PartitionID == 0
+	PartitionType    *PartitionType  `json:"partitionType,omitempty"` // non-nil only if PartitionTypeID == 0
 	TypeIDLen        uint32          `json:"typeIdLength"`
 	UnitIDLen        uint32          `json:"unitIdLength"`
 	Shards           ShardingScheme  `json:"shardingScheme"`
@@ -69,12 +69,21 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if n := len(pdr.Shards); n > 0 {
 		return fmt.Errorf("currently only single shard partitions are supported, got sharding scheme with %d shards", n)
 	}
+
 	if pdr.TypeIDLen > 32 {
 		return fmt.Errorf("type id length can be up to 32 bits, got %d", pdr.TypeIDLen)
 	}
+	if pdr.TypeIDLen%8 != 0 {
+		return fmt.Errorf("type id length must be in full bytes, got %d bytes and %d bits", pdr.TypeIDLen/8, pdr.TypeIDLen%8)
+	}
+
 	if 64 > pdr.UnitIDLen || pdr.UnitIDLen > 512 {
 		return fmt.Errorf("unit id length must be 64..512 bits, got %d", pdr.UnitIDLen)
 	}
+	if pdr.UnitIDLen%8 != 0 {
+		return fmt.Errorf("unit id length must be in full bytes, got %d bytes and %d bits", pdr.UnitIDLen/8, pdr.UnitIDLen%8)
+	}
+
 	if pdr.T2Timeout < 800*time.Millisecond || pdr.T2Timeout > 10*time.Second {
 		return fmt.Errorf("t2 timeout value out of allowed range: %s", pdr.T2Timeout)
 	}
@@ -135,6 +144,53 @@ func (pdr *PartitionDescriptionRecord) UnitIDValidator(sid ShardID) func(unitID 
 		}
 		return nil
 	}
+}
+
+func (pdr *PartitionDescriptionRecord) ComposeUnitID(shard ShardID, unitType uint32, prndSh func([]byte) error) (UnitID, error) {
+	mask := uint32(1<<pdr.TypeIDLen) - 1
+	if unitType > mask {
+		return nil, fmt.Errorf("provided unit type ID %#x uses more than max allowed %d bits", unitType, pdr.TypeIDLen)
+	}
+
+	buf := make([]byte, (pdr.UnitIDLen+pdr.TypeIDLen)/8)
+
+	// generate UnitIDLen bytes of random into the buf
+	if err := prndSh(buf[:int(pdr.UnitIDLen)/8]); err != nil {
+		return nil, fmt.Errorf("generating unit ID: %w", err)
+	}
+
+	// replace shard part
+	idx, bits := shard.length/8, shard.length%8
+	copy(buf, shard.bits[:idx])
+	if bits != 0 {
+		mask := byte(0xFF << (8 - bits))
+		buf[idx] = (buf[idx] &^ mask) | shard.bits[idx]
+	}
+
+	// set type part
+	for idx := len(buf) - 1; mask > 0; idx-- {
+		buf[idx] = byte(unitType)
+		unitType >>= 8
+		mask >>= 8
+	}
+
+	return buf, nil
+}
+
+func (pdr *PartitionDescriptionRecord) ExtractUnitType(id UnitID) (uint32, error) {
+	if pdr.TypeIDLen > 32 {
+		return 0, fmt.Errorf("partition uses %d bit type identifiers", pdr.TypeIDLen)
+	}
+
+	if idLen := int(pdr.TypeIDLen+pdr.UnitIDLen) / 8; len(id) != idLen {
+		return 0, fmt.Errorf("expected unit ID length %d bytes, got %d bytes", idLen, len(id))
+	}
+
+	// we relay on the fact that valid PDR has "pdr.UnitIDLen >= 64" ie it's safe to read four bytes
+	idx := len(id) - 1
+	v := uint32(id[idx]) | (uint32(id[idx-1]) << 8) | (uint32(id[idx-2]) << 16) | (uint32(id[idx-3]) << 24)
+	mask := uint32(0xFFFFFFFF) >> (32 - pdr.TypeIDLen)
+	return v & mask, nil
 }
 
 func (pdr *PartitionDescriptionRecord) GetVersion() ABVersion {
