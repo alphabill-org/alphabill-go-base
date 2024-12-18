@@ -68,19 +68,16 @@ func TestMarshalPayload(t *testing.T) {
 }
 
 func TestMarshalNilValuesInPayload(t *testing.T) {
-	txo := &TransactionOrder{
-		Version: 1,
-		Payload: Payload{
-			NetworkID:      0,
-			PartitionID:    0,
-			UnitID:         nil,
-			Type:           0,
-			Attributes:     nil,
-			StateLock:      nil,
-			ClientMetadata: nil,
-		},
+	srcPayload := Payload{
+		NetworkID:      0,
+		PartitionID:    0,
+		UnitID:         nil,
+		Type:           0,
+		Attributes:     nil,
+		StateLock:      nil,
+		ClientMetadata: nil,
 	}
-	payloadBytes, err := Cbor.Marshal(txo.Payload)
+	payloadBytes, err := Cbor.Marshal(srcPayload)
 	require.NoError(t, err)
 	// 87    # array(7)
 	//   00 #   zero, unsigned int
@@ -94,7 +91,7 @@ func TestMarshalNilValuesInPayload(t *testing.T) {
 
 	var payload Payload
 	require.NoError(t, Cbor.Unmarshal(payloadBytes, &payload))
-	require.EqualValues(t, txo.Payload, payload)
+	require.EqualValues(t, srcPayload, payload)
 }
 
 func TestUnmarshalPayload(t *testing.T) {

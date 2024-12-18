@@ -2,6 +2,7 @@ package tokens
 
 import (
 	"crypto"
+	"fmt"
 
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
@@ -13,15 +14,28 @@ type tokenHashData struct {
 	ClientMetadata *types.ClientMetadata
 }
 
-// HashForNewTokenID generates new token ID (unit part of the extended identifier) from the transaction order.
-// Use NewFungibleTokenID or NewNonFungibleTokenID to generate the extended identifier from the unit part.
-func HashForNewTokenID(tx *types.TransactionOrder, hashFunc crypto.Hash) ([]byte, error) {
-	if tx == nil {
-		return nil, types.ErrTransactionOrderIsNil
+/*
+PrndSh returns function which generates pseudo-random byte sequence based on the transaction order.
+Meant to be used as unit identifier generator in PDR.ComposeUnitID.
+Subsequent calls return the same value.
+*/
+func PrndSh(txo *types.TransactionOrder) func(buf []byte) error {
+	return func(buf []byte) error {
+		if txo == nil {
+			return types.ErrTransactionOrderIsNil
+		}
+		hashData := tokenHashData{
+			Attributes:     txo.Attributes,
+			ClientMetadata: txo.ClientMetadata,
+		}
+
+		h, err := types.HashCBOR(hashData, crypto.SHA256)
+		if err != nil {
+			return fmt.Errorf("hashing txo data: %w", err)
+		}
+		if n := copy(buf, h); n != len(buf) {
+			return fmt.Errorf("requested %d bytes but got %d", len(buf), n)
+		}
+		return nil
 	}
-	hashData := tokenHashData{
-		Attributes:     tx.Attributes,
-		ClientMetadata: tx.ClientMetadata,
-	}
-	return types.HashCBOR(hashData, hashFunc)
 }

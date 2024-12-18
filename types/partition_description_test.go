@@ -1,7 +1,10 @@
 package types
 
 import (
+	"bytes"
 	"crypto"
+	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -74,6 +77,12 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 		pdr := validPDR()
 		pdr.TypeIDLen = 33
 		require.EqualError(t, pdr.IsValid(), "type id length can be up to 32 bits, got 33")
+
+		pdr.TypeIDLen = 7
+		require.EqualError(t, pdr.IsValid(), "type id length must be in full bytes, got 0 bytes and 7 bits")
+
+		pdr.TypeIDLen = 9
+		require.EqualError(t, pdr.IsValid(), "type id length must be in full bytes, got 1 bytes and 1 bits")
 	})
 
 	t.Run("unit id length", func(t *testing.T) {
@@ -83,6 +92,9 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 
 		pdr.UnitIDLen = 513
 		require.EqualError(t, pdr.IsValid(), "unit id length must be 64..512 bits, got 513")
+
+		pdr.UnitIDLen = 65
+		require.EqualError(t, pdr.IsValid(), "unit id length must be in full bytes, got 8 bytes and 1 bits")
 	})
 
 	t.Run("T2 timeout", func(t *testing.T) {
@@ -199,6 +211,190 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 
 		// unit ID in the shard "1"
 		require.NoError(t, vf([]byte{0b1000_0000, 2}))
+	})
+}
+
+func Test_PartitionDescriptionRecord_ComposeUnitID(t *testing.T) {
+	pdr := PartitionDescriptionRecord{
+		Version:     1,
+		PartitionID: 1,
+		NetworkID:   5,
+		TypeIDLen:   8,
+		UnitIDLen:   256,
+		T2Timeout:   2500 * time.Millisecond,
+	}
+	require.NoError(t, pdr.IsValid())
+
+	t.Run("type id out of range", func(t *testing.T) {
+		uid, err := pdr.ComposeUnitID(ShardID{}, 1<<pdr.TypeIDLen, func(buf []byte) error { return nil })
+		require.EqualError(t, err, `provided unit type ID 0x100 uses more than max allowed 8 bits`)
+		require.Empty(t, uid)
+	})
+
+	t.Run("prndSh returns error", func(t *testing.T) {
+		expErr := fmt.Errorf("no random")
+		prndSh := func(buf []byte) error { return expErr }
+		uid, err := pdr.ComposeUnitID(ShardID{}, 1, prndSh)
+		require.ErrorIs(t, err, expErr)
+		require.Empty(t, uid)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		prndSh := func(buf []byte) error {
+			copy(buf, bytes.Repeat([]byte{0xFF}, len(buf)))
+			return nil
+		}
+		uid, err := pdr.ComposeUnitID(ShardID{}, 1<<pdr.TypeIDLen-1, prndSh)
+		require.NoError(t, err)
+		require.Len(t, uid, int(pdr.UnitIDLen+pdr.TypeIDLen)/8)
+	})
+}
+
+func Test_PartitionDescriptionRecord_ExtractUnitType(t *testing.T) {
+	pdr := PartitionDescriptionRecord{
+		Version:     1,
+		PartitionID: 1,
+		NetworkID:   5,
+		TypeIDLen:   8,
+		UnitIDLen:   256,
+		T2Timeout:   2500 * time.Millisecond,
+	}
+	require.NoError(t, pdr.IsValid())
+	unitID := bytes.Repeat([]byte{0xFF}, int((pdr.UnitIDLen+pdr.TypeIDLen)/8))
+
+	t.Run("type id length out of range", func(t *testing.T) {
+		invalidPDR := pdr
+		invalidPDR.TypeIDLen = 33
+		tid, err := invalidPDR.ExtractUnitType(unitID)
+		require.EqualError(t, err, `partition uses 33 bit type identifiers`)
+		require.Zero(t, tid)
+	})
+
+	t.Run("invalid unit id", func(t *testing.T) {
+		tid, err := pdr.ExtractUnitType(unitID[1:])
+		require.EqualError(t, err, `expected unit ID length 33 bytes, got 32 bytes`)
+		require.Zero(t, tid)
+
+		tid, err = pdr.ExtractUnitType(slices.Concat(unitID, []byte{1}))
+		require.EqualError(t, err, `expected unit ID length 33 bytes, got 34 bytes`)
+		require.Zero(t, tid)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		tid, err := pdr.ExtractUnitType(unitID)
+		require.NoError(t, err)
+		require.EqualValues(t, 0xFF, tid)
+	})
+}
+
+func Test_PartitionDescriptionRecord_TypeIDRoundtrip(t *testing.T) {
+	// test both ComposeUnitID and ExtractUnitType by composing and
+	// decomposing extended unit ID
+
+	pdrTemplate := PartitionDescriptionRecord{
+		Version:     1,
+		PartitionID: 1,
+		NetworkID:   5,
+		TypeIDLen:   8,
+		UnitIDLen:   64,
+		T2Timeout:   2500 * time.Millisecond,
+	}
+
+	prndSh := func(buf []byte) error {
+		copy(buf, bytes.Repeat([]byte{0xFF}, len(buf)))
+		return nil
+	}
+
+	shards := []ShardID{
+		{},
+		{bits: []byte{0}, length: 1},
+		{bits: []byte{128}, length: 1},
+		{bits: []byte{0}, length: 8},
+		{bits: []byte{0, 0}, length: 9},
+		{bits: []byte{0xFF, 0}, length: 9},
+	}
+
+	t.Run("one byte types", func(t *testing.T) {
+		pdr := pdrTemplate
+		pdr.TypeIDLen = 8
+		require.NoError(t, pdr.IsValid())
+		uidLastByte := int(pdr.UnitIDLen/8) - 1
+
+		for _, shardID := range shards {
+			for _, typeID := range []uint32{0, 1, 2, 7, 8, 128, 255} {
+				uid, err := pdr.ComposeUnitID(shardID, typeID, prndSh)
+				require.NoError(t, err)
+				require.EqualValues(t, 0xFF, uid[uidLastByte], "last byte of the unit id got overwritten?")
+				tid, err := pdr.ExtractUnitType(uid)
+				require.NoError(t, err)
+				if typeID != tid {
+					t.Errorf("unit ID %s, expected typeID %d, got %d", uid, typeID, tid)
+				}
+			}
+		}
+	})
+
+	t.Run("two byte types", func(t *testing.T) {
+		pdr := pdrTemplate
+		pdr.TypeIDLen = 16
+		require.NoError(t, pdr.IsValid())
+		uidLastByte := int(pdr.UnitIDLen/8) - 1
+
+		var typeIDs = []uint32{0, 1, 7, 8, 128, 255, 0x0100, 0x0180, 0x80FF, 0xFF00, 0xFFFF}
+		for _, shardID := range shards {
+			for _, typeID := range typeIDs {
+				uid, err := pdr.ComposeUnitID(shardID, typeID, prndSh)
+				require.NoError(t, err)
+				require.EqualValues(t, 0xFF, uid[uidLastByte], "last byte of the unit id got overwritten?")
+				tid, err := pdr.ExtractUnitType(uid)
+				require.NoError(t, err)
+				if typeID != tid {
+					t.Errorf("unit ID %s, expected typeID %d, got %d", uid, typeID, tid)
+				}
+			}
+		}
+	})
+
+	t.Run("three byte types", func(t *testing.T) {
+		pdr := pdrTemplate
+		pdr.TypeIDLen = 24
+		require.NoError(t, pdr.IsValid())
+		uidLastByte := int(pdr.UnitIDLen/8) - 1
+
+		var typeIDs = []uint32{0, 1, 128, 255, 0x0100, 0x0180, 0x80FF, 0xFF00, 0xFFFF, 0xFFFF00, 0xFF00FF, 0xFFFFFF}
+		for _, shardID := range shards {
+			for _, typeID := range typeIDs {
+				uid, err := pdr.ComposeUnitID(shardID, typeID, prndSh)
+				require.NoError(t, err)
+				require.EqualValues(t, 0xFF, uid[uidLastByte], "last byte of the unit id got overwritten?")
+				tid, err := pdr.ExtractUnitType(uid)
+				require.NoError(t, err)
+				if typeID != tid {
+					t.Errorf("unit ID %s, expected typeID %d, got %d", uid, typeID, tid)
+				}
+			}
+		}
+	})
+
+	t.Run("four byte types", func(t *testing.T) {
+		pdr := pdrTemplate
+		pdr.TypeIDLen = 32
+		require.NoError(t, pdr.IsValid())
+		uidLastByte := int(pdr.UnitIDLen/8) - 1
+
+		var typeIDs = []uint32{0, 1, 255, 0x0100, 0xFF00, 0xFFFF, 0xFFFF00, 0xFF00FF, 0xFFFFFF, 0x10000000, 0xFF0FF0FF, 0xFFFFFFFF}
+		for _, shardID := range shards {
+			for _, typeID := range typeIDs {
+				uid, err := pdr.ComposeUnitID(shardID, typeID, prndSh)
+				require.NoError(t, err)
+				require.EqualValues(t, 0xFF, uid[uidLastByte], "last byte of the unit id got overwritten?")
+				tid, err := pdr.ExtractUnitType(uid)
+				require.NoError(t, err)
+				if typeID != tid {
+					t.Errorf("unit ID %s, expected typeID %d, got %d", uid, typeID, tid)
+				}
+			}
+		}
 	})
 }
 

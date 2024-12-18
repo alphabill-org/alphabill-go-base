@@ -191,6 +191,9 @@ func Test_ShardID_MarshalText(t *testing.T) {
 		id := ShardID{}
 		err := id.UnmarshalText([]byte("0x0000"))
 		require.EqualError(t, err, `decoding bitstring: invalid bit string encoding: last byte doesn't contain end marker`)
+
+		err = id.UnmarshalText([]byte(""))
+		require.EqualError(t, err, `decoding bitstring: invalid bit string encoding: empty input`)
 	})
 
 	t.Run("Yellowpaper example", func(t *testing.T) {
