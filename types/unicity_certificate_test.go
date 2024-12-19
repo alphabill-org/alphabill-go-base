@@ -14,8 +14,8 @@ import (
 
 func TestUnicityCertificate_IsValid(t *testing.T) {
 	const partitionID PartitionID = 0x01010101
-	pdrh := zeroHash
-	trHash := zeroHash
+	pdrh := nilHash
+	trHash := make([]byte, 32)
 	signer, _ := testsig.CreateSignerAndVerifier(t)
 
 	inputRecord := &InputRecord{
@@ -50,7 +50,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
-			PreviousHash:         zeroHash,
+			PreviousHash:         nilHash,
 			Hash:                 ut.RootHash(),
 		}
 		require.NoError(t, seal.Sign("test", signer))
@@ -65,7 +65,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		}
 	}
 
-	require.NoError(t, validUC(t).IsValid(crypto.SHA256, partitionID, pdrh))
+	require.NoError(t, validUC(t).IsValid(partitionID, pdrh))
 
 	t.Run("UC is nil", func(t *testing.T) {
 		var uc *UnicityCertificate
@@ -80,43 +80,43 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 		uc.InputRecord = nil
 		require.EqualValues(t, 0, uc.GetRoundNumber())
 		require.Nil(t, uc.GetStateHash())
-		require.ErrorIs(t, uc.IsValid(crypto.SHA256, partitionID, pdrh), ErrInputRecordIsNil)
+		require.ErrorIs(t, uc.IsValid(partitionID, pdrh), ErrInputRecordIsNil)
 	})
 
 	t.Run("invalid UnicityTreeCertificate", func(t *testing.T) {
 		uc := validUC(t)
 		uc.UnicityTreeCertificate = nil
-		require.ErrorIs(t, uc.IsValid(crypto.SHA256, partitionID, pdrh), ErrUnicityTreeCertificateIsNil)
+		require.ErrorIs(t, uc.IsValid(partitionID, pdrh), ErrUnicityTreeCertificateIsNil)
 	})
 
 	t.Run("invalid unicity seal", func(t *testing.T) {
 		uc := validUC(t)
 		uc.UnicitySeal = nil
-		require.ErrorIs(t, uc.IsValid(crypto.SHA256, partitionID, pdrh), ErrUnicitySealIsNil)
+		require.ErrorIs(t, uc.IsValid(partitionID, pdrh), ErrUnicitySealIsNil)
 	})
 
 	t.Run("invalid version", func(t *testing.T) {
 		uc := validUC(t)
 		uc.Version = 0
-		require.EqualError(t, uc.IsValid(crypto.SHA256, partitionID, pdrh), `invalid version (type *types.UnicityCertificate)`)
+		require.EqualError(t, uc.IsValid(partitionID, pdrh), `invalid version (type *types.UnicityCertificate)`)
 
 		uc.Version = 2
-		require.EqualError(t, uc.IsValid(crypto.SHA256, partitionID, pdrh), `invalid version (type *types.UnicityCertificate)`)
+		require.EqualError(t, uc.IsValid(partitionID, pdrh), `invalid version (type *types.UnicityCertificate)`)
 	})
 
 	t.Run("invalid TRHash", func(t *testing.T) {
 		uc := validUC(t)
 		uc.TRHash = nil
-		require.EqualError(t, uc.IsValid(crypto.SHA256, partitionID, pdrh), `invalid TRHash: expected 32 bytes, got 0 bytes`)
+		require.EqualError(t, uc.IsValid(partitionID, pdrh), `invalid TRHash: expected 32 bytes, got 0 bytes`)
 
 		uc.TRHash = make([]byte, 33)
-		require.EqualError(t, uc.IsValid(crypto.SHA256, partitionID, pdrh), `invalid TRHash: expected 32 bytes, got 33 bytes`)
+		require.EqualError(t, uc.IsValid(partitionID, pdrh), `invalid TRHash: expected 32 bytes, got 33 bytes`)
 	})
 
 	t.Run("invalid shard tree cert", func(t *testing.T) {
 		uc := validUC(t)
 		uc.ShardTreeCertificate.Shard = ShardID{bits: []byte{0}, length: 1}
-		require.EqualError(t, uc.IsValid(crypto.SHA256, partitionID, pdrh), `invalid shard tree certificate: shard ID is 1 bits but got 0 sibling hashes`)
+		require.EqualError(t, uc.IsValid(partitionID, pdrh), `invalid shard tree certificate: shard ID is 1 bits but got 0 sibling hashes`)
 	})
 }
 
@@ -181,7 +181,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
-			PreviousHash:         zeroHash,
+			PreviousHash:         nilHash,
 			Hash:                 ut.RootHash(),
 		}
 		require.NoError(t, seal.Sign("test", signer))
@@ -429,7 +429,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 		}
 		require.EqualError(t, CheckNonEquivocatingCertificates(prevUC, newUC), "new certificate is from older root round 9 than previous certificate 10")
 	})
-	t.Run("round gap, new is 0H block repeating the same state as last seen", func(t *testing.T) {
+	t.Run("round gap, new is 'nil' block repeating the same state as last seen", func(t *testing.T) {
 		prevUC := &UnicityCertificate{
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 1},
@@ -470,7 +470,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 2},
 				Hash:            []byte{0, 0, 2},
-				BlockHash:       []byte{0, 0, 0},
+				BlockHash:       nilHash,
 				SummaryValue:    []byte{0, 0, 3},
 				RoundNumber:     7,
 				SumOfEarnedFees: 1,
@@ -484,7 +484,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 2},
 				Hash:            []byte{0, 0, 2},
-				BlockHash:       []byte{0, 0, 0},
+				BlockHash:       nilHash,
 				SummaryValue:    []byte{0, 0, 3},
 				RoundNumber:     6,
 				SumOfEarnedFees: 1,
@@ -495,7 +495,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 2},
 				Hash:            []byte{0, 0, 2},
-				BlockHash:       []byte{0, 0, 0},
+				BlockHash:       nilHash,
 				SummaryValue:    []byte{0, 0, 3},
 				RoundNumber:     9,
 				SumOfEarnedFees: 1,
@@ -554,7 +554,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 		}
 		require.NoError(t, CheckNonEquivocatingCertificates(prevUC, newUC))
 	})
-	t.Run("error - state changes, but block hash is 0h", func(t *testing.T) {
+	t.Run("error - state changes, but block hash is 'nil'", func(t *testing.T) {
 		prevUC := &UnicityCertificate{
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 1},
@@ -570,7 +570,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 2},
 				Hash:            []byte{0, 0, 3},
-				BlockHash:       []byte{0, 0, 0},
+				BlockHash:       nilHash,
 				SummaryValue:    []byte{0, 0, 6},
 				RoundNumber:     7,
 				SumOfEarnedFees: 1,

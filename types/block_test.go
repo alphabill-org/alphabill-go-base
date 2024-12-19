@@ -5,11 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alphabill-org/alphabill-go-base/tree/mt"
-	"github.com/alphabill-org/alphabill-go-base/types/hex"
-	"github.com/stretchr/testify/require"
-
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
+	"github.com/alphabill-org/alphabill-go-base/tree/mt"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBlock_GetBlockFees(t *testing.T) {
@@ -297,7 +295,7 @@ func TestBlock_Hash(t *testing.T) {
 		}
 		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
 		require.NoError(t, err)
-		require.Equal(t, hash, make([]byte, 32))
+		require.Equal(t, hash, cborNil)
 	})
 
 	t.Run("hash - ok", func(t *testing.T) {
@@ -386,7 +384,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		}
 		ir, err := b.CalculateBlockHash(crypto.SHA256)
 		require.NoError(t, err)
-		require.Equal(t, ir.BlockHash, make(hex.Bytes, 32))
+		require.EqualValues(t, ir.BlockHash, cborNil)
 	})
 
 	t.Run("hash - ok", func(t *testing.T) {

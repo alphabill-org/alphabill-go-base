@@ -23,10 +23,10 @@ var ir = &InputRecord{
 func TestInputRecord_IsValid(t *testing.T) {
 	validIR := InputRecord{
 		Version:      1,
-		PreviousHash: zeroHash,
-		Hash:         zeroHash,
-		BlockHash:    zeroHash,
-		SummaryValue: zeroHash,
+		PreviousHash: nilHash,
+		Hash:         nilHash,
+		BlockHash:    nilHash,
+		SummaryValue: nilHash,
 		RoundNumber:  1,
 		Timestamp:    NewTimestamp(),
 	}
@@ -56,32 +56,32 @@ func TestInputRecord_IsValid(t *testing.T) {
 		require.ErrorIs(t, ErrSummaryValueIsNil, testIR.IsValid())
 	})
 
-	t.Run("state changes, but block hash is nil", func(t *testing.T) {
+	t.Run("state changes, but block hash is 'nil'", func(t *testing.T) {
 		testIR := &InputRecord{
 			Version:         1,
-			PreviousHash:    zeroHash,
+			PreviousHash:    nilHash,
 			Hash:            []byte{1, 2, 3},
-			BlockHash:       zeroHash,
+			BlockHash:       nilHash,
 			SummaryValue:    []byte{2, 3, 4},
 			SumOfEarnedFees: 1,
 			RoundNumber:     1,
 			Timestamp:       NewTimestamp(),
 		}
-		require.EqualError(t, testIR.IsValid(), "block hash is 0H but state hash changed")
+		require.EqualError(t, testIR.IsValid(), "block hash is 'nil' but state hash changed")
 	})
 
-	t.Run("state does not change, but block hash is not 0H", func(t *testing.T) {
+	t.Run("state does not change, but block hash is not 'nil'", func(t *testing.T) {
 		testIR := &InputRecord{
 			Version:         1,
-			PreviousHash:    zeroHash,
-			Hash:            zeroHash,
+			PreviousHash:    nilHash,
+			Hash:            nilHash,
 			BlockHash:       []byte{1, 2, 3},
 			SummaryValue:    []byte{2, 3, 4},
 			SumOfEarnedFees: 1,
 			RoundNumber:     1,
 			Timestamp:       NewTimestamp(),
 		}
-		require.EqualError(t, testIR.IsValid(), "state hash didn't change but block hash is not 0H")
+		require.EqualError(t, testIR.IsValid(), "state hash didn't change but block hash is not 'nil'")
 	})
 
 	t.Run("timestamp unassigned", func(t *testing.T) {
