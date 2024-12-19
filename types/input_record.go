@@ -10,12 +10,9 @@ import (
 )
 
 var (
-	ErrInputRecordIsNil      = errors.New("input record is nil")
-	ErrHashIsNil             = errors.New("hash is nil")
-	ErrBlockHashIsNil        = errors.New("block hash is nil")
-	ErrPreviousHashIsNil     = errors.New("previous hash is nil")
-	ErrSummaryValueIsNil     = errors.New("summary value is nil")
-	ErrInvalidPartitionRound = errors.New("partition round is 0")
+	ErrInputRecordIsNil  = errors.New("input record is nil")
+	ErrHashIsNil         = errors.New("hash is nil")
+	ErrSummaryValueIsNil = errors.New("summary value is nil")
 )
 
 // Shard input record (IR) of a shard of a partition.
@@ -30,10 +27,6 @@ type InputRecord struct {
 	Timestamp       uint64    `json:"timestamp"`       // reference time for transaction validation
 	BlockHash       hex.Bytes `json:"blockHash"`       // hash of the block
 	SumOfEarnedFees uint64    `json:"sumOfEarnedFees"` // sum of the actual fees over all transaction records in the block
-}
-
-func isNilHash(hash []byte) bool {
-	return bytes.Equal(hash, cborNil)
 }
 
 func EqualIR(a, b *InputRecord) (bool, error) {
@@ -86,12 +79,6 @@ func (x *InputRecord) IsValid() error {
 	if x.Hash == nil {
 		return ErrHashIsNil
 	}
-	if x.BlockHash == nil {
-		return ErrBlockHashIsNil
-	}
-	if x.PreviousHash == nil {
-		return ErrPreviousHashIsNil
-	}
 	if x.SummaryValue == nil {
 		return ErrSummaryValueIsNil
 	}
@@ -99,12 +86,12 @@ func (x *InputRecord) IsValid() error {
 		return errors.New("timestamp is unassigned")
 	}
 	sameSH := bytes.Equal(x.PreviousHash, x.Hash)
-	nilBlockHash := isNilHash(x.BlockHash)
+	nilBlockHash := len(x.BlockHash) == 0
 	if sameSH && !nilBlockHash {
-		return errors.New("state hash didn't change but block hash is not 'nil'")
+		return errors.New("state hash didn't change but block hash is not nil")
 	}
 	if !sameSH && nilBlockHash {
-		return errors.New("block hash is 'nil' but state hash changed")
+		return errors.New("block hash is nil but state hash changed")
 	}
 	return nil
 }

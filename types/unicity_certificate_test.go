@@ -14,7 +14,7 @@ import (
 
 func TestUnicityCertificate_IsValid(t *testing.T) {
 	const partitionID PartitionID = 0x01010101
-	pdrh := nilHash
+	pdrh := zeroHash
 	trHash := make([]byte, 32)
 	signer, _ := testsig.CreateSignerAndVerifier(t)
 
@@ -50,7 +50,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
-			PreviousHash:         nilHash,
+			PreviousHash:         zeroHash,
 			Hash:                 ut.RootHash(),
 		}
 		require.NoError(t, seal.Sign("test", signer))
@@ -181,7 +181,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
-			PreviousHash:         nilHash,
+			PreviousHash:         zeroHash,
 			Hash:                 ut.RootHash(),
 		}
 		require.NoError(t, seal.Sign("test", signer))
@@ -429,7 +429,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 		}
 		require.EqualError(t, CheckNonEquivocatingCertificates(prevUC, newUC), "new certificate is from older root round 9 than previous certificate 10")
 	})
-	t.Run("round gap, new is 'nil' block repeating the same state as last seen", func(t *testing.T) {
+	t.Run("round gap, new is nil block repeating the same state as last seen", func(t *testing.T) {
 		prevUC := &UnicityCertificate{
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 1},
@@ -470,7 +470,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 2},
 				Hash:            []byte{0, 0, 2},
-				BlockHash:       nilHash,
+				BlockHash:       nil,
 				SummaryValue:    []byte{0, 0, 3},
 				RoundNumber:     7,
 				SumOfEarnedFees: 1,
@@ -484,7 +484,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 2},
 				Hash:            []byte{0, 0, 2},
-				BlockHash:       nilHash,
+				BlockHash:       nil,
 				SummaryValue:    []byte{0, 0, 3},
 				RoundNumber:     6,
 				SumOfEarnedFees: 1,
@@ -495,7 +495,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 2},
 				Hash:            []byte{0, 0, 2},
-				BlockHash:       nilHash,
+				BlockHash:       nil,
 				SummaryValue:    []byte{0, 0, 3},
 				RoundNumber:     9,
 				SumOfEarnedFees: 1,
@@ -554,7 +554,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 		}
 		require.NoError(t, CheckNonEquivocatingCertificates(prevUC, newUC))
 	})
-	t.Run("error - state changes, but block hash is 'nil'", func(t *testing.T) {
+	t.Run("error - state changes, but block hash is nil", func(t *testing.T) {
 		prevUC := &UnicityCertificate{
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 1},
@@ -570,7 +570,7 @@ func TestCheckNonEquivocatingCertificates(t *testing.T) {
 			InputRecord: &InputRecord{
 				PreviousHash:    []byte{0, 0, 2},
 				Hash:            []byte{0, 0, 3},
-				BlockHash:       nilHash,
+				BlockHash:       nil,
 				SummaryValue:    []byte{0, 0, 6},
 				RoundNumber:     7,
 				SumOfEarnedFees: 1,

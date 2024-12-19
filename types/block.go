@@ -91,10 +91,10 @@ func BlockHash(algorithm crypto.Hash, h *Header, txs []*TransactionRecord, state
 	}
 	// ⊥ - if there are no transactions and state does not change
 	if len(txs) == 0 && bytes.Equal(prevStateHash, stateHash) {
-		return bytes.Clone(cborNil), nil
+		return nil, nil
 	}
 	// init transactions merkle root to ⊥
-	merkleRoot := bytes.Clone(cborNil)
+	var merkleRoot []byte
 	// calculate Merkle tree of transactions if any
 	if len(txs) > 0 {
 		// calculate merkle tree root hash from transactions

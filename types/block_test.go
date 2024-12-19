@@ -295,7 +295,7 @@ func TestBlock_Hash(t *testing.T) {
 		}
 		hash, err := BlockHash(crypto.SHA256, b.Header, b.Transactions, uc.GetStateHash(), uc.GetPreviousStateHash())
 		require.NoError(t, err)
-		require.Equal(t, hash, cborNil)
+		require.Nil(t, hash)
 	})
 
 	t.Run("hash - ok", func(t *testing.T) {
@@ -384,7 +384,7 @@ func TestBlock_CalculateBlockHash(t *testing.T) {
 		}
 		ir, err := b.CalculateBlockHash(crypto.SHA256)
 		require.NoError(t, err)
-		require.EqualValues(t, ir.BlockHash, cborNil)
+		require.Nil(t, ir.BlockHash)
 	})
 
 	t.Run("hash - ok", func(t *testing.T) {

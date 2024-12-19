@@ -165,7 +165,7 @@ func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 	if bytes.Equal(newUC.InputRecord.PreviousHash, prevUC.InputRecord.Hash) &&
 		bytes.Equal(newUC.InputRecord.Hash, newUC.InputRecord.PreviousHash) {
 		// then new block must not be empty
-		if !isNilHash(newUC.InputRecord.BlockHash) {
+		if len(newUC.InputRecord.BlockHash) != 0 {
 			return fmt.Errorf("new UC extends state hash, new state hash does not change, but block is not empty")
 		}
 	}
@@ -174,12 +174,12 @@ func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 	if bytes.Equal(newUC.InputRecord.PreviousHash, prevUC.InputRecord.Hash) &&
 		!bytes.Equal(newUC.InputRecord.Hash, newUC.InputRecord.PreviousHash) {
 		// then new block must be empty
-		if isNilHash(newUC.InputRecord.BlockHash) {
+		if len(newUC.InputRecord.BlockHash) == 0 {
 			return fmt.Errorf("new UC extends state hash, new state hash changes, but block is empty")
 		}
 	}
 	// 7. non-empty block hash can only repeat in repeat UC
-	if !isNilHash(newUC.InputRecord.BlockHash) && bytes.Equal(newUC.InputRecord.BlockHash, prevUC.InputRecord.BlockHash) {
+	if len(newUC.InputRecord.BlockHash) != 0 && bytes.Equal(newUC.InputRecord.BlockHash, prevUC.InputRecord.BlockHash) {
 		return fmt.Errorf("new certificate repeats previous block hash")
 	}
 	return nil
