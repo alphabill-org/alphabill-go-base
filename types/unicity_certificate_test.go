@@ -15,7 +15,7 @@ import (
 func TestUnicityCertificate_IsValid(t *testing.T) {
 	const partitionID PartitionID = 0x01010101
 	pdrh := zeroHash
-	trHash := make([]byte, 32)
+	trHash := zeroHash
 	signer, _ := testsig.CreateSignerAndVerifier(t)
 
 	inputRecord := &InputRecord{
