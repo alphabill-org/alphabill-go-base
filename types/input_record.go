@@ -32,13 +32,8 @@ type InputRecord struct {
 	SumOfEarnedFees uint64    `json:"sumOfEarnedFees"` // sum of the actual fees over all transaction records in the block
 }
 
-func isZeroHash(hash []byte) bool {
-	for _, b := range hash {
-		if b != 0 {
-			return false
-		}
-	}
-	return true
+func isNilHash(hash []byte) bool {
+	return bytes.Equal(hash, cborNil)
 }
 
 func EqualIR(a, b *InputRecord) (bool, error) {
@@ -104,11 +99,12 @@ func (x *InputRecord) IsValid() error {
 		return errors.New("timestamp is unassigned")
 	}
 	sameSH := bytes.Equal(x.PreviousHash, x.Hash)
-	if sameSH != isZeroHash(x.BlockHash) {
-		if sameSH {
-			return errors.New("state hash didn't change but block hash is not 0H")
-		}
-		return errors.New("block hash is 0H but state hash changed")
+	nilBlockHash := isNilHash(x.BlockHash)
+	if sameSH && !nilBlockHash {
+		return errors.New("state hash didn't change but block hash is not 'nil'")
+	}
+	if !sameSH && nilBlockHash {
+		return errors.New("block hash is 'nil' but state hash changed")
 	}
 	return nil
 }

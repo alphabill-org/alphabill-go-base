@@ -89,12 +89,12 @@ func BlockHash(algorithm crypto.Hash, h *Header, txs []*TransactionRecord, state
 	if prevStateHash == nil {
 		return nil, fmt.Errorf("invalid block: previous state hash is nil")
 	}
-	// 0H - if there are no transactions and state does not change
+	// ⊥ - if there are no transactions and state does not change
 	if len(txs) == 0 && bytes.Equal(prevStateHash, stateHash) {
-		return make([]byte, algorithm.Size()), nil
+		return bytes.Clone(cborNil), nil
 	}
-	// init transactions merkle root to 0H
-	var merkleRoot = make([]byte, algorithm.Size())
+	// init transactions merkle root to ⊥
+	merkleRoot := bytes.Clone(cborNil)
 	// calculate Merkle tree of transactions if any
 	if len(txs) > 0 {
 		// calculate merkle tree root hash from transactions
@@ -104,7 +104,7 @@ func BlockHash(algorithm crypto.Hash, h *Header, txs []*TransactionRecord, state
 		}
 		merkleRoot = tree.GetRootHash()
 	}
-	// header hash || UC.IR.h′ || UC.IR.h || 0H - block Merkle tree root 0H
+	// header hash || UC.IR.h′ || UC.IR.h || tree hash of transactions
 	hasher := abhash.New(algorithm.New())
 	headerHash, err := h.Hash(algorithm)
 	if err != nil {
@@ -179,7 +179,7 @@ func (b *Block) IsValid(algorithm crypto.Hash, systemDescriptionHash []byte) err
 	if err != nil {
 		return fmt.Errorf("unicity certificate error: %w", err)
 	}
-	if err := uc.IsValid(algorithm, b.Header.PartitionID, systemDescriptionHash); err != nil {
+	if err := uc.IsValid(b.Header.PartitionID, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity certificate validation failed: %w", err)
 	}
 	// match block hash to input record
