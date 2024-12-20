@@ -14,7 +14,6 @@ import (
 var (
 	errBlockIsNil             = errors.New("block is nil")
 	errBlockHeaderIsNil       = errors.New("block header is nil")
-	errPrevBlockHashIsNil     = errors.New("previous block hash is nil")
 	errBlockProposerIDMissing = errors.New("block proposer node identifier is missing")
 	errTransactionsIsNil      = errors.New("transactions is nil")
 	errPartitionIDIsNil       = errors.New("partition identifier is unassigned")
@@ -83,12 +82,6 @@ func BlockHash(algorithm crypto.Hash, h *Header, txs []*TransactionRecord, state
 		return nil, fmt.Errorf("invalid block: %w", err)
 	}
 
-	if stateHash == nil {
-		return nil, fmt.Errorf("invalid block: state hash is nil")
-	}
-	if prevStateHash == nil {
-		return nil, fmt.Errorf("invalid block: previous state hash is nil")
-	}
 	// ⊥ - if there are no transactions and state does not change
 	if len(txs) == 0 && bytes.Equal(prevStateHash, stateHash) {
 		return nil, nil
@@ -250,9 +243,6 @@ func (h *Header) IsValid() error {
 		return errPartitionIDIsNil
 	}
 	// skip shard identifier for now, it is not used
-	if h.PreviousBlockHash == nil {
-		return errPrevBlockHashIsNil
-	}
 	if len(h.ProposerID) == 0 {
 		return errBlockProposerIDMissing
 	}

@@ -11,7 +11,6 @@ import (
 
 var (
 	ErrInputRecordIsNil  = errors.New("input record is nil")
-	ErrHashIsNil         = errors.New("hash is nil")
 	ErrSummaryValueIsNil = errors.New("summary value is nil")
 )
 
@@ -75,9 +74,6 @@ func (x *InputRecord) IsValid() error {
 	}
 	if x.Version != 1 {
 		return ErrInvalidVersion(x)
-	}
-	if x.Hash == nil {
-		return ErrHashIsNil
 	}
 	if x.SummaryValue == nil {
 		return ErrSummaryValueIsNil

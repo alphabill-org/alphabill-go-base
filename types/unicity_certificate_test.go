@@ -14,8 +14,8 @@ import (
 
 func TestUnicityCertificate_IsValid(t *testing.T) {
 	const partitionID PartitionID = 0x01010101
-	pdrh := zeroHash
-	trHash := zeroHash
+	pdrh := randomHash
+	trHash := randomHash
 	signer, _ := testsig.CreateSignerAndVerifier(t)
 
 	inputRecord := &InputRecord{
@@ -50,7 +50,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
-			PreviousHash:         zeroHash,
+			PreviousHash:         randomHash,
 			Hash:                 ut.RootHash(),
 		}
 		require.NoError(t, seal.Sign("test", signer))
@@ -181,7 +181,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
-			PreviousHash:         zeroHash,
+			PreviousHash:         randomHash,
 			Hash:                 ut.RootHash(),
 		}
 		require.NoError(t, seal.Sign("test", signer))
