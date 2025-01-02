@@ -23,32 +23,14 @@ var ir = &InputRecord{
 func TestInputRecord_IsValid(t *testing.T) {
 	validIR := InputRecord{
 		Version:      1,
-		PreviousHash: zeroHash,
-		Hash:         zeroHash,
-		BlockHash:    zeroHash,
-		SummaryValue: zeroHash,
+		PreviousHash: randomHash,
+		Hash:         randomHash,
+		BlockHash:    nil,
+		SummaryValue: randomHash,
 		RoundNumber:  1,
 		Timestamp:    NewTimestamp(),
 	}
 	require.NoError(t, validIR.IsValid())
-
-	t.Run("previous hash is nil", func(t *testing.T) {
-		testIR := validIR
-		testIR.PreviousHash = nil
-		require.ErrorIs(t, ErrPreviousHashIsNil, testIR.IsValid())
-	})
-
-	t.Run("hash is nil", func(t *testing.T) {
-		testIR := validIR
-		testIR.Hash = nil
-		require.ErrorIs(t, ErrHashIsNil, testIR.IsValid())
-	})
-
-	t.Run("block hash is nil", func(t *testing.T) {
-		testIR := validIR
-		testIR.BlockHash = nil
-		require.ErrorIs(t, ErrBlockHashIsNil, testIR.IsValid())
-	})
 
 	t.Run("summary value hash is nil", func(t *testing.T) {
 		testIR := validIR
@@ -59,29 +41,29 @@ func TestInputRecord_IsValid(t *testing.T) {
 	t.Run("state changes, but block hash is nil", func(t *testing.T) {
 		testIR := &InputRecord{
 			Version:         1,
-			PreviousHash:    zeroHash,
+			PreviousHash:    randomHash,
 			Hash:            []byte{1, 2, 3},
-			BlockHash:       zeroHash,
+			BlockHash:       nil,
 			SummaryValue:    []byte{2, 3, 4},
 			SumOfEarnedFees: 1,
 			RoundNumber:     1,
 			Timestamp:       NewTimestamp(),
 		}
-		require.EqualError(t, testIR.IsValid(), "block hash is 0H but state hash changed")
+		require.EqualError(t, testIR.IsValid(), "block hash is nil but state hash changed")
 	})
 
-	t.Run("state does not change, but block hash is not 0H", func(t *testing.T) {
+	t.Run("state does not change, but block hash is not nil", func(t *testing.T) {
 		testIR := &InputRecord{
 			Version:         1,
-			PreviousHash:    zeroHash,
-			Hash:            zeroHash,
+			PreviousHash:    randomHash,
+			Hash:            randomHash,
 			BlockHash:       []byte{1, 2, 3},
 			SummaryValue:    []byte{2, 3, 4},
 			SumOfEarnedFees: 1,
 			RoundNumber:     1,
 			Timestamp:       NewTimestamp(),
 		}
-		require.EqualError(t, testIR.IsValid(), "state hash didn't change but block hash is not 0H")
+		require.EqualError(t, testIR.IsValid(), "state hash didn't change but block hash is not nil")
 	})
 
 	t.Run("timestamp unassigned", func(t *testing.T) {

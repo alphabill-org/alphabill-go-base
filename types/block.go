@@ -14,7 +14,6 @@ import (
 var (
 	errBlockIsNil             = errors.New("block is nil")
 	errBlockHeaderIsNil       = errors.New("block header is nil")
-	errPrevBlockHashIsNil     = errors.New("previous block hash is nil")
 	errBlockProposerIDMissing = errors.New("block proposer node identifier is missing")
 	errTransactionsIsNil      = errors.New("transactions is nil")
 	errPartitionIDIsNil       = errors.New("partition identifier is unassigned")
@@ -83,18 +82,12 @@ func BlockHash(algorithm crypto.Hash, h *Header, txs []*TransactionRecord, state
 		return nil, fmt.Errorf("invalid block: %w", err)
 	}
 
-	if stateHash == nil {
-		return nil, fmt.Errorf("invalid block: state hash is nil")
-	}
-	if prevStateHash == nil {
-		return nil, fmt.Errorf("invalid block: previous state hash is nil")
-	}
-	// 0H - if there are no transactions and state does not change
+	// ⊥ - if there are no transactions and state does not change
 	if len(txs) == 0 && bytes.Equal(prevStateHash, stateHash) {
-		return make([]byte, algorithm.Size()), nil
+		return nil, nil
 	}
-	// init transactions merkle root to 0H
-	var merkleRoot = make([]byte, algorithm.Size())
+	// init transactions merkle root to ⊥
+	var merkleRoot []byte
 	// calculate Merkle tree of transactions if any
 	if len(txs) > 0 {
 		// calculate merkle tree root hash from transactions
@@ -104,7 +97,7 @@ func BlockHash(algorithm crypto.Hash, h *Header, txs []*TransactionRecord, state
 		}
 		merkleRoot = tree.GetRootHash()
 	}
-	// header hash || UC.IR.h′ || UC.IR.h || 0H - block Merkle tree root 0H
+	// header hash || UC.IR.h′ || UC.IR.h || tree hash of transactions
 	hasher := abhash.New(algorithm.New())
 	headerHash, err := h.Hash(algorithm)
 	if err != nil {
@@ -179,7 +172,7 @@ func (b *Block) IsValid(algorithm crypto.Hash, systemDescriptionHash []byte) err
 	if err != nil {
 		return fmt.Errorf("unicity certificate error: %w", err)
 	}
-	if err := uc.IsValid(algorithm, b.Header.PartitionID, systemDescriptionHash); err != nil {
+	if err := uc.IsValid(b.Header.PartitionID, systemDescriptionHash); err != nil {
 		return fmt.Errorf("unicity certificate validation failed: %w", err)
 	}
 	// match block hash to input record
@@ -250,9 +243,6 @@ func (h *Header) IsValid() error {
 		return errPartitionIDIsNil
 	}
 	// skip shard identifier for now, it is not used
-	if h.PreviousBlockHash == nil {
-		return errPrevBlockHashIsNil
-	}
 	if len(h.ProposerID) == 0 {
 		return errBlockProposerIDMissing
 	}
