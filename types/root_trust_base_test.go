@@ -13,40 +13,25 @@ import (
 
 func TestNodeInfo_IsValid(t *testing.T) {
 	keys := genKeys(1)
-	type fields struct {
-		NodeID string
-		SigKey []byte
+	validNodeInfo := func() *NodeInfo {
+		return &NodeInfo{
+			NodeID: "test",
+			SigKey: keys["1"].publicKey,
+			Stake:  1,
+		}
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr string
-	}{
-		{
-			name:    "missing node identifier",
-			fields:  fields{"", keys["1"].publicKey},
-			wantErr: "node identifier is empty",
-		},
-		{
-			name:    "signing key is empty",
-			fields:  fields{"1", nil},
-			wantErr: "signing key is empty",
-		},
-		{
-			name:    "signing key is invalid",
-			fields:  fields{"1", []byte{1, 2}},
-			wantErr: "signing key is invalid",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			x := &NodeInfo{
-				NodeID: tt.fields.NodeID,
-				SigKey: tt.fields.SigKey,
-			}
-			require.ErrorContains(t, x.IsValid(), tt.wantErr)
-		})
-	}
+
+	n := validNodeInfo()
+	n.NodeID = ""
+	require.ErrorContains(t, n.IsValid(), "node identifier is empty")
+
+	n = validNodeInfo()
+	n.SigKey = nil
+	require.ErrorContains(t, n.IsValid(), "signing key is empty")
+
+	n = validNodeInfo()
+	n.SigKey = []byte{1}
+	require.ErrorContains(t, n.IsValid(), "signing key is invalid")
 }
 
 func TestNewTrustBaseGenesis(t *testing.T) {
