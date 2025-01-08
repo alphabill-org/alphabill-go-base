@@ -114,27 +114,6 @@ func NewTrustBaseFromFile(trustBaseFile string) (*RootTrustBaseV1, error) {
 	return trustBase, nil
 }
 
-func NewNodeInfo(nodeID string, stake uint64, sigKey []byte) *NodeInfo {
-	return &NodeInfo{
-		NodeID: nodeID,
-		SigKey: sigKey,
-		Stake:  stake,
-	}
-}
-
-func NewNodeInfoFromVerifier(nodeID string, stake uint64, sigVerifier abcrypto.Verifier) *NodeInfo {
-	sigKey, err := sigVerifier.MarshalPublicKey()
-	if err != nil {
-		panic("failed to marshal abcrypto.Verifier to public key bytes")
-	}
-	return &NodeInfo{
-		NodeID:      nodeID,
-		SigKey:      sigKey,
-		Stake:       stake,
-		sigVerifier: sigVerifier,
-	}
-}
-
 // WithQuorumThreshold overrides the default 2/3+1 quorum threshold.
 func WithQuorumThreshold(threshold uint64) Option {
 	return func(c *trustBaseConf) {
@@ -162,9 +141,7 @@ func (n *NodeInfo) IsValid() error {
 func (n *NodeInfo) SigVerifier() (abcrypto.Verifier, error) {
 	var err error
 	n.sigVerifierInit.Do(func() {
-		if n.sigVerifier == nil {
-			n.sigVerifier, err = abcrypto.NewVerifierSecp256k1(n.SigKey)
-		}
+		n.sigVerifier, err = abcrypto.NewVerifierSecp256k1(n.SigKey)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("invalid signing key: %w", err)

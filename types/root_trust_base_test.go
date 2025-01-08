@@ -70,7 +70,9 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 		{
 			name: "empty root hash",
 			args: args{
-				nodes:               []*NodeInfo{NewNodeInfoFromVerifier("1", 1, keys["1"].verifier)},
+				nodes: []*NodeInfo{
+					&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1},
+				},
 				unicityTreeRootHash: nil,
 			},
 			wantErrStr: "unicity tree root hash is empty",
@@ -79,9 +81,9 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 			name: "default settings ok",
 			args: args{
 				nodes: []*NodeInfo{
-					NewNodeInfoFromVerifier("1", 1, keys["1"].verifier),
-					NewNodeInfoFromVerifier("2", 1, keys["2"].verifier),
-					NewNodeInfoFromVerifier("3", 1, keys["3"].verifier),
+					&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1},
+					&NodeInfo{NodeID: "2", SigKey: keys["2"].publicKey, Stake: 1},
+					&NodeInfo{NodeID: "3", SigKey: keys["3"].publicKey, Stake: 1},
 				},
 				unicityTreeRootHash: []byte{1},
 			},
@@ -99,9 +101,15 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 				// verify methods
 				require.EqualValues(t, 3, tb.GetQuorumThreshold())
 				require.EqualValues(t, 0, tb.GetMaxFaultyNodes())
-				require.Equal(t, keys["1"].verifier, tb.getRootNode("1").sigVerifier)
-				require.Equal(t, keys["2"].verifier, tb.getRootNode("2").sigVerifier)
-				require.Equal(t, keys["3"].verifier, tb.getRootNode("3").sigVerifier)
+				v1, err := tb.getRootNode("1").SigVerifier()
+				require.NoError(t, err)
+				v2, err := tb.getRootNode("2").SigVerifier()
+				require.NoError(t, err)
+				v3, err := tb.getRootNode("3").SigVerifier()
+				require.NoError(t, err)
+				require.Equal(t, keys["1"].verifier, v1)
+				require.Equal(t, keys["2"].verifier, v2)
+				require.Equal(t, keys["3"].verifier, v3)
 			},
 		},
 		{
@@ -215,7 +223,7 @@ func TestNewTrustBaseFromFile(t *testing.T) {
 
 	// create trust base from genesis
 	tb, err := NewTrustBaseGenesis(
-		[]*NodeInfo{NewNodeInfoFromVerifier("1", 1, keys["1"].verifier)},
+		[]*NodeInfo{&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1} },
 		[]byte{1},
 	)
 	require.NoError(t, err)
@@ -239,7 +247,7 @@ func TestNewTrustBaseFromFile(t *testing.T) {
 func TestSignAndVerify(t *testing.T) {
 	keys := genKeys(1)
 	tb, err := NewTrustBaseGenesis(
-		[]*NodeInfo{NewNodeInfoFromVerifier("1", 1, keys["1"].verifier)},
+		[]*NodeInfo{&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1}},
 		[]byte{1},
 	)
 	require.NoError(t, err)
@@ -259,9 +267,9 @@ func Test_RootTrustBaseV1_CBOR(t *testing.T) {
 	keys := genKeys(3)
 	tb, err := NewTrustBaseGenesis(
 		[]*NodeInfo{
-			NewNodeInfoFromVerifier("1", 1, keys["1"].verifier),
-			NewNodeInfoFromVerifier("2", 1, keys["2"].verifier),
-			NewNodeInfoFromVerifier("3", 1, keys["3"].verifier),
+			&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1},
+			&NodeInfo{NodeID: "2", SigKey: keys["2"].publicKey, Stake: 1},
+			&NodeInfo{NodeID: "3", SigKey: keys["3"].publicKey, Stake: 1},
 		},
 		[]byte{1},
 	)
@@ -325,7 +333,9 @@ func genKeys(count int) map[string]key {
 func NewTrustBase(t *testing.T, verifiers ...abcrypto.Verifier) RootTrustBase {
 	var nodes []*NodeInfo
 	for _, v := range verifiers {
-		nodes = append(nodes, NewNodeInfoFromVerifier("test", 1, v))
+		sigKey, err := v.MarshalPublicKey()
+		require.NoError(t, err)
+		nodes = append(nodes, &NodeInfo{NodeID: "test", SigKey: sigKey, Stake: 1})
 	}
 	tb, err := NewTrustBaseGenesis(nodes, []byte{1})
 	require.NoError(t, err)
@@ -335,7 +345,9 @@ func NewTrustBase(t *testing.T, verifiers ...abcrypto.Verifier) RootTrustBase {
 func NewTrustBaseFromVerifiers(t *testing.T, verifiers map[string]abcrypto.Verifier) RootTrustBase {
 	var nodes []*NodeInfo
 	for nodeID, v := range verifiers {
-		nodes = append(nodes, NewNodeInfoFromVerifier(nodeID, 1, v))
+		sigKey, err := v.MarshalPublicKey()
+		require.NoError(t, err)
+		nodes = append(nodes, &NodeInfo{NodeID: nodeID, SigKey: sigKey, Stake: 1})
 	}
 	tb, err := NewTrustBaseGenesis(nodes, []byte{1})
 	require.NoError(t, err)
