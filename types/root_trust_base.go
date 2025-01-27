@@ -1,10 +1,12 @@
 package types
 
 import (
-	"bytes"
+	"cmp"
 	"crypto"
 	"errors"
 	"fmt"
+	"slices"
+	"sync"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
@@ -18,6 +20,7 @@ type (
 		VerifySignature(data []byte, sig []byte, nodeID string) (uint64, error)
 		GetQuorumThreshold() uint64
 		GetMaxFaultyNodes() uint64
+		GetRootNodes() []*NodeInfo
 	}
 
 	RootTrustBaseV1 struct {
@@ -25,7 +28,7 @@ type (
 		Version           ABVersion            `json:"version"`
 		Epoch             uint64               `json:"epoch"`             // current epoch number
 		EpochStartRound   uint64               `json:"epochStartRound"`   // root chain round number when the epoch begins
-		RootNodes         map[string]*NodeInfo `json:"rootNodes"`         // list of all root nodes for the current epoch
+		RootNodes         []*NodeInfo          `json:"rootNodes"`         // list of all root nodes for the current epoch
 		QuorumThreshold   uint64               `json:"quorumThreshold"`   // amount of alpha required to reach consensus, currently each node gets equal amount of voting power i.e. +1 for each node
 		StateHash         hex.Bytes            `json:"stateHash"`         // unicity tree root hash
 		ChangeRecordHash  hex.Bytes            `json:"changeRecordHash"`  // epoch change request hash
@@ -34,11 +37,14 @@ type (
 	}
 
 	NodeInfo struct {
-		_         struct{}          `cbor:",toarray"`
-		NodeID    string            `json:"nodeId"`    // node identifier derived from node's encryption public key
-		PublicKey hex.Bytes         `json:"publicKey"` // the trust base signing public key
-		Stake     uint64            `json:"stake"`     // amount of staked alpha for this node, currently unused as each nodes get equal votes regardless of stake
-		verifier  abcrypto.Verifier // cached verifier, should always be filled in constructor; private field is ignored in json and cbor
+		_           struct{}          `cbor:",toarray"`
+		NodeID      string            `json:"nodeId"` // node identifier
+		SigKey      hex.Bytes         `json:"sigKey"` // signing key of the node
+		Stake       uint64            `json:"stake"`  // amount of staked alpha for this node, currently unused as each nodes get equal votes regardless of stake
+
+		// cached signature verifier; private fields are ignored in JSON and CBOR encodings
+		sigVerifier     abcrypto.Verifier
+		sigVerifierInit sync.Once
 	}
 
 	Option func(c *trustBaseConf)
@@ -49,8 +55,8 @@ type (
 )
 
 // NewTrustBaseGenesis creates new unsigned root trust base with default genesis parameters.
-func NewTrustBaseGenesis(nodes []*NodeInfo, unicityTreeRootHash []byte, opts ...Option) (*RootTrustBaseV1, error) {
-	if len(nodes) == 0 {
+func NewTrustBaseGenesis(rootNodes []*NodeInfo, unicityTreeRootHash []byte, opts ...Option) (*RootTrustBaseV1, error) {
+	if len(rootNodes) == 0 {
 		return nil, errors.New("nodes list is empty")
 	}
 	if len(unicityTreeRootHash) == 0 {
@@ -63,9 +69,15 @@ func NewTrustBaseGenesis(nodes []*NodeInfo, unicityTreeRootHash []byte, opts ...
 		opt(c)
 	}
 
+	// Sort rootNodes by NodeID, so that we have a consistent order in every
+	// implementation/encoding and we can perform binary search on them.
+	slices.SortFunc(rootNodes, func(a, b *NodeInfo) int {
+		return cmp.Compare(a.NodeID, b.NodeID)
+	})
+
 	// calculate quorum threshold
 	var totalStake uint64
-	for _, n := range nodes {
+	for _, n := range rootNodes {
 		totalStake += n.Stake
 	}
 	minStake := totalStake*2/3 + 1
@@ -80,11 +92,6 @@ func NewTrustBaseGenesis(nodes []*NodeInfo, unicityTreeRootHash []byte, opts ...
 		return nil, fmt.Errorf("quorum threshold cannot exceed the total staked amount (max threshold %d got %d)", totalStake, c.quorumThreshold)
 	}
 
-	// create node info list
-	rootNodes, err := newRootNodes(nodes)
-	if err != nil {
-		return nil, err
-	}
 	return &RootTrustBaseV1{
 		Version:           1,
 		Epoch:             1,
@@ -104,29 +111,7 @@ func NewTrustBaseFromFile(trustBaseFile string) (*RootTrustBaseV1, error) {
 	if err != nil {
 		return nil, fmt.Errorf("loading root trust base file %s: %w", trustBaseFile, err)
 	}
-	// cache verifiers
-	for _, rn := range trustBase.RootNodes {
-		verifier, err := abcrypto.NewVerifierSecp256k1(rn.PublicKey)
-		if err != nil {
-			return nil, err
-		}
-		rn.verifier = verifier
-	}
 	return trustBase, nil
-}
-
-// NewNodeInfo creates new NodeInfo, caching the verifier in private field.
-func NewNodeInfo(nodeID string, stake uint64, verifier abcrypto.Verifier) *NodeInfo {
-	key, err := verifier.MarshalPublicKey()
-	if err != nil {
-		panic("failed to marshal abcrypto.Verifier to public key bytes")
-	}
-	return &NodeInfo{
-		NodeID:    nodeID,
-		PublicKey: key,
-		Stake:     stake,
-		verifier:  verifier,
-	}
 }
 
 // WithQuorumThreshold overrides the default 2/3+1 quorum threshold.
@@ -136,13 +121,32 @@ func WithQuorumThreshold(threshold uint64) Option {
 	}
 }
 
-// Bytes serializes all fields.
-func (n *NodeInfo) Bytes() []byte {
-	var b bytes.Buffer
-	b.Write([]byte(n.NodeID))
-	b.Write(n.PublicKey)
-	b.Write(util.Uint64ToBytes(n.Stake))
-	return b.Bytes()
+// IsValid validates that all fields are correctly set and public keys are correct.
+func (n *NodeInfo) IsValid() error {
+	if n == nil {
+		return errors.New("node info is empty")
+	}
+	if n.NodeID == "" {
+		return errors.New("node identifier is empty")
+	}
+	if len(n.SigKey) == 0 {
+		return errors.New("signing key is empty")
+	}
+	if _, err := abcrypto.NewVerifierSecp256k1(n.SigKey); err != nil {
+		return fmt.Errorf("signing key is invalid: %w", err)
+	}
+	return nil
+}
+
+func (n *NodeInfo) SigVerifier() (abcrypto.Verifier, error) {
+	var err error
+	n.sigVerifierInit.Do(func() {
+		n.sigVerifier, err = abcrypto.NewVerifierSecp256k1(n.SigKey)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("invalid signing key: %w", err)
+	}
+	return n.sigVerifier, nil
 }
 
 // Sign signs the trust base entry, storing the signature to Signatures map.
@@ -206,27 +210,18 @@ func (r *RootTrustBaseV1) VerifyQuorumSignatures(data []byte, signatures map[str
 // VerifySignature verifies that the data is signed by the given root validator,
 // returns the validator's stake if it is signed.
 func (r *RootTrustBaseV1) VerifySignature(data []byte, sig []byte, nodeID string) (uint64, error) {
-	verifierNode, f := r.RootNodes[nodeID]
-	if !f {
+	verifierNode := r.getRootNode(nodeID)
+	if verifierNode == nil {
 		return 0, fmt.Errorf("author '%s' is not part of the trust base", nodeID)
 	}
-	verifier := verifierNode.verifier
-	if verifier == nil {
-		return 0, fmt.Errorf("cached verifier not found for nodeID=%s", nodeID)
+	verifier, err := verifierNode.SigVerifier()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get signature verifier for nodeID=%s: %w", nodeID, err)
 	}
 	if err := verifier.VerifyBytes(sig, data); err != nil {
 		return 0, fmt.Errorf("verify bytes failed: %w", err)
 	}
 	return verifierNode.Stake, nil
-}
-
-// GetVerifiers returns the cached verifiers.
-func (r *RootTrustBaseV1) GetVerifiers() (map[string]abcrypto.Verifier, error) {
-	verifiers := make(map[string]abcrypto.Verifier, len(r.RootNodes))
-	for nodeID, rn := range r.RootNodes {
-		verifiers[nodeID] = rn.verifier
-	}
-	return verifiers, nil
 }
 
 // GetQuorumThreshold returns the quorum threshold for the latest trust base entry.
@@ -239,13 +234,8 @@ func (r *RootTrustBaseV1) GetMaxFaultyNodes() uint64 {
 	return uint64(len(r.RootNodes)) - r.QuorumThreshold
 }
 
-// newRootNodes converts []*NodeInfo to map[string]*NodeInfo
-func newRootNodes(nodes []*NodeInfo) (map[string]*NodeInfo, error) {
-	nodeMap := map[string]*NodeInfo{}
-	for _, nodeInfo := range nodes {
-		nodeMap[nodeInfo.NodeID] = nodeInfo
-	}
-	return nodeMap, nil
+func (r *RootTrustBaseV1) GetRootNodes() []*NodeInfo {
+	return r.RootNodes
 }
 
 func (r *RootTrustBaseV1) GetVersion() ABVersion {
@@ -269,4 +259,14 @@ func (r *RootTrustBaseV1) UnmarshalCBOR(data []byte) error {
 		return fmt.Errorf("failed to unmarshal root trust base: %w", err)
 	}
 	return EnsureVersion(r, r.Version, 1)
+}
+
+func (r *RootTrustBaseV1) getRootNode(nodeID string) *NodeInfo {
+	idx, found := slices.BinarySearchFunc(r.RootNodes, nodeID, func(nodeInfo *NodeInfo, nodeID string) int {
+		return cmp.Compare(nodeInfo.NodeID, nodeID)
+	})
+	if found {
+		return r.RootNodes[idx]
+	}
+	return nil
 }
