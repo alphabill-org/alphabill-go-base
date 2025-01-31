@@ -25,13 +25,16 @@ var (
 )
 
 type SignatureMap = map[string]hex.Bytes
+
 type UnicitySeal struct {
 	_                    struct{}     `cbor:",toarray"`
 	Version              ABVersion    `json:"version"`
+	NetworkID            NetworkID    `json:"network"`
 	RootChainRoundNumber uint64       `json:"rootChainRoundNumber"`
-	Timestamp            uint64       `json:"timestamp"`
-	PreviousHash         hex.Bytes    `json:"previousHash"`
-	Hash                 hex.Bytes    `json:"hash"`
+	Epoch                uint64       `json:"epoch"`        // Root Chain Epoch number
+	Timestamp            uint64       `json:"timestamp"`    // Round creation time (wall clock value specified and verified by the Root Chain)
+	PreviousHash         hex.Bytes    `json:"previousHash"` // Root hash of previous round’s Unicity Tree
+	Hash                 hex.Bytes    `json:"hash"`         // Root hash of the Unicity Tree
 	Signatures           SignatureMap `json:"signatures"`
 }
 
@@ -63,6 +66,16 @@ func (x *UnicitySeal) IsValid() error {
 	}
 	if len(x.Signatures) == 0 {
 		return ErrUnicitySealSignatureIsNil
+	}
+	// when there is invalid signature the Verify should
+	// fail but we can do simple sanity checks here too
+	if _, ok := x.Signatures[""]; ok {
+		return errors.New("signature without signer ID")
+	}
+	for k, v := range x.Signatures {
+		if len(v) == 0 {
+			return fmt.Errorf("empty signature for %q", k)
+		}
 	}
 	return nil
 }
@@ -123,61 +136,56 @@ func (x *UnicitySeal) MarshalCBOR() ([]byte, error) {
 	return Cbor.MarshalTaggedValue(UnicitySealTag, (*alias)(x))
 }
 
-func (x *UnicitySeal) UnmarshalCBOR(b []byte) error {
-	tag, arr, err := Cbor.UnmarshalTagged(b)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal unicity seal: %w", err)
+func (x *UnicitySeal) UnmarshalCBOR(b []byte) (err error) {
+	var arr []any
+	if x.Version, arr, err = parseTaggedCBOR(b, UnicitySealTag); err != nil {
+		return fmt.Errorf("unmarshaling UnicitySeal: %w", err)
 	}
-	if tag != UnicitySealTag {
-		return fmt.Errorf("invalid tag %d, expected %d", tag, UnicitySealTag)
+	if x.Version != 1 || len(arr) != 8 {
+		return fmt.Errorf("unsupported UnicitySeal encoding, version %d with %d fields", x.Version, len(arr))
 	}
-	if len(arr) < 6 {
-		return fmt.Errorf("unicity seal: invalid array length: %d", len(arr))
-	}
-	if version, ok := arr[0].(uint64); ok {
-		if version != 1 {
-			return fmt.Errorf("unicity seal: invalid version number: expected 1, got %d", version)
-		}
-		x.Version = ABVersion(version)
+
+	if id, ok := arr[1].(uint64); ok {
+		x.NetworkID = NetworkID(id)
 	} else {
-		return fmt.Errorf("unicity seal: unexpected type of version: %+v", arr[0])
+		return fmt.Errorf("invalid network ID, expected uint64 got %T", arr[1])
 	}
-	if round, ok := arr[1].(uint64); ok {
-		x.RootChainRoundNumber = round
-	} else {
-		return fmt.Errorf("unicity seal: unexpected type of root round number: %+v", arr[1])
+
+	var ok bool
+	if x.RootChainRoundNumber, ok = arr[2].(uint64); !ok {
+		return fmt.Errorf("invalid root round number, expected uint64 got %T", arr[2])
 	}
-	if ts, ok := arr[2].(uint64); ok {
-		x.Timestamp = ts
-	} else {
-		return fmt.Errorf("unicity seal: unexpected type of timestamp: %+v", arr[2])
+
+	if x.Epoch, ok = arr[3].(uint64); !ok {
+		return fmt.Errorf("invalid epoch, expected uint64 got %T", arr[3])
 	}
-	if prevHash, ok := arr[3].([]byte); ok || arr[3] == nil {
-		x.PreviousHash = prevHash
-	} else {
-		return fmt.Errorf("unicity seal: invalid previous hash: %+v", arr[3])
+
+	if x.Timestamp, ok = arr[4].(uint64); !ok {
+		return fmt.Errorf("invalid timestamp, expected uint64 got %T", arr[4])
 	}
-	if h, ok := arr[4].([]byte); ok || arr[4] == nil {
-		x.Hash = h
-	} else {
-		return fmt.Errorf("unicity seal: invalid hash: %+v", arr[4])
+
+	if x.PreviousHash, ok = arr[5].([]byte); !ok && arr[5] != nil {
+		return fmt.Errorf("invalid previous hash, expected byte slice got %T", arr[5])
 	}
-	if sigs, ok := arr[5].(map[any]any); ok {
-		sigMap := make(SignatureMap)
+
+	if x.Hash, ok = arr[6].([]byte); !ok && arr[6] != nil {
+		return fmt.Errorf("invalid hash, expected byte slice got %T", arr[6])
+	}
+
+	if sigs, ok := arr[7].(map[any]any); ok {
+		sigMap := make(SignatureMap, len(sigs))
 		for k, v := range sigs {
 			key, ok := k.(string)
-			if !ok || key == "" {
-				return fmt.Errorf("invalid key type: %T", k)
+			if !ok {
+				return fmt.Errorf("invalid signer ID type: %T", k)
 			}
-			if value, ok := v.([]byte); ok {
-				sigMap[key] = value
-			} else {
-				return fmt.Errorf("invalid value type: %T", v)
+			if sigMap[key], ok = v.([]byte); !ok {
+				return fmt.Errorf("invalid signature type: %T", v)
 			}
 		}
 		x.Signatures = sigMap
-	} else if arr[5] != nil {
-		return fmt.Errorf("unicity seal: invalid signatures: %+v", arr[5])
+	} else if arr[7] != nil {
+		return fmt.Errorf("unicity seal: invalid signatures, expected map, got %T", arr[7])
 	}
 	return nil
 }

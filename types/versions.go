@@ -1,6 +1,9 @@
 package types
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type ABTag = uint64
 type ABVersion = uint32
@@ -44,4 +47,21 @@ func EnsureVersion(data Versioned, actual, expected ABVersion) error {
 		return fmt.Errorf("invalid version (type %T), expected %d, got %d", data, expected, actual)
 	}
 	return nil
+}
+
+func parseTaggedCBOR(b []byte, objID ABTag) (ABVersion, []any, error) {
+	tag, arr, err := Cbor.UnmarshalTagged(b)
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to unmarshal as tagged CBOR: %w", err)
+	}
+	if tag != objID {
+		return 0, nil, fmt.Errorf("expected tag %d, got %d", objID, tag)
+	}
+	if len(arr) == 0 {
+		return 0, nil, errors.New("empty data slice")
+	}
+	if version, ok := arr[0].(uint64); ok {
+		return ABVersion(version), arr, nil
+	}
+	return 0, nil, fmt.Errorf("expected version number to be uint64, got: %#v", arr[0])
 }
