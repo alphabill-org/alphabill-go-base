@@ -80,7 +80,7 @@ func TestVerifyInc(t *testing.T) {
 		proof, err := NewTxRecordProof(block, 0, crypto.SHA256)
 		require.NoError(t, err)
 		tb := NewTrustBase(t, verifier)
-		uc, err := proof.TxProof.getUCv1()
+		uc, err := proof.TxProof.GetUC()
 		require.NoError(t, err)
 		uc.UnicityTreeCertificate.Partition = 1
 		proof.TxProof.UnicityCertificate, err = uc.MarshalCBOR()

@@ -5,8 +5,10 @@ import (
 	"reflect"
 	"testing"
 
-	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/stretchr/testify/require"
+
+	abhash "github.com/alphabill-org/alphabill-go-base/hash"
+	test "github.com/alphabill-org/alphabill-go-base/testutils"
 )
 
 var ir = &InputRecord{
@@ -21,6 +23,7 @@ var ir = &InputRecord{
 }
 
 func TestInputRecord_IsValid(t *testing.T) {
+	randomHash := test.RandomBytes(32)
 	validIR := InputRecord{
 		Version:      1,
 		PreviousHash: randomHash,

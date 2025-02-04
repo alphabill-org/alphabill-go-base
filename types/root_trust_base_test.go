@@ -11,6 +11,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNodeInfo_IsValid(t *testing.T) {
+	keys := genKeys(1)
+	validNodeInfo := func() *NodeInfo {
+		return &NodeInfo{
+			NodeID: "test",
+			SigKey: keys["1"].publicKey,
+			Stake:  1,
+		}
+	}
+
+	n := validNodeInfo()
+	n.NodeID = ""
+	require.ErrorContains(t, n.IsValid(), "node identifier is empty")
+
+	n = validNodeInfo()
+	n.SigKey = nil
+	require.ErrorContains(t, n.IsValid(), "signing key is empty")
+
+	n = validNodeInfo()
+	n.SigKey = []byte{1}
+	require.ErrorContains(t, n.IsValid(), "signing key is invalid")
+}
+
 func TestNewTrustBaseGenesis(t *testing.T) {
 	keys := genKeys(4)
 	type args struct {
@@ -32,7 +55,9 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 		{
 			name: "empty root hash",
 			args: args{
-				nodes:               []*NodeInfo{NewNodeInfo("1", 1, keys["1"].verifier)},
+				nodes: []*NodeInfo{
+					&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1},
+				},
 				unicityTreeRootHash: nil,
 			},
 			wantErrStr: "unicity tree root hash is empty",
@@ -41,9 +66,9 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 			name: "default settings ok",
 			args: args{
 				nodes: []*NodeInfo{
-					NewNodeInfo("1", 1, keys["1"].verifier),
-					NewNodeInfo("2", 1, keys["2"].verifier),
-					NewNodeInfo("3", 1, keys["3"].verifier),
+					&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1},
+					&NodeInfo{NodeID: "2", SigKey: keys["2"].publicKey, Stake: 1},
+					&NodeInfo{NodeID: "3", SigKey: keys["3"].publicKey, Stake: 1},
 				},
 				unicityTreeRootHash: []byte{1},
 			},
@@ -61,11 +86,15 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 				// verify methods
 				require.EqualValues(t, 3, tb.GetQuorumThreshold())
 				require.EqualValues(t, 0, tb.GetMaxFaultyNodes())
-				verifiers, err := tb.GetVerifiers()
+				v1, err := tb.getRootNode("1").SigVerifier()
 				require.NoError(t, err)
-				require.Equal(t, keys["1"].verifier, verifiers["1"])
-				require.Equal(t, keys["2"].verifier, verifiers["2"])
-				require.Equal(t, keys["3"].verifier, verifiers["3"])
+				v2, err := tb.getRootNode("2").SigVerifier()
+				require.NoError(t, err)
+				v3, err := tb.getRootNode("3").SigVerifier()
+				require.NoError(t, err)
+				require.Equal(t, keys["1"].verifier, v1)
+				require.Equal(t, keys["2"].verifier, v2)
+				require.Equal(t, keys["3"].verifier, v3)
 			},
 		},
 		{
@@ -73,29 +102,24 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 			args: args{
 				nodes: []*NodeInfo{
 					{
-						NodeID:    "1",
-						PublicKey: keys["1"].publicKey,
-						Stake:     1,
+						NodeID: "1",
+						SigKey: keys["1"].publicKey,
+						Stake:  1,
 					},
 					{
-						NodeID:    "2",
-						PublicKey: keys["2"].publicKey,
-						Stake:     1,
+						NodeID: "2",
+						SigKey: keys["2"].publicKey,
+						Stake:  1,
 					},
 					{
-						NodeID:    "3",
-						PublicKey: keys["3"].publicKey,
-						Stake:     1,
+						NodeID: "3",
+						SigKey: keys["3"].publicKey,
+						Stake:  1,
 					},
 					{
-						NodeID:    "3",
-						PublicKey: keys["3"].publicKey,
-						Stake:     1,
-					},
-					{
-						NodeID:    "4",
-						PublicKey: keys["4"].publicKey,
-						Stake:     1,
+						NodeID: "4",
+						SigKey: keys["4"].publicKey,
+						Stake:  1,
 					},
 				},
 				unicityTreeRootHash: []byte{1},
@@ -111,24 +135,24 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 			args: args{
 				nodes: []*NodeInfo{
 					{
-						NodeID:    "1",
-						PublicKey: keys["1"].publicKey,
-						Stake:     1,
+						NodeID: "1",
+						SigKey: keys["1"].publicKey,
+						Stake:  1,
 					},
 					{
-						NodeID:    "2",
-						PublicKey: keys["2"].publicKey,
-						Stake:     1,
+						NodeID: "2",
+						SigKey: keys["2"].publicKey,
+						Stake:  1,
 					},
 					{
-						NodeID:    "3",
-						PublicKey: keys["3"].publicKey,
-						Stake:     1,
+						NodeID: "3",
+						SigKey: keys["3"].publicKey,
+						Stake:  1,
 					},
 					{
-						NodeID:    "4",
-						PublicKey: keys["4"].publicKey,
-						Stake:     1,
+						NodeID: "4",
+						SigKey: keys["4"].publicKey,
+						Stake:  1,
 					},
 				},
 				unicityTreeRootHash: []byte{1},
@@ -141,19 +165,19 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 			args: args{
 				nodes: []*NodeInfo{
 					{
-						NodeID:    "1",
-						PublicKey: keys["1"].publicKey,
-						Stake:     1,
+						NodeID: "1",
+						SigKey: keys["1"].publicKey,
+						Stake:  1,
 					},
 					{
-						NodeID:    "2",
-						PublicKey: keys["2"].publicKey,
-						Stake:     1,
+						NodeID: "2",
+						SigKey: keys["2"].publicKey,
+						Stake:  1,
 					},
 					{
-						NodeID:    "3",
-						PublicKey: keys["3"].publicKey,
-						Stake:     1,
+						NodeID: "3",
+						SigKey: keys["3"].publicKey,
+						Stake:  1,
 					},
 				},
 				unicityTreeRootHash: []byte{1},
@@ -184,7 +208,7 @@ func TestNewTrustBaseFromFile(t *testing.T) {
 
 	// create trust base from genesis
 	tb, err := NewTrustBaseGenesis(
-		[]*NodeInfo{NewNodeInfo("1", 1, keys["1"].verifier)},
+		[]*NodeInfo{&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1} },
 		[]byte{1},
 	)
 	require.NoError(t, err)
@@ -199,16 +223,16 @@ func TestNewTrustBaseFromFile(t *testing.T) {
 	require.NoError(t, err)
 
 	// verify that verifiers are cached when loading from file
-	verifiers, err := tb.GetVerifiers()
+	require.Len(t, tb.GetRootNodes(), 1)
+	verifier, err := tb.getRootNode("1").SigVerifier()
 	require.NoError(t, err)
-	require.Len(t, verifiers, 1)
-	require.Equal(t, keys["1"].verifier, verifiers["1"])
+	require.Equal(t, keys["1"].verifier, verifier)
 }
 
 func TestSignAndVerify(t *testing.T) {
 	keys := genKeys(1)
 	tb, err := NewTrustBaseGenesis(
-		[]*NodeInfo{NewNodeInfo("1", 1, keys["1"].verifier)},
+		[]*NodeInfo{&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1}},
 		[]byte{1},
 	)
 	require.NoError(t, err)
@@ -228,9 +252,9 @@ func Test_RootTrustBaseV1_CBOR(t *testing.T) {
 	keys := genKeys(3)
 	tb, err := NewTrustBaseGenesis(
 		[]*NodeInfo{
-			NewNodeInfo("1", 1, keys["1"].verifier),
-			NewNodeInfo("2", 1, keys["2"].verifier),
-			NewNodeInfo("3", 1, keys["3"].verifier),
+			&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1},
+			&NodeInfo{NodeID: "2", SigKey: keys["2"].publicKey, Stake: 1},
+			&NodeInfo{NodeID: "3", SigKey: keys["3"].publicKey, Stake: 1},
 		},
 		[]byte{1},
 	)
@@ -244,10 +268,16 @@ func Test_RootTrustBaseV1_CBOR(t *testing.T) {
 		err = Cbor.Unmarshal(data, tb2)
 		require.NoError(t, err)
 
-		// TODO: restore verifiers?
-		tb2.RootNodes["1"].verifier = keys["1"].verifier
-		tb2.RootNodes["2"].verifier = keys["2"].verifier
-		tb2.RootNodes["3"].verifier = keys["3"].verifier
+		// call SigVerifier() on all nodes so that caches are equal
+		for _, rn := range tb.RootNodes {
+			_, err := rn.SigVerifier()
+			require.NoError(t, err)
+		}
+
+		for _, rn := range tb2.RootNodes {
+			_, err := rn.SigVerifier()
+			require.NoError(t, err)
+		}
 
 		require.EqualValues(t, tb, tb2)
 	})
@@ -288,7 +318,9 @@ func genKeys(count int) map[string]key {
 func NewTrustBase(t *testing.T, verifiers ...abcrypto.Verifier) RootTrustBase {
 	var nodes []*NodeInfo
 	for _, v := range verifiers {
-		nodes = append(nodes, NewNodeInfo("test", 1, v))
+		sigKey, err := v.MarshalPublicKey()
+		require.NoError(t, err)
+		nodes = append(nodes, &NodeInfo{NodeID: "test", SigKey: sigKey, Stake: 1})
 	}
 	tb, err := NewTrustBaseGenesis(nodes, []byte{1})
 	require.NoError(t, err)
@@ -298,7 +330,9 @@ func NewTrustBase(t *testing.T, verifiers ...abcrypto.Verifier) RootTrustBase {
 func NewTrustBaseFromVerifiers(t *testing.T, verifiers map[string]abcrypto.Verifier) RootTrustBase {
 	var nodes []*NodeInfo
 	for nodeID, v := range verifiers {
-		nodes = append(nodes, NewNodeInfo(nodeID, 1, v))
+		sigKey, err := v.MarshalPublicKey()
+		require.NoError(t, err)
+		nodes = append(nodes, &NodeInfo{NodeID: nodeID, SigKey: sigKey, Stake: 1})
 	}
 	tb, err := NewTrustBaseGenesis(nodes, []byte{1})
 	require.NoError(t, err)

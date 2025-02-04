@@ -31,7 +31,7 @@ type (
 	}
 )
 
-func (p *TxProof) getUCv1() (*UnicityCertificate, error) {
+func (p *TxProof) GetUC() (*UnicityCertificate, error) {
 	if p == nil {
 		return nil, errors.New("tx proof is nil")
 	}
@@ -39,8 +39,7 @@ func (p *TxProof) getUCv1() (*UnicityCertificate, error) {
 		return nil, ErrUnicityCertificateIsNil
 	}
 	uc := &UnicityCertificate{}
-	err := Cbor.Unmarshal(p.UnicityCertificate, uc)
-	if err != nil {
+	if err := Cbor.Unmarshal(p.UnicityCertificate, uc); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal unicity certificate: %w", err)
 	}
 	return uc, nil
@@ -98,7 +97,7 @@ func VerifyTxInclusion(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgor
 		}
 	}
 	// TODO ch 2.8.7: Verify Transaction Proof: VerifyTxProof: System description must be an input parameter
-	uc, err := txProof.getUCv1()
+	uc, err := txProof.GetUC()
 	if err != nil {
 		return fmt.Errorf("failed to get unicity certificate: %w", err)
 	}

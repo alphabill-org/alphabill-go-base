@@ -8,14 +8,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	test "github.com/alphabill-org/alphabill-go-base/testutils"
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
 func TestUnicityCertificate_IsValid(t *testing.T) {
 	const partitionID PartitionID = 0x01010101
-	pdrh := randomHash
-	trHash := randomHash
+	pdrh := test.RandomBytes(32)
+	trHash := test.RandomBytes(32)
 	signer, _ := testsig.CreateSignerAndVerifier(t)
 
 	inputRecord := &InputRecord{
@@ -50,7 +51,7 @@ func TestUnicityCertificate_IsValid(t *testing.T) {
 			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
-			PreviousHash:         randomHash,
+			PreviousHash:         test.RandomBytes(32),
 			Hash:                 ut.RootHash(),
 		}
 		require.NoError(t, seal.Sign("test", signer))
@@ -181,7 +182,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 			Version:              1,
 			RootChainRoundNumber: 1,
 			Timestamp:            NewTimestamp(),
-			PreviousHash:         randomHash,
+			PreviousHash:         test.RandomBytes(32),
 			Hash:                 ut.RootHash(),
 		}
 		require.NoError(t, seal.Sign("test", signer))
@@ -846,7 +847,7 @@ func Test_UnicityCertificate_Cbor(t *testing.T) {
 		//uc := &UnicityCertificate{InputRecord: &InputRecord{}, TRHash: []byte{1}, UnicityTreeCertificate: &UnicityTreeCertificate{}, UnicitySeal: &UnicitySeal{}}
 		//_ucData, _ := uc.MarshalCBOR()
 		//fmt.Printf("ucData: 0x%X\n", _ucData)
-		ucData, err := hex.Decode([]byte("0xD903EF8601D903F089010000F6F6F600F6004101824180F6D903F6840100F6F6D903E986010000F6F6F6"))
+		ucData, err := hex.Decode([]byte("0xD903EF8601D903F089010000F6F6F600F6004101824180F6D903F6840100F6F6D903E9880100000000F6F6F6"))
 		require.NoError(t, err)
 
 		uc1 := &UnicityCertificate{}
