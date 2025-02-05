@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/alphabill-org/alphabill-go-base/crypto/canonicalizer"
 	"github.com/alphabill-org/alphabill-go-base/hash"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
@@ -63,15 +62,6 @@ func (v *verifierSecp256k1) VerifyHash(sig []byte, hash []byte) error {
 		return nil
 	}
 	return ErrVerificationFailed
-}
-
-// VerifyObject verifies the signature of canonicalizable object with public key.
-func (v *verifierSecp256k1) VerifyObject(sig []byte, obj canonicalizer.Canonicalizer, opts ...canonicalizer.Option) error {
-	data, err := canonicalizer.Canonicalize(obj, opts...)
-	if err != nil {
-		return fmt.Errorf("canonicalize the object failed: %w", err)
-	}
-	return v.VerifyBytes(sig, data)
 }
 
 // MarshalPublicKey returns compressed public key, 33 bytes

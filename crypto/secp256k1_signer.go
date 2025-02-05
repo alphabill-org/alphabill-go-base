@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/alphabill-org/alphabill-go-base/crypto/canonicalizer"
 	"github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
@@ -63,18 +62,6 @@ func (s *InMemorySecp256K1Signer) SignHash(hash []byte) ([]byte, error) {
 		return nil, fmt.Errorf("hash is nil")
 	}
 	return secp256k1.Sign(hash, s.privKey)
-}
-
-// SignObject transforms the object to canonical form and then signs the data using SignBytes method.
-func (s *InMemorySecp256K1Signer) SignObject(obj canonicalizer.Canonicalizer, opts ...canonicalizer.Option) ([]byte, error) {
-	if s == nil {
-		return nil, errSignerNil
-	}
-	data, err := canonicalizer.Canonicalize(obj, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("canonicalize the object failed: %w", err)
-	}
-	return s.SignBytes(data)
 }
 
 func (s *InMemorySecp256K1Signer) Verifier() (Verifier, error) {
