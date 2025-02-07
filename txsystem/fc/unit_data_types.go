@@ -70,3 +70,19 @@ func (b *FeeCreditRecord) GetVersion() types.ABVersion {
 	}
 	return 1
 }
+
+func (b *FeeCreditRecord) MarshalCBOR() ([]byte, error) {
+	type alias FeeCreditRecord
+	if b.Version == 0 {
+		b.Version = b.GetVersion()
+	}
+	return types.Cbor.MarshalTaggedValue(types.UnitDataTag, (*alias)(b))
+}
+
+func (b *FeeCreditRecord) UnmarshalCBOR(data []byte) error {
+	type alias FeeCreditRecord
+	if err := types.Cbor.UnmarshalTaggedValue(types.UnitDataTag, data, (*alias)(b)); err != nil {
+		return err
+	}
+	return types.EnsureVersion(b, b.Version, 1)
+}

@@ -2,6 +2,7 @@ package tokens
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -73,4 +74,64 @@ func Test_GenerateUnitID(t *testing.T) {
 			require.EqualValues(t, txt, tid)
 		}
 	})
+}
+
+func Test_CBOR(t *testing.T) {
+	unitDatas := []types.UnitData{
+		&NonFungibleTokenTypeData{
+			Version:                  1,
+			Symbol:                   "NFT",
+			Name:                     "Non-Fungible Token",
+			Icon:                     nil,
+			ParentTypeID:             []byte{0x01, 0x02},
+			SubTypeCreationPredicate: []byte{0x03, 0x04},
+			TokenMintingPredicate:    []byte{0x05, 0x06},
+			TokenTypeOwnerPredicate:  []byte{0x07, 0x08},
+			DataUpdatePredicate:      []byte{0x09, 0x0A},
+		},
+		&FungibleTokenTypeData{
+			Version:                  1,
+			Symbol:                   "FT",
+			Name:                     "Fungible Token",
+			Icon:                     nil,
+			ParentTypeID:             []byte{0x01, 0x02},
+			DecimalPlaces:            18,
+			SubTypeCreationPredicate: []byte{0x03, 0x04},
+			TokenMintingPredicate:    []byte{0x05, 0x06},
+			TokenTypeOwnerPredicate:  []byte{0x07, 0x08},
+		},
+		&NonFungibleTokenData{
+			Version:             1,
+			TypeID:              []byte{0x01, 0x02},
+			Name:                "NFT Data",
+			URI:                 "http://example.com",
+			Data:                []byte{0x03, 0x04},
+			OwnerPredicate:      []byte{0x05, 0x06},
+			DataUpdatePredicate: []byte{0x07, 0x08},
+			Locked:              1,
+			Counter:             42,
+		},
+		&FungibleTokenData{
+			Version:        1,
+			TypeID:         []byte{0x01, 0x02},
+			Value:          1000,
+			OwnerPredicate: []byte{0x03, 0x04},
+			Locked:         1,
+			Counter:        42,
+			MinLifetime:    100,
+		},
+	}
+
+	for _, unitData := range unitDatas {
+		t.Run(reflect.TypeOf(unitData).String(), func(t *testing.T) {
+			newUnitData := reflect.New(reflect.TypeOf(unitData).Elem()).Interface().(types.UnitData)
+			unitDataBytes, err := types.Cbor.Marshal(unitData)
+			require.NoError(t, err)
+			tag, _, err := types.Cbor.UnmarshalTagged(unitDataBytes)
+			require.NoError(t, err)
+			require.Equal(t, types.UnitDataTag, tag)
+			require.NoError(t, types.Cbor.Unmarshal(unitDataBytes, newUnitData))
+			require.Equal(t, unitData, newUnitData)
+		})
+	}
 }

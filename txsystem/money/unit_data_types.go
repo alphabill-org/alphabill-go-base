@@ -75,3 +75,19 @@ func (b *BillData) GetVersion() types.ABVersion {
 	}
 	return 1
 }
+
+func (b *BillData) MarshalCBOR() ([]byte, error) {
+	type alias BillData
+	if b.Version == 0 {
+		b.Version = b.GetVersion()
+	}
+	return types.Cbor.MarshalTaggedValue(types.UnitDataTag, (*alias)(b))
+}
+
+func (b *BillData) UnmarshalCBOR(data []byte) error {
+	type alias BillData
+	if err := types.Cbor.UnmarshalTaggedValue(types.UnitDataTag, data, (*alias)(b)); err != nil {
+		return err
+	}
+	return types.EnsureVersion(b, b.Version, 1)
+}

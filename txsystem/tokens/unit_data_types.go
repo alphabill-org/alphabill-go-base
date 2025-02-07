@@ -141,6 +141,22 @@ func (n *NonFungibleTokenTypeData) GetVersion() types.ABVersion {
 	return 1
 }
 
+func (n *NonFungibleTokenTypeData) MarshalCBOR() ([]byte, error) {
+	type alias NonFungibleTokenTypeData
+	if n.Version == 0 {
+		n.Version = n.GetVersion()
+	}
+	return types.Cbor.MarshalTaggedValue(types.UnitDataTag, (*alias)(n))
+}
+
+func (n *NonFungibleTokenTypeData) UnmarshalCBOR(data []byte) error {
+	type alias NonFungibleTokenTypeData
+	if err := types.Cbor.UnmarshalTaggedValue(types.UnitDataTag, data, (*alias)(n)); err != nil {
+		return err
+	}
+	return types.EnsureVersion(n, n.Version, 1)
+}
+
 func (n *NonFungibleTokenTypeData) Owner() []byte {
 	return nil
 }
@@ -174,6 +190,22 @@ func (n *NonFungibleTokenData) GetVersion() types.ABVersion {
 		return n.Version
 	}
 	return 1
+}
+
+func (n *NonFungibleTokenData) MarshalCBOR() ([]byte, error) {
+	type alias NonFungibleTokenData
+	if n.Version == 0 {
+		n.Version = n.GetVersion()
+	}
+	return types.Cbor.MarshalTaggedValue(types.UnitDataTag, (*alias)(n))
+}
+
+func (n *NonFungibleTokenData) UnmarshalCBOR(data []byte) error {
+	type alias NonFungibleTokenData
+	if err := types.Cbor.UnmarshalTaggedValue(types.UnitDataTag, data, (*alias)(n)); err != nil {
+		return err
+	}
+	return types.EnsureVersion(n, n.Version, 1)
 }
 
 func (n *NonFungibleTokenData) GetCounter() uint64 {
@@ -223,6 +255,22 @@ func (f *FungibleTokenTypeData) GetVersion() types.ABVersion {
 	return 1
 }
 
+func (b *FungibleTokenTypeData) MarshalCBOR() ([]byte, error) {
+	type alias FungibleTokenTypeData
+	if b.Version == 0 {
+		b.Version = b.GetVersion()
+	}
+	return types.Cbor.MarshalTaggedValue(types.UnitDataTag, (*alias)(b))
+}
+
+func (b *FungibleTokenTypeData) UnmarshalCBOR(data []byte) error {
+	type alias FungibleTokenTypeData
+	if err := types.Cbor.UnmarshalTaggedValue(types.UnitDataTag, data, (*alias)(b)); err != nil {
+		return err
+	}
+	return types.EnsureVersion(b, b.Version, 1)
+}
+
 func (f *FungibleTokenData) Write(hasher abhash.Hasher) {
 	hasher.Write(f)
 }
@@ -262,4 +310,20 @@ func (f *FungibleTokenData) GetVersion() types.ABVersion {
 		return f.Version
 	}
 	return 1
+}
+
+func (f *FungibleTokenData) MarshalCBOR() ([]byte, error) {
+	type alias FungibleTokenData
+	if f.Version == 0 {
+		f.Version = f.GetVersion()
+	}
+	return types.Cbor.MarshalTaggedValue(types.UnitDataTag, (*alias)(f))
+}
+
+func (f *FungibleTokenData) UnmarshalCBOR(data []byte) error {
+	type alias FungibleTokenData
+	if err := types.Cbor.UnmarshalTaggedValue(types.UnitDataTag, data, (*alias)(f)); err != nil {
+		return err
+	}
+	return types.EnsureVersion(f, f.Version, 1)
 }
