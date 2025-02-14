@@ -25,13 +25,13 @@ func TestVerifyUnitStateProof(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("unit state proof is nil", func(t *testing.T) {
-		data := &StateUnitData{}
+		data := &UnitState{}
 		var usp *UnitStateProof
 		require.EqualError(t, usp.Verify(crypto.SHA256, data, &alwaysValid{}), "invalid unit state proof: unit state proof is nil")
 	})
 
 	t.Run("unit ID missing", func(t *testing.T) {
-		data := &StateUnitData{}
+		data := &UnitState{}
 		usp := &UnitStateProof{}
 		require.EqualError(t, usp.Verify(crypto.SHA256, data, &alwaysValid{}), "invalid unit state proof: unit ID is unassigned")
 	})
@@ -40,7 +40,7 @@ func TestVerifyUnitStateProof(t *testing.T) {
 		proof := &UnitStateProof{
 			UnitID: []byte{0},
 		}
-		data := &StateUnitData{}
+		data := &UnitState{}
 		require.EqualError(t, proof.Verify(crypto.SHA256, data, &alwaysValid{}), "invalid unit state proof: unit tree cert is nil")
 	})
 
@@ -49,7 +49,7 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			UnitID:       []byte{0},
 			UnitTreeCert: &UnitTreeCert{},
 		}
-		data := &StateUnitData{}
+		data := &UnitState{}
 		require.EqualError(t, proof.Verify(crypto.SHA256, data, &alwaysValid{}), "invalid unit state proof: state tree cert is nil")
 	})
 
@@ -59,7 +59,7 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			UnitTreeCert:  &UnitTreeCert{},
 			StateTreeCert: &StateTreeCert{},
 		}
-		data := &StateUnitData{}
+		data := &UnitState{}
 		require.EqualError(t, proof.Verify(crypto.SHA256, data, &alwaysValid{}), "invalid unit state proof: unicity certificate is nil")
 	})
 
@@ -70,7 +70,7 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			StateTreeCert:      &StateTreeCert{},
 			UnicityCertificate: emptyUC,
 		}
-		data := &StateUnitData{}
+		data := &UnitState{}
 		require.EqualError(t, proof.Verify(crypto.SHA256, data, &alwaysInvalid{}), "invalid unicity certificate: invalid uc")
 	})
 
@@ -81,7 +81,7 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			StateTreeCert:      &StateTreeCert{},
 			UnicityCertificate: emptyUC,
 		}
-		require.EqualError(t, proof.Verify(crypto.SHA256, nil, &alwaysValid{}), "unit data is nil")
+		require.EqualError(t, proof.Verify(crypto.SHA256, nil, &alwaysValid{}), "unit state is nil")
 	})
 
 	t.Run("unit data hash invalid", func(t *testing.T) {
@@ -91,8 +91,8 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			StateTreeCert:      &StateTreeCert{},
 			UnicityCertificate: emptyUC,
 		}
-		data := &StateUnitData{}
-		require.EqualError(t, proof.Verify(crypto.SHA256, data, &alwaysValid{}), "unit data hash does not match hash in unit tree")
+		data := &UnitState{}
+		require.EqualError(t, proof.Verify(crypto.SHA256, data, &alwaysValid{}), "unit state hash does not match unit state hash in unit tree cert")
 	})
 
 	t.Run("invalid summary value", func(t *testing.T) {
@@ -102,8 +102,8 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			StateTreeCert:      &StateTreeCert{},
 			UnicityCertificate: emptyUC,
 		}
-		data := &StateUnitData{}
-		proof.UnitTreeCert.UnitDataHash = doHash(t, data)
+		data := &UnitState{}
+		proof.UnitTreeCert.UnitStateHash = doHash(t, data)
 		uc, err := proof.getUCv1()
 		require.NoError(t, err)
 		uc.InputRecord = &InputRecord{SummaryValue: []byte{1}}
@@ -119,8 +119,8 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			StateTreeCert:      &StateTreeCert{},
 			UnicityCertificate: emptyUC,
 		}
-		data := &StateUnitData{}
-		proof.UnitTreeCert.UnitDataHash = doHash(t, data)
+		data := &UnitState{}
+		proof.UnitTreeCert.UnitStateHash = doHash(t, data)
 		uc, err := proof.getUCv1()
 		require.NoError(t, err)
 		uc.InputRecord = &InputRecord{SummaryValue: []byte{0, 0, 0, 0, 0, 0, 0, 0}}
@@ -136,17 +136,17 @@ func TestVerifyUnitStateProof(t *testing.T) {
 			StateTreeCert:      &StateTreeCert{},
 			UnicityCertificate: emptyUC,
 		}
-		data := &StateUnitData{}
-		proof.UnitTreeCert.UnitDataHash = doHash(t, data)
+		unitState := &UnitState{}
+		proof.UnitTreeCert.UnitStateHash = doHash(t, unitState)
 
 		uc, err := proof.getUCv1()
 		require.NoError(t, err)
 		uc.InputRecord = &InputRecord{SummaryValue: []byte{0, 0, 0, 0, 0, 0, 0, 0}}
-		hash, _ := hexutil.Decode("0x74F08E087DBBC89F0ED682530AB430B9FE50D96B45E54185F44B386BF11716C1")
+		hash, _ := hexutil.Decode("0x17F0AC4A7E99A8C5B84FA792DF6D3657E66A4CA5EBE8010D67BDE8DF47516602")
 		uc.InputRecord.Hash = hash
 		proof.UnicityCertificate, err = uc.MarshalCBOR()
 		require.NoError(t, err)
-		require.NoError(t, proof.Verify(crypto.SHA256, data, &alwaysValid{}), "unexpected error")
+		require.NoError(t, proof.Verify(crypto.SHA256, unitState, &alwaysValid{}), "unexpected error")
 	})
 }
 
