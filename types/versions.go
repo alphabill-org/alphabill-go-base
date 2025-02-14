@@ -35,7 +35,6 @@ const (
 	TransactionOrderTag
 	RootPartitionBlockDataTag
 	RootPartitionRoundInfoTag
-	UnitDataTag
 )
 
 func ErrInvalidVersion(s Versioned) error {

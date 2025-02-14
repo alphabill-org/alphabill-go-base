@@ -19,9 +19,6 @@ func Test_CBOR(t *testing.T) {
 
 	unitDataBytes, err := types.Cbor.Marshal(unitData)
 	require.NoError(t, err)
-	tag, _, err := types.Cbor.UnmarshalTagged(unitDataBytes)
-	require.NoError(t, err)
-	require.Equal(t, types.UnitDataTag, tag)
 	require.NoError(t, types.Cbor.Unmarshal(unitDataBytes, newUnitData))
 	require.Equal(t, unitData, newUnitData)
 }
