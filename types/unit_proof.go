@@ -26,8 +26,8 @@ type (
 
 	UnitTreeCert struct {
 		_                     struct{}       `cbor:",toarray"`
-		TransactionRecordHash hex.Bytes      `json:"txrHash"`  // t
-		UnitDataHash          hex.Bytes      `json:"dataHash"` // s
+		TransactionRecordHash hex.Bytes      `json:"txrHash"`       // t
+		UnitStateHash         hex.Bytes      `json:"unitStateHash"` // s
 		Path                  []*mt.PathItem `json:"path"`
 	}
 
@@ -49,20 +49,34 @@ type (
 		SiblingSummaryValue uint64    `json:"siblingSummaryValue,string"`
 	}
 
-	StateUnitData struct {
-		Data RawCBOR
+	UnitState struct {
+		Data          RawCBOR
+		DeletionRound uint64
+		StateLockTx   RawCBOR
 	}
 
-	UnitDataAndProof struct {
-		_        struct{} `cbor:",toarray"`
-		UnitData *StateUnitData
-		Proof    *UnitStateProof
+	UnitStateWithProof struct {
+		_     struct{} `cbor:",toarray"`
+		State *UnitState
+		Proof *UnitStateProof
 	}
 
 	UnicityCertificateValidator interface {
 		Validate(uc *UnicityCertificate) error
 	}
 )
+
+func NewUnitState(unitData UnitData, deletionRound uint64, stateLockTx RawCBOR) (*UnitState, error) {
+	unitDataCBOR, err := Cbor.Marshal(unitData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal unit data: %w", err)
+	}
+	return &UnitState{
+		Data:          unitDataCBOR,
+		DeletionRound: deletionRound,
+		StateLockTx:   stateLockTx,
+	}, nil
+}
 
 func (u *UnitStateProof) getUCv1() (*UnicityCertificate, error) {
 	if u == nil {
@@ -79,12 +93,12 @@ func (u *UnitStateProof) getUCv1() (*UnicityCertificate, error) {
 	return uc, nil
 }
 
-func (u *UnitStateProof) Verify(algorithm crypto.Hash, unitData *StateUnitData, ucv UnicityCertificateValidator) error {
+func (u *UnitStateProof) Verify(algorithm crypto.Hash, unitState *UnitState, ucv UnicityCertificateValidator) error {
 	if err := u.IsValid(); err != nil {
 		return fmt.Errorf("invalid unit state proof: %w", err)
 	}
-	if unitData == nil {
-		return errors.New("unit data is nil")
+	if unitState == nil {
+		return errors.New("unit state is nil")
 	}
 
 	uc, err := u.getUCv1()
@@ -95,15 +109,15 @@ func (u *UnitStateProof) Verify(algorithm crypto.Hash, unitData *StateUnitData, 
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 
-	hash, err := unitData.Hash(algorithm)
+	unitStateHash, err := unitState.Hash(algorithm)
 	if err != nil {
-		return fmt.Errorf("failed to calculate unit data hash: %w", err)
+		return fmt.Errorf("failed to calculate unit state hash: %w", err)
 	}
-	if !bytes.Equal(u.UnitTreeCert.UnitDataHash, hash) {
-		return errors.New("unit data hash does not match hash in unit tree")
+	if !bytes.Equal(u.UnitTreeCert.UnitStateHash, unitStateHash) {
+		return errors.New("unit state hash does not match unit state hash in unit tree cert")
 	}
 
-	hash, summary, err := u.CalculateStateTreeOutput(algorithm)
+	stateRootHash, summary, err := u.CalculateStateTreeOutput(algorithm)
 	if err != nil {
 		return fmt.Errorf("failed to calculate state tree output: %w", err)
 	}
@@ -111,10 +125,9 @@ func (u *UnitStateProof) Verify(algorithm crypto.Hash, unitData *StateUnitData, 
 	if !bytes.Equal(util.Uint64ToBytes(summary), ir.SummaryValue) {
 		return fmt.Errorf("invalid summary value: expected %X, got %X", ir.SummaryValue, util.Uint64ToBytes(summary))
 	}
-	if !bytes.Equal(hash, ir.Hash) {
-		return fmt.Errorf("invalid state root hash: expected %X, got %X", ir.Hash, hash)
+	if !bytes.Equal(stateRootHash, ir.Hash) {
+		return fmt.Errorf("invalid state root hash: expected %X, got %X", ir.Hash, stateRootHash)
 	}
-
 	return nil
 }
 
@@ -124,12 +137,12 @@ func (u *UnitStateProof) CalculateStateTreeOutput(algorithm crypto.Hash) ([]byte
 	if u.UnitTreeCert.TransactionRecordHash == nil {
 		z, err = abhash.HashValues(algorithm,
 			u.UnitLedgerHash,
-			u.UnitTreeCert.UnitDataHash,
+			u.UnitTreeCert.UnitStateHash,
 		)
 	} else {
 		z, err = abhash.HashValues(algorithm, u.UnitLedgerHash, u.UnitTreeCert.TransactionRecordHash)
 		if err == nil {
-			z, err = abhash.HashValues(algorithm, z, u.UnitTreeCert.UnitDataHash)
+			z, err = abhash.HashValues(algorithm, z, u.UnitTreeCert.UnitStateHash)
 		}
 	}
 	if err != nil {
@@ -162,23 +175,25 @@ func (u *UnitStateProof) CalculateStateTreeOutput(algorithm crypto.Hash) ([]byte
 	return h, v, nil
 }
 
-func (up *UnitDataAndProof) UnmarshalUnitData(v any) error {
-	if up.UnitData == nil {
-		return fmt.Errorf("unit data is nil")
+func (up *UnitStateWithProof) UnmarshalUnitData(v any) error {
+	if up.State == nil {
+		return fmt.Errorf("unit state is nil")
 	}
-	return up.UnitData.UnmarshalData(v)
+	return up.State.UnmarshalData(v)
 }
 
-func (sd *StateUnitData) UnmarshalData(v any) error {
+func (sd *UnitState) UnmarshalData(v any) error {
 	if sd.Data == nil {
 		return fmt.Errorf("state unit data is nil")
 	}
 	return Cbor.Unmarshal(sd.Data, v)
 }
 
-func (sd *StateUnitData) Hash(hashAlgo crypto.Hash) ([]byte, error) {
+func (sd *UnitState) Hash(hashAlgo crypto.Hash) ([]byte, error) {
 	hasher := abhash.New(hashAlgo.New())
 	hasher.WriteRaw(sd.Data)
+	hasher.Write(sd.DeletionRound)
+	hasher.WriteRaw(sd.StateLockTx)
 	return hasher.Sum()
 }
 
