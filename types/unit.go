@@ -7,6 +7,7 @@ import (
 type (
 	// UnitData is a generic data type for the unit state.
 	UnitData interface {
+		Versioned
 		Write(hasher abhash.Hasher)
 		SummaryValueInput() uint64
 		Copy() UnitData

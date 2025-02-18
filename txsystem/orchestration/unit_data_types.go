@@ -9,8 +9,9 @@ var _ types.UnitData = (*VarData)(nil)
 
 // VarData Validator Assignment Record Data
 type VarData struct {
-	_           struct{} `cbor:",toarray"`
-	EpochNumber uint64   // epoch number from the validator assignment record
+	_           struct{}        `cbor:",toarray"`
+	Version     types.ABVersion `json:"version"`
+	EpochNumber uint64          // epoch number from the validator assignment record
 }
 
 func (b *VarData) Write(hasher abhash.Hasher) {
@@ -29,4 +30,27 @@ func (b *VarData) Copy() types.UnitData {
 
 func (b *VarData) Owner() []byte {
 	return nil
+}
+
+func (b *VarData) GetVersion() types.ABVersion {
+	if b != nil && b.Version != 0 {
+		return b.Version
+	}
+	return 1
+}
+
+func (b *VarData) MarshalCBOR() ([]byte, error) {
+	type alias VarData
+	if b.Version == 0 {
+		b.Version = b.GetVersion()
+	}
+	return types.Cbor.Marshal((*alias)(b))
+}
+
+func (b *VarData) UnmarshalCBOR(data []byte) error {
+	type alias VarData
+	if err := types.Cbor.Unmarshal(data, (*alias)(b)); err != nil {
+		return err
+	}
+	return types.EnsureVersion(b, b.Version, 1)
 }
