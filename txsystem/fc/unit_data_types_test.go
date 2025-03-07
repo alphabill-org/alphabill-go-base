@@ -11,6 +11,7 @@ import (
 
 func TestFCR_HashIsCalculatedCorrectly(t *testing.T) {
 	fcr := &FeeCreditRecord{
+		Version:        1,
 		Balance:        1,
 		OwnerPredicate: []byte{1, 2, 3},
 		Counter:        10,
@@ -45,4 +46,21 @@ func TestFCR_SummaryValueIsZero(t *testing.T) {
 		MinLifetime: 2,
 	}
 	require.Equal(t, uint64(0), fcr.SummaryValueInput())
+}
+
+func Test_CBOR(t *testing.T) {
+	unitData := &FeeCreditRecord{
+		Version:        1,
+		Balance:        42,
+		MinLifetime:    100,
+		OwnerPredicate: []byte{0x01},
+		Locked:         0,
+		Counter:        42,
+	}
+	newUnitData := &FeeCreditRecord{}
+
+	unitDataBytes, err := types.Cbor.Marshal(unitData)
+	require.NoError(t, err)
+	require.NoError(t, types.Cbor.Unmarshal(unitDataBytes, newUnitData))
+	require.Equal(t, unitData, newUnitData)
 }
