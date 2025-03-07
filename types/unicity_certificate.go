@@ -119,6 +119,14 @@ func (x *UnicityCertificate) GetSummaryValue() []byte {
 	return nil
 }
 
+func (x *UnicityCertificate) GetPartitionID() PartitionID {
+	return x.UnicityTreeCertificate.Partition
+}
+
+func (x *UnicityCertificate) GetShardID() ShardID {
+	return x.ShardTreeCertificate.Shard
+}
+
 // CheckNonEquivocatingCertificates checks if provided certificates are equivocating
 // NB! order is important, also it is assumed that validity of both UCs is checked before
 // The algorithm is based on Yellowpaper: "Algorithm 6 Checking two UC-s for equivocation"
@@ -126,9 +134,14 @@ func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 	if newUC == nil {
 		return ErrUCIsNil
 	}
+	if prevUC == nil && newUC.IsInitial() {
+		// newUC is the first UC, prevUC does not exist, nothing to check
+		return nil
+	}
 	if prevUC == nil {
 		return ErrLastUCIsNil
 	}
+
 	// verify order, check both partition round and root round
 	if newUC.GetRootRoundNumber() < prevUC.GetRootRoundNumber() {
 		return fmt.Errorf("new certificate is from older root round %v than previous certificate %v",
@@ -170,10 +183,10 @@ func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 		}
 	}
 	// 6. uc.IR.h′ = uc'.IR.h and uc.IR.h = uc'.IR.h -> previous state hash is equal and new state is not equal,
-	// then new block must be empty
+	// then new block must not be empty
 	if bytes.Equal(newUC.InputRecord.PreviousHash, prevUC.InputRecord.Hash) &&
 		!bytes.Equal(newUC.InputRecord.Hash, newUC.InputRecord.PreviousHash) {
-		// then new block must be empty
+		// then new block must not be empty
 		if len(newUC.InputRecord.BlockHash) == 0 {
 			return fmt.Errorf("new UC extends state hash, new state hash changes, but block is empty")
 		}
@@ -186,7 +199,7 @@ func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 }
 
 func (x *UnicityCertificate) IsSuccessor(prevUC *UnicityCertificate) bool {
-	return bytes.Equal(x.GetPreviousStateHash(), prevUC.GetStateHash())
+	return prevUC == nil || bytes.Equal(x.GetPreviousStateHash(), prevUC.GetStateHash())
 }
 
 func (x *UnicityCertificate) IsDuplicate(prevUC *UnicityCertificate) bool {
@@ -197,9 +210,17 @@ func (x *UnicityCertificate) IsRepeat(prevUC *UnicityCertificate) (bool, error) 
 	return isRepeat(prevUC, x)
 }
 
+func (x *UnicityCertificate) IsInitial() (bool) {
+	// IR.Hash is nil before shard validators agree on genesis state hash
+	return x.InputRecord.Hash == nil
+}
+
 // isRepeat - check if newUC is a repeat of previous UC.
 // Everything else is the same except root round number may be bigger
 func isRepeat(prevUC, newUC *UnicityCertificate) (bool, error) {
+	if prevUC == nil {
+		return false, nil
+	}
 	eq, err := EqualIR(prevUC.InputRecord, newUC.InputRecord)
 	if err != nil {
 		return false, err

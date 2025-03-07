@@ -75,11 +75,13 @@ func (x *InputRecord) IsValid() error {
 	if x.Version != 1 {
 		return ErrInvalidVersion(x)
 	}
-	if x.SummaryValue == nil {
-		return ErrSummaryValueIsNil
-	}
-	if x.Timestamp == 0 {
-		return errors.New("timestamp is unassigned")
+	if x.RoundNumber != 0 {
+		if x.SummaryValue == nil {
+			return ErrSummaryValueIsNil
+		}
+		if x.Timestamp == 0 {
+			return errors.New("timestamp is unassigned")
+		}
 	}
 	sameSH := bytes.Equal(x.PreviousHash, x.Hash)
 	nilBlockHash := len(x.BlockHash) == 0

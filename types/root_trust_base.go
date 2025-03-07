@@ -11,11 +11,11 @@ import (
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
-	"github.com/alphabill-org/alphabill-go-base/util"
 )
 
 type (
 	RootTrustBase interface {
+		GetNetworkID() NetworkID
 		VerifyQuorumSignatures(data []byte, signatures map[string]hex.Bytes) (error, []error)
 		VerifySignature(data []byte, sig []byte, nodeID string) (uint64, error)
 		GetQuorumThreshold() uint64
@@ -26,6 +26,7 @@ type (
 	RootTrustBaseV1 struct {
 		_                 struct{}             `cbor:",toarray"`
 		Version           ABVersion            `json:"version"`
+		NetworkID         NetworkID            `json:"networkId"`
 		Epoch             uint64               `json:"epoch"`             // current epoch number
 		EpochStartRound   uint64               `json:"epochStartRound"`   // root chain round number when the epoch begins
 		RootNodes         []*NodeInfo          `json:"rootNodes"`         // list of all root nodes for the current epoch
@@ -55,12 +56,9 @@ type (
 )
 
 // NewTrustBaseGenesis creates new unsigned root trust base with default genesis parameters.
-func NewTrustBaseGenesis(rootNodes []*NodeInfo, unicityTreeRootHash []byte, opts ...Option) (*RootTrustBaseV1, error) {
+func NewTrustBaseGenesis(networkID NetworkID, rootNodes []*NodeInfo, opts ...Option) (*RootTrustBaseV1, error) {
 	if len(rootNodes) == 0 {
 		return nil, errors.New("nodes list is empty")
-	}
-	if len(unicityTreeRootHash) == 0 {
-		return nil, errors.New("unicity tree root hash is empty")
 	}
 
 	// init config
@@ -94,24 +92,16 @@ func NewTrustBaseGenesis(rootNodes []*NodeInfo, unicityTreeRootHash []byte, opts
 
 	return &RootTrustBaseV1{
 		Version:           1,
+		NetworkID:         networkID,
 		Epoch:             1,
 		EpochStartRound:   1,
 		RootNodes:         rootNodes,
 		QuorumThreshold:   c.quorumThreshold,
-		StateHash:         unicityTreeRootHash,
+		StateHash:         nil,
 		ChangeRecordHash:  nil,
 		PreviousEntryHash: nil,
 		Signatures:        make(map[string]hex.Bytes),
 	}, nil
-}
-
-// NewTrustBaseFromFile loads trust base from file and caches verifiers.
-func NewTrustBaseFromFile(trustBaseFile string) (*RootTrustBaseV1, error) {
-	trustBase, err := util.ReadJsonFile(trustBaseFile, &RootTrustBaseV1{})
-	if err != nil {
-		return nil, fmt.Errorf("loading root trust base file %s: %w", trustBaseFile, err)
-	}
-	return trustBase, nil
 }
 
 // WithQuorumThreshold overrides the default 2/3+1 quorum threshold.
@@ -243,6 +233,10 @@ func (r *RootTrustBaseV1) GetVersion() ABVersion {
 		return 1
 	}
 	return r.Version
+}
+
+func (r *RootTrustBaseV1) GetNetworkID() NetworkID {
+	return r.NetworkID
 }
 
 func (r *RootTrustBaseV1) MarshalCBOR() ([]byte, error) {
