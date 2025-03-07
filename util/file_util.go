@@ -30,7 +30,7 @@ func ReadJsonFile[T any](path string, res *T) (*T, error) {
 	return res, nil
 }
 
-func WriteJsonFile[T any](path string, obj *T) error {
+func WriteJsonFile[T any](path string, obj T) error {
 	b, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
 		return err

@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
@@ -27,19 +26,26 @@ func (std *PartitionType) AddToHasher(h abhash.Hasher) {
 }
 
 type PartitionDescriptionRecord struct {
-	_                struct{}        `cbor:",toarray"`
-	Version          ABVersion       `json:"version"`
-	NetworkID        NetworkID       `json:"networkId"`
-	PartitionID      PartitionID     `json:"partitionId"`
-	PartitionTypeID  PartitionTypeID `json:"partitionTypeId"`
-	PartitionType    *PartitionType  `json:"partitionType,omitempty"` // non-nil only if PartitionTypeID == 0
-	TypeIDLen        uint32          `json:"typeIdLength"`
-	UnitIDLen        uint32          `json:"unitIdLength"`
-	Shards           ShardingScheme  `json:"shardingScheme"`
-	SummaryTrustBase hex.Bytes       `json:"summaryTrustBase"`
-	T2Timeout        time.Duration   `json:"t2timeout"`
-	FeeCreditBill    *FeeCreditBill  `json:"feeCreditBill"`
+	_                struct{}         `cbor:",toarray"`
+	Version          ABVersion        `json:"version"`
+	NetworkID        NetworkID        `json:"networkId"`
+	PartitionID      PartitionID      `json:"partitionId"`
+	ShardID          ShardID          `json:"shardId"`
+
+	PartitionTypeID  PartitionTypeID  `json:"partitionTypeId"`
+	PartitionType    *PartitionType   `json:"partitionType,omitempty"` // non-nil only if PartitionTypeID == 0
+	TypeIDLen        uint32           `json:"typeIdLength"`
+	UnitIDLen        uint32           `json:"unitIdLength"`
+
+	SummaryTrustBase hex.Bytes        `json:"summaryTrustBase"`
+	T2Timeout        time.Duration    `json:"t2timeout"`
+	FeeCreditBill    *FeeCreditBill   `json:"feeCreditBill"`
 	//todo: Transaction cost function
+	PartitionParams  map[string]string `json:"partitionParams,omitempty"`
+
+	ShardEpoch       uint64            `json:"shardEpoch"`
+	RootRound        uint64            `json:"rootRound"` // Activation root round
+	Validators       []*NodeInfo       `json:"validators"`
 }
 
 type FeeCreditBill struct {
@@ -58,18 +64,17 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if pdr.NetworkID == 0 {
 		return fmt.Errorf("invalid network identifier: %d", pdr.NetworkID)
 	}
-	// we currently do not support custom System Type Descriptors so allow
-	// only non-zero System IDs
 	if pdr.PartitionID == 0 {
 		return fmt.Errorf("invalid partition identifier: %s", pdr.PartitionID)
+	}
+	// we currently do not support custom partition types, so allow
+	// only non-zero PartitionTypeIDs
+	if pdr.PartitionTypeID == 0 {
+		return fmt.Errorf("invalid partition type identifier: %s", pdr.PartitionTypeID)
 	}
 	if pdr.PartitionType != nil {
 		return errors.New("custom SystemDescriptor is not supported")
 	}
-	if n := len(pdr.Shards); n > 0 {
-		return fmt.Errorf("currently only single shard partitions are supported, got sharding scheme with %d shards", n)
-	}
-
 	if pdr.TypeIDLen > 32 {
 		return fmt.Errorf("type id length can be up to 32 bits, got %d", pdr.TypeIDLen)
 	}
@@ -83,11 +88,47 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if pdr.UnitIDLen%8 != 0 {
 		return fmt.Errorf("unit id length must be in full bytes, got %d bytes and %d bits", pdr.UnitIDLen/8, pdr.UnitIDLen%8)
 	}
+	if pdr.UnitIDLen < uint32(pdr.ShardID.Length()) {
+		return fmt.Errorf("partition has %d bit unit IDs but shard ID is %d bits", pdr.UnitIDLen, pdr.ShardID.Length())
+	}
 
 	if pdr.T2Timeout < 800*time.Millisecond || pdr.T2Timeout > 10*time.Second {
 		return fmt.Errorf("t2 timeout value out of allowed range: %s", pdr.T2Timeout)
 	}
 
+	var nodeIDs = make(map[string]struct{})
+	for i, v := range pdr.Validators {
+		if err := v.IsValid(); err != nil {
+			return fmt.Errorf("invalid validator at idx %d: %w", i, err)
+		}
+		if _, f := nodeIDs[v.NodeID]; f {
+			return fmt.Errorf("duplicate node id: %v", v.NodeID)
+		}
+		nodeIDs[v.NodeID] = struct{}{}
+	}
+
+	return nil
+}
+
+// Verify verifies validator info and that it extends the previous shard conf if provided.
+func (pdr *PartitionDescriptionRecord) Verify(prev *PartitionDescriptionRecord) error {
+	if prev != nil {
+		if pdr.NetworkID != prev.NetworkID {
+			return fmt.Errorf("invalid network id, provided %d previous %d", pdr.NetworkID, prev.NetworkID)
+		}
+		if pdr.PartitionID != prev.PartitionID {
+			return fmt.Errorf("invalid partition id, provided %d previous %d", pdr.PartitionID, prev.PartitionID)
+		}
+		if !pdr.ShardID.Equal(prev.ShardID) {
+			return fmt.Errorf("invalid shard id, provided \"0x%x\" previous \"0x%x\"", pdr.ShardID.Bytes(), prev.ShardID.Bytes())
+		}
+		if pdr.ShardEpoch != prev.ShardEpoch+1 {
+			return fmt.Errorf("invalid epoch number, provided %d previous %d", pdr.ShardEpoch, prev.ShardEpoch)
+		}
+		if pdr.RootRound <= prev.RootRound {
+			return fmt.Errorf("invalid root round number, provided %d previous %d", pdr.RootRound, prev.RootRound)
+		}
+	}
 	return nil
 }
 
@@ -103,25 +144,6 @@ func (pdr *PartitionDescriptionRecord) GetNetworkID() NetworkID {
 
 func (pdr *PartitionDescriptionRecord) GetPartitionID() PartitionID {
 	return pdr.PartitionID
-}
-
-/*
-IsValidShard checks if the argument is a valid shard ID in the Partition.
-*/
-func (pdr *PartitionDescriptionRecord) IsValidShard(id ShardID) error {
-	if len(pdr.Shards) == 0 && id.Length() != 0 {
-		return errors.New("only empty shard ID is valid in a single-shard sharding scheme")
-	}
-	if len(pdr.Shards) != 0 && id.Length() == 0 {
-		return errors.New("empty shard ID is not valid in multi-shard sharding scheme")
-	}
-	if pdr.UnitIDLen < uint32(id.Length()) {
-		return fmt.Errorf("partition has %d bit unit IDs but shard ID is %d bits", pdr.UnitIDLen, id.Length())
-	}
-	if id.Length() != 0 && !slices.ContainsFunc(pdr.Shards, func(x ShardID) bool { return id.Equal(x) }) {
-		return fmt.Errorf("shard ID %s doesn't belong into the sharding scheme", id)
-	}
-	return nil
 }
 
 /*
