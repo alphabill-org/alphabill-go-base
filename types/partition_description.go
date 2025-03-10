@@ -43,8 +43,8 @@ type PartitionDescriptionRecord struct {
 	//todo: Transaction cost function
 	PartitionParams  map[string]string `json:"partitionParams,omitempty"`
 
-	ShardEpoch       uint64            `json:"shardEpoch"`
-	RootRound        uint64            `json:"rootRound"` // Activation root round
+	Epoch            uint64            `json:"epoch"`
+	EpochStart       uint64            `json:"epochStart"` // Root round when this epoch is activated
 	Validators       []*NodeInfo       `json:"validators"`
 }
 
@@ -122,11 +122,11 @@ func (pdr *PartitionDescriptionRecord) Verify(prev *PartitionDescriptionRecord) 
 		if !pdr.ShardID.Equal(prev.ShardID) {
 			return fmt.Errorf("invalid shard id, provided \"0x%x\" previous \"0x%x\"", pdr.ShardID.Bytes(), prev.ShardID.Bytes())
 		}
-		if pdr.ShardEpoch != prev.ShardEpoch+1 {
-			return fmt.Errorf("invalid epoch number, provided %d previous %d", pdr.ShardEpoch, prev.ShardEpoch)
+		if pdr.Epoch != prev.Epoch+1 {
+			return fmt.Errorf("invalid epoch, provided %d previous %d", pdr.Epoch, prev.Epoch)
 		}
-		if pdr.RootRound <= prev.RootRound {
-			return fmt.Errorf("invalid root round number, provided %d previous %d", pdr.RootRound, prev.RootRound)
+		if pdr.EpochStart <= prev.EpochStart {
+			return fmt.Errorf("invalid epoch start, provided %d previous %d", pdr.EpochStart, prev.EpochStart)
 		}
 	}
 	return nil
