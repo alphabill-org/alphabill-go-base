@@ -17,6 +17,7 @@ var ir = &InputRecord{
 	Hash:            []byte{0, 0, 2},
 	BlockHash:       []byte{0, 0, 3},
 	SummaryValue:    []byte{0, 0, 4},
+	ETHash:          []byte{0, 0, 5},
 	RoundNumber:     1,
 	Epoch:           0,
 	SumOfEarnedFees: 20,
@@ -118,14 +119,15 @@ func TestInputRecord_AddToHasher(t *testing.T) {
 		Epoch:           0,
 		Timestamp:       1731504540,
 		SumOfEarnedFees: 20,
+		ETHash:          []byte{0, 0, 5},
 	}
 	hasher := sha256.New()
 	abhasher := abhash.New(hasher)
 	ir.AddToHasher(abhasher)
 	hash := hasher.Sum(nil)
 
-	expectedHash := []byte{0xbc, 0xad, 0x41, 0x5d, 0xbc, 0xb8, 0x40, 0x44, 0xde, 0xc0, 0xa, 0x45, 0x76, 0xf0, 0x16,
-		0x52, 0xdf, 0xa1, 0xad, 0x28, 0x1a, 0xb2, 0xce, 0xe4, 0xd7, 0x20, 0x0, 0x2e, 0x68, 0x3, 0xa4, 0x79}
+	expectedHash := []byte{0x65, 0x33, 0x67, 0xb2, 0xf2, 0xff, 0x9d, 0xa5, 0x2, 0x86, 0x2, 0x65, 0x46, 0xf6, 0x62,
+		0x77, 0x89, 0x83, 0x10, 0x63, 0x60, 0x6b, 0x23, 0x60, 0xf2, 0x16, 0x61, 0x5a, 0x60, 0x16, 0x1, 0xbf}
 	require.Equal(t, expectedHash, hash)
 }
 
@@ -305,9 +307,10 @@ func TestStringer(t *testing.T) {
 		PreviousHash:    []byte{1, 1, 1},
 		Hash:            []byte{2, 2, 2},
 		BlockHash:       []byte{3, 3, 3},
-		SummaryValue:    []byte{4, 4, 4},
+		ETHash:          []byte{4, 4, 4},
+		SummaryValue:    []byte{5, 5, 5},
 		RoundNumber:     2,
 		SumOfEarnedFees: 33,
 	}
-	require.Equal(t, "H: 020202 H': 010101 Bh: 030303 round: 2 epoch: 0 fees: 33 summary: 040404", testIR.String())
+	require.Equal(t, "H: 020202 H': 010101 Bh: 030303 round: 2 epoch: 0 fees: 33 ETh: 040404 summary: 050505", testIR.String())
 }

@@ -112,6 +112,13 @@ func (x *UnicityCertificate) GetFeeSum() uint64 {
 	return 0
 }
 
+func (x *UnicityCertificate) GetETHash() []byte {
+	if x != nil && x.InputRecord != nil {
+		return x.InputRecord.ETHash
+	}
+	return nil
+}
+
 func (x *UnicityCertificate) GetSummaryValue() []byte {
 	if x != nil && x.InputRecord != nil {
 		return x.InputRecord.SummaryValue
