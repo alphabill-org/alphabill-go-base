@@ -18,14 +18,15 @@ var (
 type InputRecord struct {
 	_               struct{}  `cbor:",toarray"`
 	Version         ABVersion `json:"version"`
-	RoundNumber     uint64    `json:"roundNumber"`     // shard's round number
-	Epoch           uint64    `json:"epoch"`           // shard’s epoch number
-	PreviousHash    hex.Bytes `json:"previousHash"`    // previously certified state hash
-	Hash            hex.Bytes `json:"hash"`            // state hash to be certified
-	SummaryValue    hex.Bytes `json:"summaryValue"`    // summary value to certified
-	Timestamp       uint64    `json:"timestamp"`       // reference time for transaction validation
-	BlockHash       hex.Bytes `json:"blockHash"`       // hash of the block
-	SumOfEarnedFees uint64    `json:"sumOfEarnedFees"` // sum of the actual fees over all transaction records in the block
+	RoundNumber     uint64    `json:"roundNumber"`              // shard's round number
+	Epoch           uint64    `json:"epoch"`                    // shard’s epoch number
+	PreviousHash    hex.Bytes `json:"previousHash"`             // previously certified state hash
+	Hash            hex.Bytes `json:"hash"`                     // state hash to be certified
+	SummaryValue    hex.Bytes `json:"summaryValue"`             // summary value to certified
+	Timestamp       uint64    `json:"timestamp"`                // reference time for transaction validation
+	BlockHash       hex.Bytes `json:"blockHash"`                // hash of the block
+	SumOfEarnedFees uint64    `json:"sumOfEarnedFees"`          // sum of the actual fees over all transaction records in the block
+	ETHash          hex.Bytes `json:"executedTransactionsHash"` // hash of executed transactions
 }
 
 func EqualIR(a, b *InputRecord) (bool, error) {
@@ -64,6 +65,9 @@ func AssertEqualIR(a, b *InputRecord) error {
 	}
 	if !bytes.Equal(a.BlockHash, b.BlockHash) {
 		return fmt.Errorf("block hash is different: %X vs %X", a.BlockHash, b.BlockHash)
+	}
+	if !bytes.Equal(a.ETHash, b.ETHash) {
+		return fmt.Errorf("executed transactions hash is different: %X vs %X", a.ETHash, b.ETHash)
 	}
 	return nil
 }
@@ -112,6 +116,7 @@ func (x *InputRecord) NewRepeatIR() *InputRecord {
 		Epoch:           x.Epoch,
 		Timestamp:       x.Timestamp,
 		SumOfEarnedFees: x.SumOfEarnedFees,
+		ETHash:          x.ETHash,
 	}
 }
 
@@ -119,8 +124,8 @@ func (x *InputRecord) String() string {
 	if x == nil {
 		return "input record is nil"
 	}
-	return fmt.Sprintf("H: %X H': %X Bh: %X round: %d epoch: %d fees: %d summary: %X",
-		x.Hash, x.PreviousHash, x.BlockHash, x.RoundNumber, x.Epoch, x.SumOfEarnedFees, x.SummaryValue)
+	return fmt.Sprintf("H: %X H': %X Bh: %X round: %d epoch: %d fees: %d ETh: %X summary: %X",
+		x.Hash, x.PreviousHash, x.BlockHash, x.RoundNumber, x.Epoch, x.SumOfEarnedFees, x.ETHash, x.SummaryValue)
 }
 
 func (x *InputRecord) GetVersion() ABVersion {
