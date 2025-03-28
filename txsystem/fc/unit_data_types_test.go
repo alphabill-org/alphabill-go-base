@@ -16,7 +16,6 @@ func TestFCR_HashIsCalculatedCorrectly(t *testing.T) {
 		OwnerPredicate: []byte{1, 2, 3},
 		Counter:        10,
 		MinLifetime:    2,
-		Locked:         3,
 	}
 	// calculate actual hash
 	hasher := abhash.NewSha256()
@@ -54,7 +53,6 @@ func Test_CBOR(t *testing.T) {
 		Balance:        42,
 		MinLifetime:    100,
 		OwnerPredicate: []byte{0x01},
-		Locked:         0,
 		Counter:        42,
 	}
 	newUnitData := &FeeCreditRecord{}
