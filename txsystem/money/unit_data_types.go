@@ -17,7 +17,6 @@ type BillData struct {
 	Version        types.ABVersion `json:"version"`
 	Value          uint64          `json:"value,string"`   // The monetary value of this bill
 	OwnerPredicate hex.Bytes       `json:"ownerPredicate"` // The owner predicate of this bill
-	Locked         uint64          `json:"locked,string"`  // The lock status of this bill (non-zero value means locked)
 	Counter        uint64          `json:"counter,string"` // The transaction counter of this bill
 }
 
@@ -56,13 +55,8 @@ func (b *BillData) Copy() types.UnitData {
 	return &BillData{
 		Value:          b.Value,
 		OwnerPredicate: bytes.Clone(b.OwnerPredicate),
-		Locked:         b.Locked,
 		Counter:        b.Counter,
 	}
-}
-
-func (b *BillData) IsLocked() bool {
-	return b.Locked != 0
 }
 
 func (b *BillData) Owner() []byte {

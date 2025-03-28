@@ -9,8 +9,6 @@ const (
 	TransactionTypeReclaimFeeCredit  uint16 = 15
 	TransactionTypeAddFeeCredit      uint16 = 16
 	TransactionTypeCloseFeeCredit    uint16 = 17
-	TransactionTypeLockFeeCredit     uint16 = 18
-	TransactionTypeUnlockFeeCredit   uint16 = 19
 )
 
 type (
@@ -45,9 +43,8 @@ type (
 	}
 
 	LockFeeCreditAttributes struct {
-		_          struct{} `cbor:",toarray"`
-		LockStatus uint64   // status of the lock, non-zero value means locked
-		Counter    uint64   // the transaction counter of the target unit
+		_       struct{} `cbor:",toarray"`
+		Counter uint64   // the transaction counter of the target unit
 	}
 
 	UnlockFeeCreditAttributes struct {
@@ -60,5 +57,8 @@ func IsFeeCreditTx(tx *types.TransactionOrder) bool {
 	if tx == nil {
 		return false
 	}
-	return tx.Type >= TransactionTypeTransferFeeCredit && tx.Type <= TransactionTypeUnlockFeeCredit
+	return tx.Type == TransactionTypeTransferFeeCredit ||
+		tx.Type == TransactionTypeReclaimFeeCredit ||
+		tx.Type == TransactionTypeAddFeeCredit ||
+		tx.Type == TransactionTypeCloseFeeCredit
 }

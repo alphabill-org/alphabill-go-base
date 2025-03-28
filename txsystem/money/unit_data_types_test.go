@@ -12,7 +12,6 @@ func Test_CBOR(t *testing.T) {
 		Version:        1,
 		Value:          100,
 		OwnerPredicate: []byte{0x01},
-		Locked:         0,
 		Counter:        42,
 	}
 	newUnitData := &BillData{}

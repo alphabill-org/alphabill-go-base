@@ -11,16 +11,6 @@ type (
 		OwnerProof []byte
 	}
 
-	LockAuthProof struct {
-		_          struct{} `cbor:",toarray"`
-		OwnerProof []byte
-	}
-
-	UnlockAuthProof struct {
-		_          struct{} `cbor:",toarray"`
-		OwnerProof []byte
-	}
-
 	TransferDCAuthProof struct {
 		_          struct{} `cbor:",toarray"`
 		OwnerProof []byte
