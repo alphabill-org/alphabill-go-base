@@ -49,7 +49,6 @@ type NonFungibleTokenData struct {
 	Data                hex.Bytes       `json:"data"`                // the optional data associated with this token
 	OwnerPredicate      hex.Bytes       `json:"ownerPredicate"`      // the owner predicate of this token
 	DataUpdatePredicate hex.Bytes       `json:"dataUpdatePredicate"` // the data update predicate;
-	Locked              uint64          `json:"locked,string"`       // the lock status of this token (non-zero value means locked)
 	Counter             uint64          `json:"counter,string"`      // the transaction counter of this token
 }
 
@@ -59,7 +58,6 @@ type FungibleTokenData struct {
 	TypeID         types.UnitID    `json:"typeId"`             // the type of this token
 	Value          uint64          `json:"value,string"`       // the value of this token
 	OwnerPredicate hex.Bytes       `json:"ownerPredicate"`     // the owner predicate of this token
-	Locked         uint64          `json:"locked,string"`      // the lock status of this token (non-zero value means locked)
 	Counter        uint64          `json:"counter,string"`     // the transaction counter of this token
 	MinLifetime    uint64          `json:"minLifetime,string"` // the earliest round number when this token may be deleted if the balance goes to zero
 }
@@ -180,7 +178,6 @@ func (n *NonFungibleTokenData) Copy() types.UnitData {
 		Data:                bytes.Clone(n.Data),
 		OwnerPredicate:      bytes.Clone(n.OwnerPredicate),
 		DataUpdatePredicate: bytes.Clone(n.DataUpdatePredicate),
-		Locked:              n.Locked,
 		Counter:             n.Counter,
 	}
 }
@@ -210,10 +207,6 @@ func (n *NonFungibleTokenData) UnmarshalCBOR(data []byte) error {
 
 func (n *NonFungibleTokenData) GetCounter() uint64 {
 	return n.Counter
-}
-
-func (n *NonFungibleTokenData) IsLocked() uint64 {
-	return n.Locked
 }
 
 func (n *NonFungibleTokenData) Owner() []byte {
@@ -287,7 +280,6 @@ func (f *FungibleTokenData) Copy() types.UnitData {
 		TypeID:         bytes.Clone(f.TypeID),
 		Value:          f.Value,
 		OwnerPredicate: bytes.Clone(f.OwnerPredicate),
-		Locked:         f.Locked,
 		Counter:        f.Counter,
 		MinLifetime:    f.MinLifetime,
 	}
@@ -295,10 +287,6 @@ func (f *FungibleTokenData) Copy() types.UnitData {
 
 func (f *FungibleTokenData) GetCounter() uint64 {
 	return f.Counter
-}
-
-func (f *FungibleTokenData) IsLocked() uint64 {
-	return f.Locked
 }
 
 func (f *FungibleTokenData) Owner() []byte {

@@ -17,12 +17,10 @@ const (
 	TransactionTypeMintNFT     uint16 = 4
 	TransactionTypeTransferFT  uint16 = 5
 	TransactionTypeTransferNFT uint16 = 6
-	TransactionTypeLockToken   uint16 = 7
-	TransactionTypeUnlockToken uint16 = 8
-	TransactionTypeSplitFT     uint16 = 9
-	TransactionTypeBurnFT      uint16 = 10
-	TransactionTypeJoinFT      uint16 = 11
-	TransactionTypeUpdateNFT   uint16 = 12
+	TransactionTypeSplitFT     uint16 = 7
+	TransactionTypeBurnFT      uint16 = 8
+	TransactionTypeJoinFT      uint16 = 9
+	TransactionTypeUpdateNFT   uint16 = 10
 )
 
 type (
@@ -116,17 +114,6 @@ type (
 	JoinFungibleTokenAttributes struct {
 		_               struct{}               `cbor:",toarray"`
 		BurnTokenProofs []*types.TxRecordProof // the transaction records and proofs that burned the source tokens
-	}
-
-	LockTokenAttributes struct {
-		_          struct{} `cbor:",toarray"`
-		LockStatus uint64   // status of the lock, non-zero value means locked
-		Counter    uint64   // the transaction counter of this token
-	}
-
-	UnlockTokenAttributes struct {
-		_       struct{} `cbor:",toarray"`
-		Counter uint64   // the transaction counter of this token
 	}
 )
 
