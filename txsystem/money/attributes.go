@@ -12,8 +12,6 @@ const (
 	TransactionTypeSplit    uint16 = 2
 	TransactionTypeTransDC  uint16 = 3
 	TransactionTypeSwapDC   uint16 = 4
-	TransactionTypeLock     uint16 = 5
-	TransactionTypeUnlock   uint16 = 6
 )
 
 type (
@@ -41,17 +39,6 @@ type (
 	SwapDCAttributes struct {
 		_                  struct{}               `cbor:",toarray"`
 		DustTransferProofs []*types.TxRecordProof // the dust transfer records and proofs
-	}
-
-	LockAttributes struct {
-		_          struct{} `cbor:",toarray"`
-		LockStatus uint64   // status of the lock, non-zero value means locked
-		Counter    uint64
-	}
-
-	UnlockAttributes struct {
-		_       struct{} `cbor:",toarray"`
-		Counter uint64
 	}
 
 	TargetUnit struct {

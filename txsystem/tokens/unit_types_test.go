@@ -46,7 +46,7 @@ func Test_GenerateUnitID(t *testing.T) {
 	t.Run("invalid tx type", func(t *testing.T) {
 		// only "mint" transactions (ie those creating unit) are allowed
 		txo := validTXO()
-		for _, txt := range []uint16{TransactionTypeTransferFT, TransactionTypeTransferNFT, TransactionTypeLockToken, TransactionTypeUnlockToken, TransactionTypeSplitFT, TransactionTypeBurnFT, TransactionTypeJoinFT, TransactionTypeUpdateNFT} {
+		for _, txt := range []uint16{TransactionTypeTransferFT, TransactionTypeTransferNFT, TransactionTypeSplitFT, TransactionTypeBurnFT, TransactionTypeJoinFT, TransactionTypeUpdateNFT} {
 			txo.Type = txt
 			err := GenerateUnitID(&txo, &pdr)
 			require.EqualError(t, err, fmt.Sprintf(`invalid tx type %#x - unit ID can be generated only for "mint" transactions`, txt))
@@ -101,7 +101,6 @@ func Test_CBOR(t *testing.T) {
 			Data:                []byte{0x03, 0x04},
 			OwnerPredicate:      []byte{0x05, 0x06},
 			DataUpdatePredicate: []byte{0x07, 0x08},
-			Locked:              1,
 			Counter:             42,
 		},
 		&FungibleTokenData{
@@ -109,7 +108,6 @@ func Test_CBOR(t *testing.T) {
 			TypeID:         []byte{0x01, 0x02},
 			Value:          1000,
 			OwnerPredicate: []byte{0x03, 0x04},
-			Locked:         1,
 			Counter:        42,
 			MinLifetime:    100,
 		},
