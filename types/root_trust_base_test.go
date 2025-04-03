@@ -2,12 +2,11 @@ package types
 
 import (
 	"fmt"
-	"path/filepath"
 	"strconv"
 	"testing"
 
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
-	"github.com/alphabill-org/alphabill-go-base/util"
+	"github.com/alphabill-org/alphabill-go-base/types/hex"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,16 +52,6 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 			wantErrStr: "nodes list is empty",
 		},
 		{
-			name: "empty root hash",
-			args: args{
-				nodes: []*NodeInfo{
-					&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1},
-				},
-				unicityTreeRootHash: nil,
-			},
-			wantErrStr: "unicity tree root hash is empty",
-		},
-		{
 			name: "default settings ok",
 			args: args{
 				nodes: []*NodeInfo{
@@ -78,7 +67,7 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 				require.EqualValues(t, 1, tb.EpochStartRound)
 				require.Len(t, tb.RootNodes, 3)
 				require.EqualValues(t, 3, tb.QuorumThreshold)
-				require.EqualValues(t, []byte{1}, tb.StateHash)
+				require.EqualValues(t, hex.Bytes(nil), tb.StateHash)
 				require.Nil(t, tb.ChangeRecordHash)
 				require.Nil(t, tb.PreviousEntryHash)
 				require.Empty(t, tb.Signatures)
@@ -188,7 +177,7 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tb, err := NewTrustBaseGenesis(tt.args.nodes, tt.args.unicityTreeRootHash, tt.args.opts...)
+			tb, err := NewTrustBaseGenesis(NetworkMainNet, tt.args.nodes, tt.args.opts...)
 			if tt.wantErrStr != "" {
 				require.ErrorContains(t, err, tt.wantErrStr)
 				require.Nil(t, tb)
@@ -203,37 +192,11 @@ func TestNewTrustBaseGenesis(t *testing.T) {
 	}
 }
 
-func TestNewTrustBaseFromFile(t *testing.T) {
-	keys := genKeys(3)
-
-	// create trust base from genesis
-	tb, err := NewTrustBaseGenesis(
-		[]*NodeInfo{&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1} },
-		[]byte{1},
-	)
-	require.NoError(t, err)
-
-	// save trust base to file
-	trustBaseFile := filepath.Join(t.TempDir(), "root-trust-base.json")
-	err = util.WriteJsonFile(trustBaseFile, tb)
-	require.NoError(t, err)
-
-	// load trust base from file
-	tb, err = NewTrustBaseFromFile(trustBaseFile)
-	require.NoError(t, err)
-
-	// verify that verifiers are cached when loading from file
-	require.Len(t, tb.GetRootNodes(), 1)
-	verifier, err := tb.getRootNode("1").SigVerifier()
-	require.NoError(t, err)
-	require.Equal(t, keys["1"].verifier, verifier)
-}
-
 func TestSignAndVerify(t *testing.T) {
 	keys := genKeys(1)
 	tb, err := NewTrustBaseGenesis(
+		NetworkMainNet,
 		[]*NodeInfo{&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1}},
-		[]byte{1},
 	)
 	require.NoError(t, err)
 
@@ -251,12 +214,12 @@ func TestSignAndVerify(t *testing.T) {
 func Test_RootTrustBaseV1_CBOR(t *testing.T) {
 	keys := genKeys(3)
 	tb, err := NewTrustBaseGenesis(
+		NetworkMainNet,
 		[]*NodeInfo{
 			&NodeInfo{NodeID: "1", SigKey: keys["1"].publicKey, Stake: 1},
 			&NodeInfo{NodeID: "2", SigKey: keys["2"].publicKey, Stake: 1},
 			&NodeInfo{NodeID: "3", SigKey: keys["3"].publicKey, Stake: 1},
 		},
-		[]byte{1},
 	)
 	require.NoError(t, err)
 
@@ -322,7 +285,7 @@ func NewTrustBase(t *testing.T, verifiers ...abcrypto.Verifier) RootTrustBase {
 		require.NoError(t, err)
 		nodes = append(nodes, &NodeInfo{NodeID: "test", SigKey: sigKey, Stake: 1})
 	}
-	tb, err := NewTrustBaseGenesis(nodes, []byte{1})
+	tb, err := NewTrustBaseGenesis(NetworkMainNet, nodes)
 	require.NoError(t, err)
 	return tb
 }
@@ -334,7 +297,7 @@ func NewTrustBaseFromVerifiers(t *testing.T, verifiers map[string]abcrypto.Verif
 		require.NoError(t, err)
 		nodes = append(nodes, &NodeInfo{NodeID: nodeID, SigKey: sigKey, Stake: 1})
 	}
-	tb, err := NewTrustBaseGenesis(nodes, []byte{1})
+	tb, err := NewTrustBaseGenesis(NetworkMainNet, nodes)
 	require.NoError(t, err)
 	return tb
 }

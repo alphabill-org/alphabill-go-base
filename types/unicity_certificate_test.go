@@ -128,7 +128,6 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		PartitionID: 0x0f0f0f0f,
 		TypeIDLen:   8,
 		UnitIDLen:   256,
-		Shards:      ShardingScheme{sid0, sid1},
 	}
 	pdrHash, err := pdr.Hash(crypto.SHA256)
 	require.NoError(t, err)
@@ -157,7 +156,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 	ir1.RoundNumber = 900
 
 	sTree, err := CreateShardTree(
-		pdr.Shards,
+		ShardingScheme{sid0, sid1},
 		[]ShardTreeInput{
 			{Shard: sid0, IR: &ir0, TRHash: trHash0},
 			{Shard: sid1, IR: &ir1, TRHash: trHash1},
@@ -216,7 +215,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 		uc := validUC(t, sid0, &ir0, trHash0)
 		uc.UnicitySeal.Hash = []byte{1, 2, 3}
 		require.EqualError(t, uc.Verify(tb, crypto.SHA256, pdr.PartitionID, pdrHash),
-			"unicity seal hash 010203 does not match with the root hash of the unicity tree D11EB8E155C043A082640326EAC89A24C7845380A44BE66439CF3A99F7B1F0CE")
+			"unicity seal hash 010203 does not match with the root hash of the unicity tree A80EF6A69C526232B9E51693CBB04CA587F9D74FFA6B73CC90F81EBC1ACBE9F8")
 	})
 }
 

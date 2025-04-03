@@ -26,26 +26,26 @@ func (std *PartitionType) AddToHasher(h abhash.Hasher) {
 }
 
 type PartitionDescriptionRecord struct {
-	_                struct{}         `cbor:",toarray"`
-	Version          ABVersion        `json:"version"`
-	NetworkID        NetworkID        `json:"networkId"`
-	PartitionID      PartitionID      `json:"partitionId"`
-	ShardID          ShardID          `json:"shardId"`
+	_           struct{}    `cbor:",toarray"`
+	Version     ABVersion   `json:"version"`
+	NetworkID   NetworkID   `json:"networkId"`
+	PartitionID PartitionID `json:"partitionId"`
+	ShardID     ShardID     `json:"shardId"`
 
-	PartitionTypeID  PartitionTypeID  `json:"partitionTypeId"`
-	PartitionType    *PartitionType   `json:"partitionType,omitempty"` // non-nil only if PartitionTypeID == 0
-	TypeIDLen        uint32           `json:"typeIdLength"`
-	UnitIDLen        uint32           `json:"unitIdLength"`
+	PartitionTypeID PartitionTypeID `json:"partitionTypeId"`
+	PartitionType   *PartitionType  `json:"partitionType,omitempty"` // non-nil only if PartitionTypeID == 0
+	TypeIDLen       uint32          `json:"typeIdLength"`
+	UnitIDLen       uint32          `json:"unitIdLength"`
 
-	SummaryTrustBase hex.Bytes        `json:"summaryTrustBase"`
-	T2Timeout        time.Duration    `json:"t2timeout"`
-	FeeCreditBill    *FeeCreditBill   `json:"feeCreditBill"`
+	SummaryTrustBase hex.Bytes      `json:"summaryTrustBase"`
+	T2Timeout        time.Duration  `json:"t2timeout"`
+	FeeCreditBill    *FeeCreditBill `json:"feeCreditBill"`
 	//todo: Transaction cost function
-	PartitionParams  map[string]string `json:"partitionParams,omitempty"`
+	PartitionParams map[string]string `json:"partitionParams,omitempty"`
 
-	Epoch            uint64            `json:"epoch"`
-	EpochStart       uint64            `json:"epochStart"` // Root round when this epoch is activated
-	Validators       []*NodeInfo       `json:"validators"`
+	Epoch      uint64      `json:"epoch"`
+	EpochStart uint64      `json:"epochStart"` // Root round when this epoch is activated
+	Validators []*NodeInfo `json:"validators"`
 }
 
 type FeeCreditBill struct {
@@ -70,7 +70,7 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	// we currently do not support custom partition types, so allow
 	// only non-zero PartitionTypeIDs
 	if pdr.PartitionTypeID == 0 {
-		return fmt.Errorf("invalid partition type identifier: %s", pdr.PartitionTypeID)
+		return fmt.Errorf("invalid partition type identifier: %d", pdr.PartitionTypeID)
 	}
 	if pdr.PartitionType != nil {
 		return errors.New("custom SystemDescriptor is not supported")

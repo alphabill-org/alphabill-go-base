@@ -40,12 +40,13 @@ func Test_PartitionDescriptionRecord_Hash(t *testing.T) {
 func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 	validPDR := func() *PartitionDescriptionRecord {
 		return &PartitionDescriptionRecord{
-			Version:     1,
-			NetworkID:   5,
-			PartitionID: 1,
-			TypeIDLen:   8,
-			UnitIDLen:   256,
-			T2Timeout:   2500 * time.Millisecond,
+			Version:         1,
+			NetworkID:       5,
+			PartitionID:     1,
+			PartitionTypeID: 1,
+			TypeIDLen:       8,
+			UnitIDLen:       256,
+			T2Timeout:       2500 * time.Millisecond,
 		}
 	}
 
@@ -109,68 +110,6 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 		require.EqualError(t, pdr.IsValid(), "t2 timeout value out of allowed range: 2m0s")
 	})
 }
-
-func Test_PartitionDescriptionRecord_IsValidShard(t *testing.T) {
-	t.Run("empty scheme", func(t *testing.T) {
-		pdr := &PartitionDescriptionRecord{
-			Version:     1,
-			PartitionID: 1,
-			TypeIDLen:   8,
-			UnitIDLen:   256,
-			T2Timeout:   2500 * time.Millisecond,
-			Shards:      nil,
-		}
-
-		// empty sharding scheme - only empty id is valid
-		err := pdr.IsValidShard(ShardID{bits: []byte{0}, length: 1})
-		require.EqualError(t, err, `only empty shard ID is valid in a single-shard sharding scheme`)
-
-		require.NoError(t, pdr.IsValidShard(ShardID{}))
-	})
-
-	t.Run("non empty scheme", func(t *testing.T) {
-		pdr := &PartitionDescriptionRecord{
-			Version:     1,
-			PartitionID: 1,
-			TypeIDLen:   8,
-			UnitIDLen:   256,
-			T2Timeout:   2500 * time.Millisecond,
-			Shards: ShardingScheme{
-				ShardID{bits: []byte{0}, length: 1},
-				ShardID{bits: []byte{1}, length: 1},
-			},
-		}
-
-		// empty id is invalid in multi-shard scheme
-		err := pdr.IsValidShard(ShardID{})
-		require.EqualError(t, err, `empty shard ID is not valid in multi-shard sharding scheme`)
-
-		// single bit IDs "0" and "1" must be valid
-		require.NoError(t, pdr.IsValidShard(ShardID{bits: []byte{0}, length: 1}))
-		require.NoError(t, pdr.IsValidShard(ShardID{bits: []byte{1}, length: 1}))
-
-		// id which is not in the scheme (two bits)
-		err = pdr.IsValidShard(ShardID{bits: []byte{0}, length: 2})
-		require.EqualError(t, err, `shard ID 00 doesn't belong into the sharding scheme`)
-	})
-
-	t.Run("shard id longer than unit id", func(t *testing.T) {
-		pdr := &PartitionDescriptionRecord{
-			Version:     1,
-			PartitionID: 1,
-			TypeIDLen:   8,
-			UnitIDLen:   8,
-			T2Timeout:   2500 * time.Millisecond,
-			Shards: ShardingScheme{
-				ShardID{bits: []byte{0}, length: 1},
-				ShardID{bits: []byte{1}, length: 1},
-			},
-		}
-		err := pdr.IsValidShard(ShardID{bits: []byte{0, 1}, length: 9})
-		require.EqualError(t, err, `partition has 8 bit unit IDs but shard ID is 9 bits`)
-	})
-}
-
 func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 	t.Run("unit ID length", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{
@@ -198,10 +137,6 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 			TypeIDLen:   8,
 			UnitIDLen:   8,
 			T2Timeout:   2500 * time.Millisecond,
-			Shards: ShardingScheme{
-				ShardID{bits: []byte{0}, length: 1},
-				ShardID{bits: []byte{1}, length: 1},
-			},
 		}
 		// validator for shard "1"
 		vf := pdr.UnitIDValidator(ShardID{bits: []byte{128}, length: 1})
@@ -216,12 +151,13 @@ func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 
 func Test_PartitionDescriptionRecord_ComposeUnitID(t *testing.T) {
 	pdr := PartitionDescriptionRecord{
-		Version:     1,
-		PartitionID: 1,
-		NetworkID:   5,
-		TypeIDLen:   8,
-		UnitIDLen:   256,
-		T2Timeout:   2500 * time.Millisecond,
+		Version:         1,
+		PartitionID:     1,
+		PartitionTypeID: 1,
+		NetworkID:       5,
+		TypeIDLen:       8,
+		UnitIDLen:       256,
+		T2Timeout:       2500 * time.Millisecond,
 	}
 	require.NoError(t, pdr.IsValid())
 
@@ -252,12 +188,13 @@ func Test_PartitionDescriptionRecord_ComposeUnitID(t *testing.T) {
 
 func Test_PartitionDescriptionRecord_ExtractUnitType(t *testing.T) {
 	pdr := PartitionDescriptionRecord{
-		Version:     1,
-		PartitionID: 1,
-		NetworkID:   5,
-		TypeIDLen:   8,
-		UnitIDLen:   256,
-		T2Timeout:   2500 * time.Millisecond,
+		Version:         1,
+		PartitionID:     1,
+		PartitionTypeID: 1,
+		NetworkID:       5,
+		TypeIDLen:       8,
+		UnitIDLen:       256,
+		T2Timeout:       2500 * time.Millisecond,
 	}
 	require.NoError(t, pdr.IsValid())
 	unitID := bytes.Repeat([]byte{0xFF}, int((pdr.UnitIDLen+pdr.TypeIDLen)/8))
@@ -292,12 +229,13 @@ func Test_PartitionDescriptionRecord_TypeIDRoundtrip(t *testing.T) {
 	// decomposing extended unit ID
 
 	pdrTemplate := PartitionDescriptionRecord{
-		Version:     1,
-		PartitionID: 1,
-		NetworkID:   5,
-		TypeIDLen:   8,
-		UnitIDLen:   64,
-		T2Timeout:   2500 * time.Millisecond,
+		Version:         1,
+		PartitionID:     1,
+		PartitionTypeID: 1,
+		NetworkID:       5,
+		TypeIDLen:       8,
+		UnitIDLen:       64,
+		T2Timeout:       2500 * time.Millisecond,
 	}
 
 	prndSh := func(buf []byte) error {
