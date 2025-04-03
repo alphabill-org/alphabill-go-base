@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -98,6 +99,12 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 		require.EqualError(t, pdr.IsValid(), "unit id length must be in full bytes, got 8 bytes and 1 bits")
 	})
 
+	t.Run("shard id length", func(t *testing.T) {
+		pdr := validPDR()
+		pdr.ShardID = ShardID{length: uint(pdr.UnitIDLen)}
+		require.EqualError(t, pdr.IsValid(), "shard id length 256 must be shorter than unit id length 256")
+	})
+
 	t.Run("T2 timeout", func(t *testing.T) {
 		pdr := validPDR()
 		pdr.T2Timeout = 0
@@ -109,7 +116,120 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 		pdr.T2Timeout = 2 * time.Minute
 		require.EqualError(t, pdr.IsValid(), "t2 timeout value out of allowed range: 2m0s")
 	})
+
+	t.Run("invalid validator", func(t *testing.T) {
+		pdr := validPDR()
+		pdr.Validators = []*NodeInfo{{
+			NodeID: "test",
+			SigKey: []byte{1},
+		}}
+		require.EqualError(t, pdr.IsValid(), "invalid validator at idx 0: signing key is invalid: pubkey must be 33 bytes long, but is 1")
+	})
+
+	t.Run("duplicate validator", func(t *testing.T) {
+		signer, err := abcrypto.NewInMemorySecp256K1Signer()
+		require.NoError(t, err)
+		verifier, err := signer.Verifier()
+		require.NoError(t, err)
+		sigKey, err := verifier.MarshalPublicKey()
+
+		pdr := validPDR()
+		pdr.Validators = []*NodeInfo{{
+			NodeID: "test",
+			SigKey: sigKey,
+		}, {
+			NodeID: "test",
+			SigKey: sigKey,
+		}}
+		require.EqualError(t, pdr.IsValid(), "duplicate validator with node id \"test\"")
+	})
 }
+
+func Test_PartitionDescriptionRecord_Verify(t *testing.T) {
+	validPDR := func() *PartitionDescriptionRecord {
+		return &PartitionDescriptionRecord{
+			Version:         1,
+			NetworkID:       5,
+			PartitionID:     1,
+			PartitionTypeID: 1,
+			TypeIDLen:       8,
+			UnitIDLen:       256,
+			T2Timeout:       2500 * time.Millisecond,
+		}
+	}
+	require.NoError(t, validPDR().IsValid())
+
+	invalidShardID := ShardID{}
+	require.NoError(t, invalidShardID.UnmarshalText([]byte("0x81")))
+
+	var testCases = []struct {
+		name   string
+		prev   *PartitionDescriptionRecord
+		next   *PartitionDescriptionRecord
+		errMsg string
+	}{
+		{
+			name:   "invalid network id",
+			prev:   &PartitionDescriptionRecord{NetworkID: 1},
+			next:   &PartitionDescriptionRecord{NetworkID: 2},
+			errMsg: "invalid network id, provided 2 previous 1",
+		},
+		{
+			name:   "invalid partition id",
+			prev:   &PartitionDescriptionRecord{PartitionID: 1},
+			next:   &PartitionDescriptionRecord{PartitionID: 2},
+			errMsg: "invalid partition id, provided 2 previous 1",
+		},
+		{
+			name:   "invalid shard id",
+			prev:   &PartitionDescriptionRecord{ShardID: ShardID{}},
+			next:   &PartitionDescriptionRecord{ShardID: invalidShardID},
+			errMsg: `invalid shard id, provided "0x81" previous "0x80"`,
+		},
+		{
+			name:   "invalid epoch (next smaller than curr)",
+			prev:   &PartitionDescriptionRecord{Epoch: 1},
+			next:   &PartitionDescriptionRecord{Epoch: 0},
+			errMsg: "invalid epoch, provided 0 previous 1",
+		},
+		{
+			name:   "invalid epoch (next equal to curr)",
+			prev:   &PartitionDescriptionRecord{Epoch: 1},
+			next:   &PartitionDescriptionRecord{Epoch: 1},
+			errMsg: "invalid epoch, provided 1 previous 1",
+		},
+		{
+			name:   "invalid epoch (next greater than curr by more than 1)",
+			prev:   &PartitionDescriptionRecord{Epoch: 1},
+			next:   &PartitionDescriptionRecord{Epoch: 3},
+			errMsg: "invalid epoch, provided 3 previous 1",
+		},
+		{
+			name:   "invalid epoch start (next less than curr)",
+			prev:   &PartitionDescriptionRecord{EpochStart: 1},
+			next:   &PartitionDescriptionRecord{EpochStart: 0, Epoch: 1},
+			errMsg: "invalid epoch start, provided 0 previous 1",
+		},
+		{
+			name:   "invalid epoch start (next equal to curr)",
+			prev:   &PartitionDescriptionRecord{EpochStart: 1},
+			next:   &PartitionDescriptionRecord{EpochStart: 1, Epoch: 1},
+			errMsg: "invalid epoch start, provided 1 previous 1",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.next.Verify(tc.prev)
+			if tc.errMsg != "" {
+				require.ErrorContains(t, err, tc.errMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func Test_PartitionDescriptionRecord_UnitIdValidator(t *testing.T) {
 	t.Run("unit ID length", func(t *testing.T) {
 		pdr := &PartitionDescriptionRecord{

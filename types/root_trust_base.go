@@ -55,7 +55,7 @@ type (
 	}
 )
 
-// NewTrustBaseGenesis creates new unsigned root trust base with default genesis parameters.
+// NewTrustBaseGenesis creates new unsigned root trust base with default parameters.
 func NewTrustBaseGenesis(networkID NetworkID, rootNodes []*NodeInfo, opts ...Option) (*RootTrustBaseV1, error) {
 	if len(rootNodes) == 0 {
 		return nil, errors.New("nodes list is empty")

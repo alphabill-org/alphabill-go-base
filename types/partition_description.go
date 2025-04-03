@@ -73,7 +73,10 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 		return fmt.Errorf("invalid partition type identifier: %d", pdr.PartitionTypeID)
 	}
 	if pdr.PartitionType != nil {
-		return errors.New("custom SystemDescriptor is not supported")
+		return errors.New("custom PartitionType is not supported")
+	}
+	if pdr.UnitIDLen <= uint32(pdr.ShardID.Length()) {
+		return fmt.Errorf("shard id length %d must be shorter than unit id length %d", pdr.ShardID.Length(), pdr.UnitIDLen)
 	}
 	if pdr.TypeIDLen > 32 {
 		return fmt.Errorf("type id length can be up to 32 bits, got %d", pdr.TypeIDLen)
@@ -96,15 +99,15 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 		return fmt.Errorf("t2 timeout value out of allowed range: %s", pdr.T2Timeout)
 	}
 
-	var nodeIDs = make(map[string]struct{})
+	var validatorIDs = make(map[string]struct{})
 	for i, v := range pdr.Validators {
 		if err := v.IsValid(); err != nil {
 			return fmt.Errorf("invalid validator at idx %d: %w", i, err)
 		}
-		if _, f := nodeIDs[v.NodeID]; f {
-			return fmt.Errorf("duplicate node id: %v", v.NodeID)
+		if _, f := validatorIDs[v.NodeID]; f {
+			return fmt.Errorf("duplicate validator with node id %q", v.NodeID)
 		}
-		nodeIDs[v.NodeID] = struct{}{}
+		validatorIDs[v.NodeID] = struct{}{}
 	}
 
 	return nil
