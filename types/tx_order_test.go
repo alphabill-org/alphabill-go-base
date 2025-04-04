@@ -255,3 +255,21 @@ func Test_UnmarshalCBOR(t *testing.T) {
 		require.ErrorContains(t, txo2.UnmarshalCBOR(data), "invalid version (type *types.TransactionOrder), expected 1, got 2")
 	})
 }
+
+func TestAddStateUnlockCommitProof(t *testing.T) {
+	tx := createTransactionOrder(t)
+	tx.AddStateUnlockCommitProof([]byte{255})
+
+	require.Len(t, tx.StateUnlock, 2)
+	require.EqualValues(t, 1, tx.StateUnlock[0])
+	require.EqualValues(t, 255, tx.StateUnlock[1])
+}
+
+func TestAddStateUnlockRollbackProof(t *testing.T) {
+	tx := createTransactionOrder(t)
+	tx.AddStateUnlockRollbackProof([]byte{255})
+
+	require.Len(t, tx.StateUnlock, 2)
+	require.EqualValues(t, 0, tx.StateUnlock[0])
+	require.EqualValues(t, 255, tx.StateUnlock[1])
+}

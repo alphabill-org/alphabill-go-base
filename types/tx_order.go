@@ -9,6 +9,11 @@ import (
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
+const (
+	StateUnlockRollback StateUnlockProofKind = iota
+	StateUnlockExecute
+)
+
 var (
 	ErrTransactionRecordIsNil = errors.New("transaction record is nil")
 	ErrTransactionOrderIsNil  = errors.New("transaction order is nil")
@@ -75,6 +80,8 @@ type (
 		StateUnlock []byte
 		AuthProof   RawCBOR
 	}
+
+	StateUnlockProofKind byte
 )
 
 func (t *TransactionOrder) StateLockProofSigBytes() ([]byte, error) {
@@ -238,6 +245,14 @@ func (t *TransactionOrder) UnmarshalCBOR(data []byte) error {
 		return err
 	}
 	return EnsureVersion(t, t.Version, 1)
+}
+
+func (t *TransactionOrder) AddStateUnlockCommitProof(unlockProof []byte) {
+	t.StateUnlock = append([]byte{byte(StateUnlockExecute)}, unlockProof...)
+}
+
+func (t *TransactionOrder) AddStateUnlockRollbackProof(unlockProof []byte) {
+	t.StateUnlock = append([]byte{byte(StateUnlockRollback)}, unlockProof...)
 }
 
 func (c *ClientMetadata) GetTimeout() uint64 {
