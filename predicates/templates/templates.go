@@ -1,10 +1,10 @@
 package templates
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 
-	"github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/predicates"
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
@@ -49,7 +49,8 @@ func EmptyArgument() []byte {
 }
 
 func NewP2pkh256FromKey(pubKey []byte) predicates.Predicate {
-	return NewP2pkh256FromKeyHash(hash.Sum256(pubKey))
+	pkh := sha256.Sum256(pubKey)
+	return NewP2pkh256FromKeyHash(pkh[:])
 }
 
 func NewP2pkh256FromKeyHash(pubKeyHash []byte) predicates.Predicate {
