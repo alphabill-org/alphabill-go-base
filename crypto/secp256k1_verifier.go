@@ -3,10 +3,10 @@ package crypto
 import (
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 
-	"github.com/alphabill-org/alphabill-go-base/hash"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 )
@@ -43,7 +43,8 @@ func (v *verifierSecp256k1) VerifyBytes(sig []byte, data []byte) error {
 	if v == nil || v.pubKey == nil || sig == nil || data == nil {
 		return ErrInvalidArgument
 	}
-	return v.VerifyHash(sig, hash.Sum256(data))
+	h := sha256.Sum256(data)
+	return v.VerifyHash(sig, h[:])
 }
 
 // VerifyHash verifies the hash against the signature, using the internal public key.
