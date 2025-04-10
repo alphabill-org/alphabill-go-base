@@ -15,7 +15,6 @@ func TestNewUnicityTree(t *testing.T) {
 		{
 			Partition:     1,
 			ShardTreeRoot: []byte{9, 9, 9, 9},
-			PDRHash:       []byte{1, 2, 3, 4},
 		},
 	})
 	require.NoError(t, err)
@@ -29,12 +28,10 @@ func TestGetCertificate_Ok(t *testing.T) {
 		{
 			Partition:     key2,
 			ShardTreeRoot: []byte{2, 2, 2, 2},
-			PDRHash:       []byte{3, 4, 5, 6},
 		},
 		{
 			Partition:     key1,
 			ShardTreeRoot: []byte{1, 1, 1, 1},
-			PDRHash:       []byte{1, 2, 3, 4},
 		},
 	}
 	unicityTree, err := NewUnicityTree(crypto.SHA256, data)
@@ -55,7 +52,7 @@ func TestGetCertificate_Ok(t *testing.T) {
 	root, err := imt.IndexTreeOutput(hashSteps, key1.Bytes(), crypto.SHA256)
 	require.NoError(t, err)
 	require.Equal(t, unicityTree.RootHash(), root)
-	// system id 0 is illegal
+	// PartitionID 0 is not part of UT
 	cert, err = unicityTree.Certificate(PartitionID(0))
 	require.EqualError(t, err, "certificate for partition 00000000 not found")
 	require.Nil(t, cert)
@@ -66,7 +63,6 @@ func TestGetCertificate_InvalidKey(t *testing.T) {
 		{
 			Partition:     0x01020301,
 			ShardTreeRoot: []byte{9, 9, 9, 9},
-			PDRHash:       []byte{1, 2, 3, 4},
 		},
 	})
 	require.NoError(t, err)
@@ -81,7 +77,6 @@ func TestGetCertificate_KeyNotFound(t *testing.T) {
 		{
 			Partition:     0x01020301,
 			ShardTreeRoot: []byte{9, 9, 9, 9},
-			PDRHash:       []byte{1, 2, 3, 4},
 		},
 	})
 	require.NoError(t, err)
