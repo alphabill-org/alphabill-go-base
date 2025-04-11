@@ -17,12 +17,13 @@ type UnicityCertificate struct {
 	Version                ABVersion               `json:"version"`
 	InputRecord            *InputRecord            `json:"inputRecord"`
 	TRHash                 hex.Bytes               `json:"trHash"` // hash of the TechnicalRecord
+	ShardConfHash          hex.Bytes               `json:"shardConfHash"`
 	ShardTreeCertificate   ShardTreeCertificate    `json:"shardTreeCertificate"`
 	UnicityTreeCertificate *UnicityTreeCertificate `json:"unicityTreeCertificate"`
 	UnicitySeal            *UnicitySeal            `json:"unicitySeal"`
 }
 
-func (x *UnicityCertificate) IsValid(partitionID PartitionID, pdrHash []byte) error {
+func (x *UnicityCertificate) IsValid(partitionID PartitionID, shardConfHash []byte) error {
 	if x == nil {
 		return ErrUnicityCertificateIsNil
 	}
@@ -35,34 +36,37 @@ func (x *UnicityCertificate) IsValid(partitionID PartitionID, pdrHash []byte) er
 	if n := len(x.TRHash); n != 32 {
 		return fmt.Errorf("invalid TRHash: expected 32 bytes, got %d bytes", n)
 	}
-	if err := x.UnicityTreeCertificate.IsValid(partitionID, pdrHash); err != nil {
-		return fmt.Errorf("invalid unicity tree certificate: %w", err)
+	if shardConfHash != nil && !bytes.Equal(shardConfHash, x.ShardConfHash) {
+		return fmt.Errorf("invalid shard configuration hash: expected %X, got %X", shardConfHash, x.ShardConfHash)
 	}
-	if err := x.UnicitySeal.IsValid(); err != nil {
-		return fmt.Errorf("invalid unicity seal: %w", err)
+	if err := x.UnicityTreeCertificate.IsValid(partitionID); err != nil {
+		return fmt.Errorf("invalid unicity tree certificate: %w", err)
 	}
 	if err := x.ShardTreeCertificate.IsValid(); err != nil {
 		return fmt.Errorf("invalid shard tree certificate: %w", err)
 	}
+	if err := x.UnicitySeal.IsValid(); err != nil {
+		return fmt.Errorf("invalid unicity seal: %w", err)
+	}
 	return nil
 }
 
-func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, partitionID PartitionID, pdrHash []byte) error {
-	if err := x.IsValid(partitionID, pdrHash); err != nil {
+func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, partitionID PartitionID, shardConfHash []byte) error {
+	if err := x.IsValid(partitionID, shardConfHash); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 
-	strh, err := x.ShardTreeCertificate.ComputeCertificateHash(x.InputRecord, x.TRHash, algorithm)
+	shardTreeRoot, err := x.ShardTreeCertificate.ComputeCertificateHash(x.InputRecord, x.TRHash, x.ShardConfHash, algorithm)
 	if err != nil {
 		return err
 	}
-	treeRoot, err := x.UnicityTreeCertificate.EvalAuthPath(strh, algorithm)
+	unicityTreeRoot, err := x.UnicityTreeCertificate.EvalAuthPath(shardTreeRoot, algorithm)
 	if err != nil {
 		return fmt.Errorf("evaluating unicity tree certificate: %w", err)
 	}
 	rootHash := x.UnicitySeal.Hash
-	if !bytes.Equal(treeRoot, rootHash) {
-		return fmt.Errorf("unicity seal hash %X does not match with the root hash of the unicity tree %X", rootHash, treeRoot)
+	if !bytes.Equal(unicityTreeRoot, rootHash) {
+		return fmt.Errorf("unicity seal hash %X does not match with the root hash of the unicity tree %X", rootHash, unicityTreeRoot)
 	}
 
 	if err := x.UnicitySeal.Verify(tb); err != nil {
@@ -87,6 +91,13 @@ func (x *UnicityCertificate) GetStateHash() []byte {
 func (x *UnicityCertificate) GetPreviousStateHash() []byte {
 	if x != nil && x.InputRecord != nil {
 		return x.InputRecord.PreviousHash
+	}
+	return nil
+}
+
+func (x *UnicityCertificate) GetBlockHash() []byte {
+	if x != nil && x.InputRecord != nil {
+		return x.InputRecord.BlockHash
 	}
 	return nil
 }
@@ -126,6 +137,14 @@ func (x *UnicityCertificate) GetSummaryValue() []byte {
 	return nil
 }
 
+func (x *UnicityCertificate) GetPartitionID() PartitionID {
+	return x.UnicityTreeCertificate.Partition
+}
+
+func (x *UnicityCertificate) GetShardID() ShardID {
+	return x.ShardTreeCertificate.Shard
+}
+
 // CheckNonEquivocatingCertificates checks if provided certificates are equivocating
 // NB! order is important, also it is assumed that validity of both UCs is checked before
 // The algorithm is based on Yellowpaper: "Algorithm 6 Checking two UC-s for equivocation"
@@ -136,6 +155,7 @@ func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 	if prevUC == nil {
 		return ErrLastUCIsNil
 	}
+
 	// verify order, check both partition round and root round
 	if newUC.GetRootRoundNumber() < prevUC.GetRootRoundNumber() {
 		return fmt.Errorf("new certificate is from older root round %v than previous certificate %v",
@@ -177,10 +197,10 @@ func CheckNonEquivocatingCertificates(prevUC, newUC *UnicityCertificate) error {
 		}
 	}
 	// 6. uc.IR.h′ = uc'.IR.h and uc.IR.h = uc'.IR.h -> previous state hash is equal and new state is not equal,
-	// then new block must be empty
+	// then new block must not be empty
 	if bytes.Equal(newUC.InputRecord.PreviousHash, prevUC.InputRecord.Hash) &&
 		!bytes.Equal(newUC.InputRecord.Hash, newUC.InputRecord.PreviousHash) {
-		// then new block must be empty
+		// then new block must not be empty
 		if len(newUC.InputRecord.BlockHash) == 0 {
 			return fmt.Errorf("new UC extends state hash, new state hash changes, but block is empty")
 		}
@@ -204,9 +224,18 @@ func (x *UnicityCertificate) IsRepeat(prevUC *UnicityCertificate) (bool, error) 
 	return isRepeat(prevUC, x)
 }
 
+func (x *UnicityCertificate) IsInitial() (bool) {
+	// Initial UC is issued by root chain for shard round 0,
+	// without any certification requests from shard nodes
+	return x.InputRecord.RoundNumber == 0
+}
+
 // isRepeat - check if newUC is a repeat of previous UC.
 // Everything else is the same except root round number may be bigger
 func isRepeat(prevUC, newUC *UnicityCertificate) (bool, error) {
+	if prevUC == nil {
+		return false, nil
+	}
 	eq, err := EqualIR(prevUC.InputRecord, newUC.InputRecord)
 	if err != nil {
 		return false, err

@@ -27,13 +27,15 @@ Input:
 
 	IR - input record of the shard
 	TRHash - hash of the TechnicalRecord
+	ShardConfHash - hash of the ShardConf
 
 Output: Root hash
 */
-func (cert ShardTreeCertificate) ComputeCertificateHash(IR *InputRecord, TRHash []byte, algo crypto.Hash) ([]byte, error) {
+func (cert ShardTreeCertificate) ComputeCertificateHash(IR *InputRecord, TRHash []byte, shardConfHash []byte, algo crypto.Hash) ([]byte, error) {
 	h := abhash.New(algo.New())
 	h.Write(IR)
 	h.Write(TRHash)
+	h.Write(shardConfHash)
 	rootHash, err := h.Sum()
 	if err != nil {
 		return nil, fmt.Errorf("calculating initial root hash: %w", err)
@@ -72,9 +74,10 @@ func (cert ShardTreeCertificate) ComputeCertificateHash(IR *InputRecord, TRHash 
 ShardTreeInput is source data for leaf node in a shard tree
 */
 type ShardTreeInput struct {
-	Shard  ShardID
-	IR     *InputRecord
-	TRHash []byte // hash of TechnicalRecord
+	Shard         ShardID
+	IR            *InputRecord
+	TRHash        []byte // hash of TechnicalRecord
+	ShardConfHash []byte
 }
 
 /*
@@ -94,6 +97,7 @@ func CreateShardTree(scheme ShardingScheme, states []ShardTreeInput, algo crypto
 		h.Reset()
 		h.Write(v.IR)
 		h.Write(v.TRHash)
+		h.Write(v.ShardConfHash)
 		if tree[v.Shard.Key()], err = h.Sum(); err != nil {
 			return nil, fmt.Errorf("calculating hash for shard %s: %w", v.Shard, err)
 		}
@@ -119,7 +123,7 @@ func CreateShardTree(scheme ShardingScheme, states []ShardTreeInput, algo crypto
 	return tree, nil
 }
 
-type ShardTree map[string][]byte // ShardID.Key -> hash(IR, TRh)
+type ShardTree map[string][]byte // ShardID.Key -> hash(IR, TRh, ShardConfHash)
 
 /*
 generate generates non-leaf nodes of the tree. This may be called only

@@ -1,7 +1,6 @@
 package types
 
 import (
-	"bytes"
 	"crypto"
 	"errors"
 	"fmt"
@@ -21,7 +20,6 @@ type UnicityTreeCertificate struct {
 	_         struct{}    `cbor:",toarray"`
 	Version   ABVersion   `json:"version"`
 	Partition PartitionID `json:"partitionId"`
-	PDRHash   hex.Bytes   `json:"partitionDescriptionHash"`
 	HashSteps []*PathItem `json:"hashSteps"`
 }
 
@@ -29,7 +27,6 @@ type UnicityTreeData struct {
 	_             struct{} `cbor:",toarray"`
 	Partition     PartitionID
 	ShardTreeRoot []byte // root hash of the partition shard tree
-	PDRHash       []byte // PartitionDescriptionRecord hash
 }
 
 type PathItem struct {
@@ -40,14 +37,13 @@ type PathItem struct {
 
 func (t *UnicityTreeData) AddToHasher(hasher abhash.Hasher) {
 	hasher.Write(t.ShardTreeRoot)
-	hasher.Write(t.PDRHash)
 }
 
 func (t *UnicityTreeData) Key() []byte {
 	return t.Partition.Bytes()
 }
 
-func (utc *UnicityTreeCertificate) IsValid(partition PartitionID, pdrHash []byte) error {
+func (utc *UnicityTreeCertificate) IsValid(partition PartitionID) error {
 	if utc == nil {
 		return ErrUnicityTreeCertificateIsNil
 	}
@@ -56,9 +52,6 @@ func (utc *UnicityTreeCertificate) IsValid(partition PartitionID, pdrHash []byte
 	}
 	if utc.Partition != partition {
 		return fmt.Errorf("invalid partition identifier: expected %s, got %s", partition, utc.Partition)
-	}
-	if !bytes.Equal(pdrHash, utc.PDRHash) {
-		return fmt.Errorf("invalid partition description hash: expected %X, got %X", pdrHash, utc.PDRHash)
 	}
 	return nil
 }
@@ -74,7 +67,6 @@ func (utc *UnicityTreeCertificate) EvalAuthPath(shardTreeRoot []byte, hashAlgori
 	(&UnicityTreeData{
 		Partition:     utc.Partition,
 		ShardTreeRoot: shardTreeRoot,
-		PDRHash:       utc.PDRHash,
 	}).AddToHasher(hasher)
 	h, err := hasher.Sum()
 	if err != nil {
