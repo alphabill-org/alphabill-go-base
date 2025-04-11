@@ -13,11 +13,10 @@ import (
 
 func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 	const partitionID PartitionID = 0x01010101
-	pdrHash := test.RandomBytes(32)
 
 	t.Run("unicity tree certificate is nil", func(t *testing.T) {
 		var uct *UnicityTreeCertificate = nil
-		require.ErrorIs(t, uct.IsValid(2, pdrHash), ErrUnicityTreeCertificateIsNil)
+		require.ErrorIs(t, uct.IsValid(2), ErrUnicityTreeCertificateIsNil)
 	})
 
 	t.Run("invalid partition identifier", func(t *testing.T) {
@@ -25,28 +24,15 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 			Version:   1,
 			Partition: partitionID,
 			HashSteps: []*PathItem{{Key: partitionID, Hash: test.RandomBytes(32)}},
-			PDRHash:   pdrHash,
 		}
-		require.EqualError(t, uct.IsValid(0x01010100, pdrHash),
+		require.EqualError(t, uct.IsValid(0x01010100),
 			"invalid partition identifier: expected 01010100, got 01010101")
-	})
-
-	t.Run("invalid shard configuration hash", func(t *testing.T) {
-		uct := &UnicityTreeCertificate{
-			Version:   1,
-			Partition: partitionID,
-			HashSteps: []*PathItem{{Key: partitionID, Hash: test.RandomBytes(32)}},
-			PDRHash:   []byte{1, 1, 1, 1},
-		}
-		require.EqualError(t, uct.IsValid(partitionID, []byte{1, 1, 1, 2}),
-			"invalid shard configuration hash: expected 01010102, got 01010101")
 	})
 
 	t.Run("ok", func(t *testing.T) {
 		leaf := UnicityTreeData{
 			Partition:     partitionID,
 			ShardTreeRoot: []byte{9, 9, 9, 9},
-			PDRHash:       pdrHash,
 		}
 		hasher := crypto.SHA256.New()
 		abhasher := abhash.New(hasher)
@@ -56,9 +42,8 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 			Version:   1,
 			Partition: partitionID,
 			HashSteps: []*PathItem{{Key: partitionID, Hash: hasher.Sum(nil)}},
-			PDRHash:   pdrHash,
 		}
-		require.NoError(t, uct.IsValid(partitionID, pdrHash))
+		require.NoError(t, uct.IsValid(partitionID))
 
 		uctBytes, err := uct.MarshalCBOR()
 		require.NoError(t, err)
@@ -72,7 +57,6 @@ func TestUnicityTreeCertificate_IsValid(t *testing.T) {
 			Version:   2,
 			Partition: partitionID,
 			HashSteps: []*PathItem{{Key: partitionID, Hash: test.RandomBytes(32)}},
-			PDRHash:   pdrHash,
 		}
 		uctBytes, err := uct.MarshalCBOR()
 		require.NoError(t, err)
@@ -87,7 +71,6 @@ func TestUnicityTreeCertificate_Hash(t *testing.T) {
 		Version:   1,
 		Partition: partitionID,
 		HashSteps: []*PathItem{{Key: partitionID, Hash: []byte{1, 2, 3}}},
-		PDRHash:   []byte{1, 2, 3, 4},
 	}
 
 	utBytes, err := ut.MarshalCBOR()
@@ -107,23 +90,25 @@ func createUnicityCertificate(
 	signer abcrypto.Signer,
 	ir *InputRecord,
 	trHash []byte,
-	pdr *PartitionDescriptionRecord,
+	shardConf *PartitionDescriptionRecord,
 ) *UnicityCertificate {
 	t.Helper()
 
-	sTree, err := CreateShardTree(ShardingScheme{}, []ShardTreeInput{{IR: ir, TRHash: trHash}}, crypto.SHA256)
+	shardConfHash := doHash(t, shardConf)
+	sTree, err := CreateShardTree(ShardingScheme{}, []ShardTreeInput{
+		{IR: ir, TRHash: trHash, ShardConfHash: shardConfHash},
+	}, crypto.SHA256)
 	require.NoError(t, err)
 	stCert, err := sTree.Certificate(ShardID{})
 	require.NoError(t, err)
 
 	leaf := []*UnicityTreeData{{
-		Partition:     pdr.PartitionID,
+		Partition:     shardConf.PartitionID,
 		ShardTreeRoot: sTree.RootHash(),
-		PDRHash:       doHash(t, pdr),
 	}}
 	ut, err := NewUnicityTree(crypto.SHA256, leaf)
 	require.NoError(t, err)
-	utCert, err := ut.Certificate(pdr.PartitionID)
+	utCert, err := ut.Certificate(shardConf.PartitionID)
 	require.NoError(t, err)
 
 	unicitySeal := &UnicitySeal{
@@ -139,6 +124,7 @@ func createUnicityCertificate(
 		Version:                1,
 		InputRecord:            ir,
 		TRHash:                 trHash,
+		ShardConfHash:          shardConfHash,
 		ShardTreeCertificate:   stCert,
 		UnicityTreeCertificate: utCert,
 		UnicitySeal:            unicitySeal,

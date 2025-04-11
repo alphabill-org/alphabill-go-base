@@ -17,6 +17,7 @@ type UnicityCertificate struct {
 	Version                ABVersion               `json:"version"`
 	InputRecord            *InputRecord            `json:"inputRecord"`
 	TRHash                 hex.Bytes               `json:"trHash"` // hash of the TechnicalRecord
+	ShardConfHash          hex.Bytes               `json:"shardConfHash"`
 	ShardTreeCertificate   ShardTreeCertificate    `json:"shardTreeCertificate"`
 	UnicityTreeCertificate *UnicityTreeCertificate `json:"unicityTreeCertificate"`
 	UnicitySeal            *UnicitySeal            `json:"unicitySeal"`
@@ -35,14 +36,17 @@ func (x *UnicityCertificate) IsValid(partitionID PartitionID, shardConfHash []by
 	if n := len(x.TRHash); n != 32 {
 		return fmt.Errorf("invalid TRHash: expected 32 bytes, got %d bytes", n)
 	}
-	if err := x.UnicityTreeCertificate.IsValid(partitionID, shardConfHash); err != nil {
-		return fmt.Errorf("invalid unicity tree certificate: %w", err)
+	if shardConfHash != nil && !bytes.Equal(shardConfHash, x.ShardConfHash) {
+		return fmt.Errorf("invalid shard configuration hash: expected %X, got %X", shardConfHash, x.ShardConfHash)
 	}
-	if err := x.UnicitySeal.IsValid(); err != nil {
-		return fmt.Errorf("invalid unicity seal: %w", err)
+	if err := x.UnicityTreeCertificate.IsValid(partitionID); err != nil {
+		return fmt.Errorf("invalid unicity tree certificate: %w", err)
 	}
 	if err := x.ShardTreeCertificate.IsValid(); err != nil {
 		return fmt.Errorf("invalid shard tree certificate: %w", err)
+	}
+	if err := x.UnicitySeal.IsValid(); err != nil {
+		return fmt.Errorf("invalid unicity seal: %w", err)
 	}
 	return nil
 }
@@ -52,17 +56,17 @@ func (x *UnicityCertificate) Verify(tb RootTrustBase, algorithm crypto.Hash, par
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 
-	strh, err := x.ShardTreeCertificate.ComputeCertificateHash(x.InputRecord, x.TRHash, algorithm)
+	shardTreeRoot, err := x.ShardTreeCertificate.ComputeCertificateHash(x.InputRecord, x.TRHash, x.ShardConfHash, algorithm)
 	if err != nil {
 		return err
 	}
-	treeRoot, err := x.UnicityTreeCertificate.EvalAuthPath(strh, algorithm)
+	unicityTreeRoot, err := x.UnicityTreeCertificate.EvalAuthPath(shardTreeRoot, algorithm)
 	if err != nil {
 		return fmt.Errorf("evaluating unicity tree certificate: %w", err)
 	}
 	rootHash := x.UnicitySeal.Hash
-	if !bytes.Equal(treeRoot, rootHash) {
-		return fmt.Errorf("unicity seal hash %X does not match with the root hash of the unicity tree %X", rootHash, treeRoot)
+	if !bytes.Equal(unicityTreeRoot, rootHash) {
+		return fmt.Errorf("unicity seal hash %X does not match with the root hash of the unicity tree %X", rootHash, unicityTreeRoot)
 	}
 
 	if err := x.UnicitySeal.Verify(tb); err != nil {
