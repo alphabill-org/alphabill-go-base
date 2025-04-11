@@ -101,16 +101,13 @@ func VerifyTxInclusion(txRecordProof *TxRecordProof, tb RootTrustBase, hashAlgor
 	if err != nil {
 		return fmt.Errorf("failed to get unicity certificate: %w", err)
 	}
-	var sdrHash []byte
-	if uc.UnicityTreeCertificate != nil {
-		sdrHash = uc.UnicityTreeCertificate.PDRHash
-	}
 
 	txo, err := txRecord.GetTransactionOrderV1()
 	if err != nil {
 		return fmt.Errorf("failed to get transaction order: %w", err)
 	}
-	if err := uc.Verify(tb, hashAlgorithm, txo.PartitionID, sdrHash); err != nil {
+
+	if err := uc.Verify(tb, hashAlgorithm, txo.PartitionID, nil); err != nil {
 		return fmt.Errorf("invalid unicity certificate: %w", err)
 	}
 	// h ← plain_tree_output(C, H(P))

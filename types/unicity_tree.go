@@ -11,8 +11,8 @@ import (
 )
 
 type UnicityTree struct {
-	imt     *imt.Tree
-	pdrhMap map[PartitionID][]byte
+	imt        *imt.Tree
+	partitions map[PartitionID]struct{}
 }
 
 /*
@@ -25,19 +25,19 @@ func NewUnicityTree(hashAlgorithm crypto.Hash, data []*UnicityTreeData) (*Unicit
 	slices.SortFunc(data, func(a, b *UnicityTreeData) int {
 		return cmp.Compare(a.Partition, b.Partition)
 	})
-	sdMap := make(map[PartitionID][]byte)
+	partitions := make(map[PartitionID]struct{})
 	leaves := make([]imt.LeafData, len(data))
 	for i, d := range data {
 		leaves[i] = d
-		sdMap[d.Partition] = d.PDRHash
+		partitions[d.Partition] = struct{}{}
 	}
 	t, err := imt.New(hashAlgorithm, leaves)
 	if err != nil {
 		return nil, fmt.Errorf("creating index tree: %w", err)
 	}
 	return &UnicityTree{
-		imt:     t,
-		pdrhMap: sdMap,
+		imt:        t,
+		partitions: partitions,
 	}, nil
 }
 
@@ -47,8 +47,7 @@ func (u *UnicityTree) RootHash() []byte {
 
 // Certificate returns an unicity tree certificate for given partition identifier.
 func (u *UnicityTree) Certificate(partitionID PartitionID) (*UnicityTreeCertificate, error) {
-	pdrh, found := u.pdrhMap[partitionID]
-	if !found {
+	if _, found := u.partitions[partitionID]; !found {
 		return nil, fmt.Errorf("certificate for partition %s not found", partitionID)
 	}
 	pathItems, err := u.imt.GetMerklePath(partitionID.Bytes())
@@ -63,7 +62,6 @@ func (u *UnicityTree) Certificate(partitionID PartitionID) (*UnicityTreeCertific
 	return &UnicityTreeCertificate{
 		Version:   1,
 		Partition: partitionID,
-		PDRHash:   pdrh,
 		HashSteps: path[1:], // drop redundant first hash step; path is guaranteed to have size > 0
 	}, nil
 }
