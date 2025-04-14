@@ -1,43 +1,49 @@
 package util
 
 import (
-	"fmt"
-	"math"
+	"math/bits"
 )
 
-// AddUint64 adds a list of uint64s together, returning an error and a boolean indicator if the sum overflows uint64.
-func AddUint64(ns ...uint64) (sum uint64, overflow bool, err error) {
+/*
+AddUint64 adds a list of uint64s together, returning sum and a boolean indicator
+if the sum is ok (ie didn't overflow).
+
+Special cases:
+  - if the list is empty the sum is zero and ok == true;
+  - if there is just one element in the argument slice it's value will be
+    returned as sum (and ok == true);
+
+Use [SafeAdd] to add just two ints.
+*/
+func AddUint64(ns ...uint64) (uint64, bool) {
 	if len(ns) == 0 {
-		return 0, false, nil
+		return 0, true
 	}
-	sum = ns[0]
-	for i := 1; i < len(ns); i++ {
-		n := ns[i]
-		if n > math.MaxUint64-sum {
-			overflow = true
+
+	var carry uint64
+	sum := ns[0]
+	for _, v := range ns[1:] {
+		if sum, carry = bits.Add64(sum, v, 0); carry != 0 {
+			return 0, false
 		}
-		sum += n
 	}
 
-	if overflow {
-		err = fmt.Errorf("uint64 sum overflow: %v", ns)
-	}
-
-	return
+	return sum, true
 }
 
-// SafeAdd returns a+b and checks for overflow
+/*
+SafeAdd returns a+b and checks for overflow, the second return value is "ok", ie
+it is "true" when the returned sum is valid and "false" in case of overflow.
+*/
 func SafeAdd(a, b uint64) (uint64, bool) {
-	if a > math.MaxUint64-b {
-		return 0, false
-	}
-	return a + b, true
+	sum, carry := bits.Add64(a, b, 0)
+	return sum, carry == 0
 }
 
-// SafeSub returns a-b and checks for underflow
+/*
+SafeSub returns a-b and boolean indicating is the result ok (ie no underflow).
+*/
 func SafeSub(a, b uint64) (uint64, bool) {
-	if a < b {
-		return 0, false
-	}
-	return a - b, true
+	diff, borrow := bits.Sub64(a, b, 0)
+	return diff, borrow == 0
 }
