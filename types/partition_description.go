@@ -75,7 +75,7 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if pdr.PartitionType != nil {
 		return errors.New("custom PartitionType is not supported")
 	}
-	if pdr.UnitIDLen <= uint32(pdr.ShardID.Length()) {
+	if uint(pdr.UnitIDLen) <= pdr.ShardID.Length() {
 		return fmt.Errorf("shard id length %d must be shorter than unit id length %d", pdr.ShardID.Length(), pdr.UnitIDLen)
 	}
 	if pdr.TypeIDLen > 32 {
@@ -91,10 +91,6 @@ func (pdr *PartitionDescriptionRecord) IsValid() error {
 	if pdr.UnitIDLen%8 != 0 {
 		return fmt.Errorf("unit id length must be in full bytes, got %d bytes and %d bits", pdr.UnitIDLen/8, pdr.UnitIDLen%8)
 	}
-	if pdr.UnitIDLen < uint32(pdr.ShardID.Length()) {
-		return fmt.Errorf("partition has %d bit unit IDs but shard ID is %d bits", pdr.UnitIDLen, pdr.ShardID.Length())
-	}
-
 	if pdr.T2Timeout < 800*time.Millisecond || pdr.T2Timeout > 10*time.Second {
 		return fmt.Errorf("t2 timeout value out of allowed range: %s", pdr.T2Timeout)
 	}
