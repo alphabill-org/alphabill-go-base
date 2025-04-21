@@ -24,6 +24,12 @@ type (
 	PartitionID     uint32
 	PartitionTypeID uint32
 
+	PartitionShardID struct {
+		_           struct{} `cbor:",toarray"`
+		PartitionID PartitionID
+		ShardID     string // types.ShardID is not comparable
+	}
+
 	// UnitID is the extended identifier, combining the type and the unit identifiers.
 	UnitID []byte
 )
@@ -85,4 +91,8 @@ func (nid NetworkID) Bytes() []byte {
 	b := make([]byte, NetworkIDLength)
 	binary.BigEndian.PutUint16(b, uint16(nid))
 	return b
+}
+
+func (i *PartitionShardID) String() string {
+	return fmt.Sprintf("%s_%x", i.PartitionID, i.ShardID)
 }

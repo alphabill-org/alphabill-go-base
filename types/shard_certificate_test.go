@@ -150,7 +150,7 @@ func Test_ShardTreeCertificate_ComputeCertificate(t *testing.T) {
 
 	t.Run("single shard scheme", func(t *testing.T) {
 		scheme := ShardingScheme{}
-		in := []ShardTreeInput{{Shard: ShardID{}, IR: &InputRecord{}, TRHash: []byte{7, 7, 7}}}
+		in := []ShardTreeInput{{Shard: ShardID{}, IR: &InputRecord{}, TRHash: []byte{7, 7, 7}, ShardConfHash: []byte{8, 8, 8}}}
 		tree, err := CreateShardTree(scheme, in, crypto.SHA256)
 		require.NoError(t, err)
 		require.Len(t, tree, 1)
@@ -158,7 +158,7 @@ func Test_ShardTreeCertificate_ComputeCertificate(t *testing.T) {
 		cert, err := tree.Certificate(ShardID{})
 		require.NoError(t, err)
 		require.NoError(t, cert.IsValid())
-		rh, err := cert.ComputeCertificateHash(in[0].IR, in[0].TRHash, crypto.SHA256)
+		rh, err := cert.ComputeCertificateHash(in[0].IR, in[0].TRHash, in[0].ShardConfHash, crypto.SHA256)
 		require.NoError(t, err)
 		require.Equal(t, tree.RootHash(), rh)
 	})
@@ -179,9 +179,9 @@ func Test_ShardTreeCertificate_ComputeCertificate(t *testing.T) {
 		for id := range scheme.All() {
 			cert, err := tree.Certificate(id)
 			require.NoError(t, err)
-			require.NoError(t, cert.IsValid())
 			data := findSTInput(t, in, id)
-			rh, err := cert.ComputeCertificateHash(data.IR, data.TRHash, crypto.SHA256)
+			require.NoError(t, cert.IsValid())
+			rh, err := cert.ComputeCertificateHash(data.IR, data.TRHash, data.ShardConfHash, crypto.SHA256)
 			require.NoError(t, err)
 			require.Equal(t, tree.RootHash(), rh, "shard %s cert %v", id, cert)
 		}
@@ -219,9 +219,10 @@ func generateSTInput(scheme ShardingScheme) []ShardTreeInput {
 	for shard := range scheme.All() {
 		out = append(out,
 			ShardTreeInput{
-				Shard:  shard,
-				IR:     &InputRecord{Hash: test.RandomBytes(8), SumOfEarnedFees: uint64(shard.Length())},
-				TRHash: test.RandomBytes(8),
+				Shard:         shard,
+				IR:            &InputRecord{Hash: test.RandomBytes(8), SumOfEarnedFees: uint64(shard.Length())},
+				TRHash:        test.RandomBytes(8),
+				ShardConfHash: test.RandomBytes(8),
 			},
 		)
 	}
