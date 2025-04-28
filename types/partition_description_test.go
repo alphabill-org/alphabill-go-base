@@ -132,6 +132,7 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 		verifier, err := signer.Verifier()
 		require.NoError(t, err)
 		sigKey, err := verifier.MarshalPublicKey()
+		require.NoError(t, err)
 
 		pdr := validPDR()
 		pdr.Validators = []*NodeInfo{{
@@ -141,7 +142,7 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 			NodeID: "test",
 			SigKey: sigKey,
 		}}
-		require.EqualError(t, pdr.IsValid(), "duplicate validator with node id \"test\"")
+		require.EqualError(t, pdr.IsValid(), `duplicate validator with node id "test"`)
 	})
 }
 
