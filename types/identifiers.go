@@ -25,9 +25,8 @@ type (
 	PartitionTypeID uint32
 
 	PartitionShardID struct {
-		_           struct{} `cbor:",toarray"`
 		PartitionID PartitionID
-		ShardID     string // types.ShardID is not comparable
+		ShardID     string // types.ShardID is not comparable, use ShardID.Key() here
 	}
 
 	// UnitID is the extended identifier, combining the type and the unit identifiers.

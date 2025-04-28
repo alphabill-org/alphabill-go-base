@@ -3,6 +3,7 @@ package types
 import (
 	"crypto"
 	"errors"
+	"fmt"
 
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 )
@@ -192,6 +193,24 @@ func (sm *ServerMetadata) GetTargetUnits() []UnitID {
 		return nil
 	}
 	return sm.TargetUnits
+}
+
+func (t *TxRecordProof) Verify(getTrustBase func(epoch uint64) (RootTrustBase, error)) error {
+	if t == nil || t.TxProof == nil {
+		return errors.New("invalid TxRecordProof (nil or txProof is nil)")
+	}
+	uc, err := t.TxProof.GetUC()
+	if err != nil {
+		return fmt.Errorf("reading UC of the tx proof: %w", err)
+	}
+	if uc.UnicitySeal == nil {
+		return errors.New("invalid UC: missing UnicitySeal")
+	}
+	trustBase, err := getTrustBase(uc.UnicitySeal.Epoch)
+	if err != nil {
+		return fmt.Errorf("acquiring trust base: %w", err)
+	}
+	return VerifyTxProof(t, trustBase, crypto.SHA256)
 }
 
 func (t *TxRecordProof) IsValid() error {
