@@ -21,6 +21,15 @@ func TestNodeInfo_IsValid(t *testing.T) {
 	}
 
 	n := validNodeInfo()
+	require.NoError(t, n.IsValid())
+
+	n = validNodeInfo()
+	n.Stake = 0
+	require.EqualError(t, n.IsValid(), `node must have stake == 1`)
+	n.Stake = 2
+	require.EqualError(t, n.IsValid(), `node must have stake == 1`)
+
+	n = validNodeInfo()
 	n.NodeID = ""
 	require.ErrorContains(t, n.IsValid(), "node identifier is empty")
 

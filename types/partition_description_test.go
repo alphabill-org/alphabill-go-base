@@ -122,6 +122,7 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 		pdr.Validators = []*NodeInfo{{
 			NodeID: "test",
 			SigKey: []byte{1},
+			Stake:  1,
 		}}
 		require.EqualError(t, pdr.IsValid(), "invalid validator at idx 0: signing key is invalid: pubkey must be 33 bytes long, but is 1")
 	})
@@ -138,9 +139,11 @@ func Test_PartitionDescriptionRecord_IsValid(t *testing.T) {
 		pdr.Validators = []*NodeInfo{{
 			NodeID: "test",
 			SigKey: sigKey,
+			Stake:  1,
 		}, {
 			NodeID: "test",
 			SigKey: sigKey,
+			Stake:  1,
 		}}
 		require.EqualError(t, pdr.IsValid(), `duplicate validator with node id "test"`)
 	})
