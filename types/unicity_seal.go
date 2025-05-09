@@ -117,7 +117,7 @@ func (x *UnicitySeal) Verify(tb RootTrustBase) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal unicity seal: %w", err)
 	}
-	if err, _ := tb.VerifyQuorumSignatures(bs, x.Signatures); err != nil {
+	if err := tb.VerifyQuorumSignatures(bs, x.Signatures); err != nil {
 		return fmt.Errorf("verifying signatures: %w", err)
 	}
 	return nil
