@@ -16,7 +16,7 @@ import (
 type (
 	RootTrustBase interface {
 		GetNetworkID() NetworkID
-		VerifyQuorumSignatures(data []byte, signatures map[string]hex.Bytes) (error, []error)
+		VerifyQuorumSignatures(data []byte, signatures map[string]hex.Bytes) error
 		VerifySignature(data []byte, sig []byte, nodeID string) (uint64, error)
 		GetQuorumThreshold() uint64
 		GetMaxFaultyNodes() uint64
@@ -38,10 +38,10 @@ type (
 	}
 
 	NodeInfo struct {
-		_           struct{}          `cbor:",toarray"`
-		NodeID      string            `json:"nodeId"` // node identifier
-		SigKey      hex.Bytes         `json:"sigKey"` // signing key of the node
-		Stake       uint64            `json:"stake"`  // amount of staked alpha for this node, currently unused as each nodes get equal votes regardless of stake
+		_      struct{}  `cbor:",toarray"`
+		NodeID string    `json:"nodeId"` // node identifier
+		SigKey hex.Bytes `json:"sigKey"` // signing key of the node
+		Stake  uint64    `json:"stake"`  // amount of staked alpha for this node
 
 		// cached signature verifier; private fields are ignored in JSON and CBOR encodings
 		sigVerifier     abcrypto.Verifier
@@ -119,6 +119,11 @@ func (n *NodeInfo) IsValid() error {
 	if n.NodeID == "" {
 		return errors.New("node identifier is empty")
 	}
+	// until proper staking is implemented require that all nodes do have equal stake
+	// and thus equal vote when determining quorum
+	if n.Stake != 1 {
+		return errors.New("node must have stake == 1")
+	}
 	if len(n.SigKey) == 0 {
 		return errors.New("signing key is empty")
 	}
@@ -177,24 +182,19 @@ func (r RootTrustBaseV1) SigBytes() ([]byte, error) {
 }
 
 // VerifyQuorumSignatures verifies that the data is signed by enough root nodes so that quorum is reached,
-// returns error if quorum is not reached, also returns list of any signature verification errors,
-// regardless if quorum is reached or not.
-func (r *RootTrustBaseV1) VerifyQuorumSignatures(data []byte, signatures map[string]hex.Bytes) (error, []error) {
+// returns error if quorum is not reached.
+func (r *RootTrustBaseV1) VerifyQuorumSignatures(data []byte, signatures map[string]hex.Bytes) error {
 	// verify all signatures, calculate quorum
 	var quorum uint64
-	var verificationErrors []error
 	for nodeID, sig := range signatures {
-		stake, err := r.VerifySignature(data, sig, nodeID)
-		if err != nil {
-			verificationErrors = append(verificationErrors, err)
-		} else {
+		if stake, err := r.VerifySignature(data, sig, nodeID); err == nil {
 			quorum += stake
 		}
 	}
 	if quorum >= r.QuorumThreshold {
-		return nil, verificationErrors
+		return nil
 	}
-	return fmt.Errorf("quorum not reached, signed_votes=%d quorum_threshold=%d", quorum, r.QuorumThreshold), verificationErrors
+	return fmt.Errorf("quorum not reached, signed_votes=%d quorum_threshold=%d", quorum, r.QuorumThreshold)
 }
 
 // VerifySignature verifies that the data is signed by the given root validator,
