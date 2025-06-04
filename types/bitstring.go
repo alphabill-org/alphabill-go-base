@@ -43,9 +43,9 @@ func decodeBitstring(data []byte) ([]byte, uint, error) {
 	case 8:
 		return nil, 0, errors.New("invalid bit string encoding: last byte doesn't contain end marker")
 	case 7: // entire last byte is end marker
-		return data[:byteCnt], uint(byteCnt * 8), nil
+		return data[:byteCnt], uint(byteCnt * 8), nil /* #nosec its unlikely that byteCnt*8 exceeds uint */
 	default:
-		data[byteCnt] ^= (1 << zc) // clear end marker
-		return data, uint(byteCnt*8 + 7 - zc), nil
+		data[byteCnt] ^= (1 << zc)                 // clear end marker
+		return data, uint(byteCnt*8 + 7 - zc), nil /* #nosec its unlikely that byteCnt*8+7-zc exceeds uint */
 	}
 }

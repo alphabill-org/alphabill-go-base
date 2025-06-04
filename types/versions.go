@@ -61,7 +61,7 @@ func parseTaggedCBOR(b []byte, objID ABTag) (ABVersion, []any, error) {
 		return 0, nil, errors.New("empty data slice")
 	}
 	if version, ok := arr[0].(uint64); ok {
-		return ABVersion(version), arr, nil
+		return ABVersion(version), arr, nil /* #nosec its unlikely that version exceeds uint32 */
 	}
 	return 0, nil, fmt.Errorf("expected version number to be uint64, got: %#v", arr[0])
 }
