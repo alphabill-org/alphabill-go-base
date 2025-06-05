@@ -38,7 +38,7 @@ func (id ShardID) AddToHasher(h abhash.Hasher) {
 
 func (id ShardID) String() (s string) {
 	byteCnt := id.length / 8
-	for i := 0; i < int(byteCnt); i++ {
+	for i := uint(0); i < byteCnt; i++ {
 		s += fmt.Sprintf("%08b", id.bits[i])
 	}
 	if b := id.length % 8; b > 0 {
