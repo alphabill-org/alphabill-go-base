@@ -21,10 +21,6 @@ type PartitionType struct {
 	// so the actual field list is not needed...
 }
 
-func (std *PartitionType) AddToHasher(h abhash.Hasher) {
-	h.Write(std)
-}
-
 type PartitionDescriptionRecord struct {
 	_           struct{}    `cbor:",toarray"`
 	Version     ABVersion   `json:"version"`

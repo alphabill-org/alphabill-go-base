@@ -169,7 +169,7 @@ func TestUnicityCertificate_Verify(t *testing.T) {
 	ir1.RoundNumber = 900
 
 	sTree, err := CreateShardTree(
-		ShardingScheme{sid0, sid1},
+		buildShardingScheme([]ShardID{sid0, sid1}),
 		[]ShardTreeInput{
 			{Shard: sid0, IR: &ir0, TRHash: trHash0, ShardConfHash: shardConf0Hash},
 			{Shard: sid1, IR: &ir1, TRHash: trHash1, ShardConfHash: shardConf1Hash},

@@ -45,6 +45,10 @@ func (uid UnitID) Eq(id UnitID) bool {
 	return bytes.Equal(uid, id)
 }
 
+func (uid UnitID) Shard(scheme ShardingScheme) ShardID {
+	return scheme.Shard(uid)
+}
+
 func (uid UnitID) TypeMustBe(typeID uint32, pdr *PartitionDescriptionRecord) error {
 	tid, err := pdr.ExtractUnitType(uid)
 	if err != nil {
