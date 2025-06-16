@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
@@ -14,14 +15,14 @@ import (
 
 type (
 	UnitStateProof struct {
-		_                  struct{}       `cbor:",toarray"`
-		Version            ABVersion      `json:"version"`
-		UnitID             UnitID         `json:"unitId"`
-		UnitValue          uint64         `json:"unitValue,string"` // V0 - data summary of type PD.V
-		UnitLedgerHash     hex.Bytes      `json:"unitLedgerHash"`   // x_ - previous state hash of type H ∪ {⊥}
-		UnitTreeCert       *UnitTreeCert  `json:"unitTreeCert"`
-		StateTreeCert      *StateTreeCert `json:"stateTreeCert"`
-		UnicityCertificate TaggedCBOR     `json:"unicityCert"`
+		_                  struct{}        `cbor:",toarray"`
+		Version            ABVersion       `json:"version"`
+		UnitID             UnitID          `json:"unitId"`
+		UnitValue          uint64          `json:"unitValue,string"` // V0 - data summary of type PD.V
+		UnitLedgerHash     hex.Bytes       `json:"unitLedgerHash"`   // x_ - previous state hash of type H ∪ {⊥}
+		UnitTreeCert       *UnitTreeCert   `json:"unitTreeCert"`
+		StateTreeCert      *StateTreeCert  `json:"stateTreeCert"`
+		UnicityCertificate cbor.TaggedCBOR `json:"unicityCert"`
 	}
 
 	UnitTreeCert struct {
@@ -50,9 +51,9 @@ type (
 	}
 
 	UnitState struct {
-		Data          RawCBOR
+		Data          cbor.RawCBOR
 		DeletionRound uint64
-		StateLockTx   RawCBOR
+		StateLockTx   cbor.RawCBOR
 	}
 
 	UnitStateWithProof struct {
@@ -66,8 +67,8 @@ type (
 	}
 )
 
-func NewUnitState(unitData UnitData, deletionRound uint64, stateLockTx RawCBOR) (*UnitState, error) {
-	unitDataCBOR, err := Cbor.Marshal(unitData)
+func NewUnitState(unitData UnitData, deletionRound uint64, stateLockTx cbor.RawCBOR) (*UnitState, error) {
+	unitDataCBOR, err := cbor.Marshal(unitData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal unit data: %w", err)
 	}
@@ -86,7 +87,7 @@ func (u *UnitStateProof) getUCv1() (*UnicityCertificate, error) {
 		return nil, ErrUnicityCertificateIsNil
 	}
 	uc := &UnicityCertificate{}
-	err := Cbor.Unmarshal(u.UnicityCertificate, uc)
+	err := cbor.Unmarshal(u.UnicityCertificate, uc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal unicity certificate: %w", err)
 	}
@@ -186,7 +187,7 @@ func (sd *UnitState) UnmarshalData(v any) error {
 	if sd.Data == nil {
 		return fmt.Errorf("state unit data is nil")
 	}
-	return Cbor.Unmarshal(sd.Data, v)
+	return cbor.Unmarshal(sd.Data, v)
 }
 
 func (sd *UnitState) Hash(hashAlgo crypto.Hash) ([]byte, error) {
@@ -240,12 +241,12 @@ func (u *UnitStateProof) MarshalCBOR() ([]byte, error) {
 	if u.Version == 0 {
 		u.Version = u.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(UnitStateProofTag, (*alias)(u))
+	return cbor.MarshalTaggedValue(UnitStateProofTag, (*alias)(u))
 }
 
 func (u *UnitStateProof) UnmarshalCBOR(data []byte) error {
 	type alias UnitStateProof
-	if err := Cbor.UnmarshalTaggedValue(UnitStateProofTag, data, (*alias)(u)); err != nil {
+	if err := cbor.UnmarshalTaggedValue(UnitStateProofTag, data, (*alias)(u)); err != nil {
 		return err
 	}
 	return EnsureVersion(u, u.Version, 1)

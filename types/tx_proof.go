@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
 )
@@ -21,7 +22,7 @@ type (
 		Version            ABVersion
 		BlockHeaderHash    []byte
 		Chain              []*GenericChainItem
-		UnicityCertificate TaggedCBOR
+		UnicityCertificate cbor.TaggedCBOR
 	}
 
 	GenericChainItem struct {
@@ -39,7 +40,7 @@ func (p *TxProof) GetUC() (*UnicityCertificate, error) {
 		return nil, ErrUnicityCertificateIsNil
 	}
 	uc := &UnicityCertificate{}
-	if err := Cbor.Unmarshal(p.UnicityCertificate, uc); err != nil {
+	if err := cbor.Unmarshal(p.UnicityCertificate, uc); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal unicity certificate: %w", err)
 	}
 	return uc, nil
@@ -166,12 +167,12 @@ func (p *TxProof) MarshalCBOR() ([]byte, error) {
 	if p.Version == 0 {
 		p.Version = p.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(TxProofTag, (*alias)(p))
+	return cbor.MarshalTaggedValue(TxProofTag, (*alias)(p))
 }
 
 func (p *TxProof) UnmarshalCBOR(data []byte) error {
 	type alias TxProof
-	if err := Cbor.UnmarshalTaggedValue(TxProofTag, data, (*alias)(p)); err != nil {
+	if err := cbor.UnmarshalTaggedValue(TxProofTag, data, (*alias)(p)); err != nil {
 		return err
 	}
 	return EnsureVersion(p, p.Version, 1)

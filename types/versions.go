@@ -3,9 +3,10 @@ package types
 import (
 	"errors"
 	"fmt"
+
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 )
 
-type ABTag = uint64
 type ABVersion = uint32
 
 // Versioned interface is used by the structs that require versioning.
@@ -16,7 +17,7 @@ type Versioned interface {
 }
 
 const (
-	_ = iota + ABTag(1000)
+	_ = iota + cbor.ABTag(1000)
 	UnicitySealTag
 	RootGenesisTag
 	GenesisRootRecordTag
@@ -49,8 +50,8 @@ func EnsureVersion(data Versioned, actual, expected ABVersion) error {
 	return nil
 }
 
-func parseTaggedCBOR(b []byte, objID ABTag) (ABVersion, []any, error) {
-	tag, arr, err := Cbor.UnmarshalTagged(b)
+func parseTaggedCBOR(b []byte, objID cbor.ABTag) (ABVersion, []any, error) {
+	tag, arr, err := cbor.UnmarshalTagged(b)
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to unmarshal as tagged CBOR: %w", err)
 	}

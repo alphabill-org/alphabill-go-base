@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/tree/imt"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
@@ -97,12 +98,12 @@ func (utc *UnicityTreeCertificate) MarshalCBOR() ([]byte, error) {
 	if utc.Version == 0 {
 		utc.Version = utc.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(UnicityTreeCertificateTag, (*alias)(utc))
+	return cbor.MarshalTaggedValue(UnicityTreeCertificateTag, (*alias)(utc))
 }
 
 func (utc *UnicityTreeCertificate) UnmarshalCBOR(data []byte) error {
 	type alias UnicityTreeCertificate
-	if err := Cbor.UnmarshalTaggedValue(UnicityTreeCertificateTag, data, (*alias)(utc)); err != nil {
+	if err := cbor.UnmarshalTaggedValue(UnicityTreeCertificateTag, data, (*alias)(utc)); err != nil {
 		return err
 	}
 	return EnsureVersion(utc, utc.Version, 1)

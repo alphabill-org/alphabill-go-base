@@ -3,7 +3,7 @@ package money
 import (
 	"testing"
 
-	"github.com/alphabill-org/alphabill-go-base/types"
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,8 +16,8 @@ func Test_CBOR(t *testing.T) {
 	}
 	newUnitData := &BillData{}
 
-	unitDataBytes, err := types.Cbor.Marshal(unitData)
+	unitDataBytes, err := cbor.Marshal(unitData)
 	require.NoError(t, err)
-	require.NoError(t, types.Cbor.Unmarshal(unitDataBytes, newUnitData))
+	require.NoError(t, cbor.Unmarshal(unitDataBytes, newUnitData))
 	require.Equal(t, unitData, newUnitData)
 }

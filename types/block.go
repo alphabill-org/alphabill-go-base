@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
@@ -24,7 +25,7 @@ type (
 		_                  struct{} `cbor:",toarray"`
 		Header             *Header
 		Transactions       []*TransactionRecord
-		UnicityCertificate TaggedCBOR
+		UnicityCertificate cbor.TaggedCBOR
 	}
 
 	Header struct {
@@ -45,7 +46,7 @@ func (b *Block) getUCv1() (*UnicityCertificate, error) {
 		return nil, ErrUnicityCertificateIsNil
 	}
 	uc := &UnicityCertificate{}
-	err := Cbor.Unmarshal(b.UnicityCertificate, uc)
+	err := cbor.Unmarshal(b.UnicityCertificate, uc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal unicity certificate: %w", err)
 	}
@@ -212,12 +213,12 @@ func (h *Header) MarshalCBOR() ([]byte, error) {
 	if h.Version == 0 {
 		h.Version = h.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(BlockTag, (*alias)(h))
+	return cbor.MarshalTaggedValue(BlockTag, (*alias)(h))
 }
 
 func (h *Header) UnmarshalCBOR(data []byte) error {
 	type alias Header
-	if err := Cbor.UnmarshalTaggedValue(BlockTag, data, (*alias)(h)); err != nil {
+	if err := cbor.UnmarshalTaggedValue(BlockTag, data, (*alias)(h)); err != nil {
 		return fmt.Errorf("failed to unmarshal block header: %w", err)
 	}
 	return EnsureVersion(h, h.Version, 1)

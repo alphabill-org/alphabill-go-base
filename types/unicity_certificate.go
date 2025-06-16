@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
@@ -224,7 +225,7 @@ func (x *UnicityCertificate) IsRepeat(prevUC *UnicityCertificate) (bool, error) 
 	return isRepeat(prevUC, x)
 }
 
-func (x *UnicityCertificate) IsInitial() (bool) {
+func (x *UnicityCertificate) IsInitial() bool {
 	// Initial UC is issued by root chain for shard round 0,
 	// without any certification requests from shard nodes
 	return x.InputRecord.RoundNumber == 0
@@ -255,12 +256,12 @@ func (x *UnicityCertificate) MarshalCBOR() ([]byte, error) {
 	if x.Version == 0 {
 		x.Version = x.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(UnicityCertificateTag, (*alias)(x))
+	return cbor.MarshalTaggedValue(UnicityCertificateTag, (*alias)(x))
 }
 
 func (x *UnicityCertificate) UnmarshalCBOR(data []byte) error {
 	type alias UnicityCertificate
-	if err := Cbor.UnmarshalTaggedValue(UnicityCertificateTag, data, (*alias)(x)); err != nil {
+	if err := cbor.UnmarshalTaggedValue(UnicityCertificateTag, data, (*alias)(x)); err != nil {
 		return err
 	}
 	return EnsureVersion(x, x.Version, 1)

@@ -4,13 +4,15 @@ import (
 	"crypto"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
+	"github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
 // tokenHashData defines the cbor data for calculating new token ID.
 type tokenHashData struct {
 	_              struct{} `cbor:",toarray"`
-	Attributes     types.RawCBOR
+	Attributes     cbor.RawCBOR
 	ClientMetadata *types.ClientMetadata
 }
 
@@ -29,7 +31,9 @@ func PrndSh(txo *types.TransactionOrder) func(buf []byte) error {
 			ClientMetadata: txo.ClientMetadata,
 		}
 
-		h, err := types.HashCBOR(hashData, crypto.SHA256)
+		hasher := hash.New(crypto.SHA256.New())
+		hasher.Write(hashData)
+		h, err := hasher.Sum()
 		if err != nil {
 			return fmt.Errorf("hashing txo data: %w", err)
 		}

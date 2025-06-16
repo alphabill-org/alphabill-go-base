@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 )
 
 type testProcessingDetails struct {
@@ -15,7 +17,7 @@ type testProcessingDetails struct {
 func TestTransactionRecordFunctions(t *testing.T) {
 	txo := createTransactionOrder(t)
 	expectedProcessingDetails := testProcessingDetails{A: 97, B: "b"}
-	processingDetailsCBOR, err := Cbor.Marshal(expectedProcessingDetails)
+	processingDetailsCBOR, err := cbor.Marshal(expectedProcessingDetails)
 	require.NoError(t, err)
 
 	txr := createTransactionRecord(t, txo, 1)

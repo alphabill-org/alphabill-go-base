@@ -3,8 +3,8 @@ package fc
 import (
 	"testing"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
-	"github.com/alphabill-org/alphabill-go-base/types"
 
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +25,7 @@ func TestFCR_HashIsCalculatedCorrectly(t *testing.T) {
 
 	// calculate expected hash
 	hasher.Reset()
-	res, err := types.Cbor.Marshal(fcr)
+	res, err := cbor.Marshal(fcr)
 	require.NoError(t, err)
 	hasher.WriteRaw(res)
 	expectedHash, err := hasher.Sum()
@@ -34,7 +34,7 @@ func TestFCR_HashIsCalculatedCorrectly(t *testing.T) {
 
 	// check all fields serialized
 	var fcrFromSerialized FeeCreditRecord
-	require.NoError(t, types.Cbor.Unmarshal(res, &fcrFromSerialized))
+	require.NoError(t, cbor.Unmarshal(res, &fcrFromSerialized))
 	require.Equal(t, fcr, &fcrFromSerialized)
 }
 
@@ -57,8 +57,8 @@ func Test_CBOR(t *testing.T) {
 	}
 	newUnitData := &FeeCreditRecord{}
 
-	unitDataBytes, err := types.Cbor.Marshal(unitData)
+	unitDataBytes, err := cbor.Marshal(unitData)
 	require.NoError(t, err)
-	require.NoError(t, types.Cbor.Unmarshal(unitDataBytes, newUnitData))
+	require.NoError(t, cbor.Unmarshal(unitDataBytes, newUnitData))
 	require.Equal(t, unitData, newUnitData)
 }

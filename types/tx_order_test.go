@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 )
 
 var (
@@ -62,7 +64,7 @@ type testAttributes struct {
 
 func TestMarshalPayload(t *testing.T) {
 	payload := createTransactionOrder(t).Payload
-	payloadBytes, err := Cbor.Marshal(payload)
+	payloadBytes, err := cbor.Marshal(payload)
 	require.NoError(t, err)
 	require.Equal(t, hexDecode(t, payloadInHEX), payloadBytes)
 }
@@ -77,7 +79,7 @@ func TestMarshalNilValuesInPayload(t *testing.T) {
 		StateLock:      nil,
 		ClientMetadata: nil,
 	}
-	payloadBytes, err := Cbor.Marshal(srcPayload)
+	payloadBytes, err := cbor.Marshal(srcPayload)
 	require.NoError(t, err)
 	// 87    # array(7)
 	//   00 #   zero, unsigned int
@@ -90,13 +92,13 @@ func TestMarshalNilValuesInPayload(t *testing.T) {
 	require.Equal(t, []byte{0x87, 0x0, 0x0, 0xf6, 0x0, 0xf6, 0xf6, 0xf6}, payloadBytes)
 
 	var payload Payload
-	require.NoError(t, Cbor.Unmarshal(payloadBytes, &payload))
+	require.NoError(t, cbor.Unmarshal(payloadBytes, &payload))
 	require.EqualValues(t, srcPayload, payload)
 }
 
 func TestUnmarshalPayload(t *testing.T) {
 	var payload Payload
-	require.NoError(t, Cbor.Unmarshal(hexDecode(t, payloadInHEX), &payload))
+	require.NoError(t, cbor.Unmarshal(hexDecode(t, payloadInHEX), &payload))
 	require.Equal(t, networkID, payload.NetworkID)
 	require.Equal(t, partitionID, payload.PartitionID)
 	require.Equal(t, UnitID(unitID), payload.UnitID)
@@ -177,7 +179,7 @@ func TestStateLock_IsValid(t *testing.T) {
 
 func createTransactionOrder(t *testing.T) *TransactionOrder {
 	attr := &testAttributes{NewOwnerPredicate: newOwnerPredicate, TargetValue: targetValue, Counter: counter}
-	attrBytes, err := Cbor.Marshal(attr)
+	attrBytes, err := cbor.Marshal(attr)
 	require.NoError(t, err)
 	return &TransactionOrder{
 		Version: 1,
@@ -239,7 +241,7 @@ func Test_VersionsInProofs(t *testing.T) {
 func Test_UnmarshalCBOR(t *testing.T) {
 	t.Run("Unmarshal valid", func(t *testing.T) {
 		txo := createTransactionOrder(t)
-		data, err := Cbor.Marshal(txo)
+		data, err := cbor.Marshal(txo)
 		require.NoError(t, err)
 		txo2 := &TransactionOrder{}
 		require.NoError(t, txo2.UnmarshalCBOR(data))
@@ -249,7 +251,7 @@ func Test_UnmarshalCBOR(t *testing.T) {
 	t.Run("Unmarshal with invalid version", func(t *testing.T) {
 		txo := createTransactionOrder(t)
 		txo.Version = 2
-		data, err := Cbor.Marshal(txo)
+		data, err := cbor.Marshal(txo)
 		require.NoError(t, err)
 		txo2 := &TransactionOrder{}
 		require.ErrorContains(t, txo2.UnmarshalCBOR(data), "invalid version (type *types.TransactionOrder), expected 1, got 2")

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
@@ -222,12 +223,12 @@ func (pdr *PartitionDescriptionRecord) MarshalCBOR() ([]byte, error) {
 	if pdr.Version == 0 {
 		pdr.Version = pdr.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(PartitionDescriptionRecordTag, (*alias)(pdr))
+	return cbor.MarshalTaggedValue(PartitionDescriptionRecordTag, (*alias)(pdr))
 }
 
 func (pdr *PartitionDescriptionRecord) UnmarshalCBOR(data []byte) error {
 	type alias PartitionDescriptionRecord
-	if err := Cbor.UnmarshalTaggedValue(PartitionDescriptionRecordTag, data, (*alias)(pdr)); err != nil {
+	if err := cbor.UnmarshalTaggedValue(PartitionDescriptionRecordTag, data, (*alias)(pdr)); err != nil {
 		return fmt.Errorf("failed to unmarshal partition description record: %w", err)
 	}
 	return EnsureVersion(pdr, pdr.Version, 1)

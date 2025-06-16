@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
@@ -142,12 +143,12 @@ func (x *InputRecord) MarshalCBOR() ([]byte, error) {
 	if x.Version == 0 {
 		x.Version = x.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(InputRecordTag, (*alias)(x))
+	return cbor.MarshalTaggedValue(InputRecordTag, (*alias)(x))
 }
 
 func (x *InputRecord) UnmarshalCBOR(data []byte) error {
 	type alias InputRecord
-	if err := Cbor.UnmarshalTaggedValue(InputRecordTag, data, (*alias)(x)); err != nil {
+	if err := cbor.UnmarshalTaggedValue(InputRecordTag, data, (*alias)(x)); err != nil {
 		return err
 	}
 	return EnsureVersion(x, x.Version, 1)

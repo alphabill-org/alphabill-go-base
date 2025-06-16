@@ -4,8 +4,8 @@ go 1.24
 
 require (
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/fxamacker/cbor/v2 v2.7.0
-	github.com/stretchr/testify v1.9.0
+	github.com/fxamacker/cbor/v2 v2.8.0
+	github.com/stretchr/testify v1.10.0
 )
 
 require (

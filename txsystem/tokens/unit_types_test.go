@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
@@ -116,9 +117,9 @@ func Test_CBOR(t *testing.T) {
 	for _, unitData := range unitDatas {
 		t.Run(reflect.TypeOf(unitData).String(), func(t *testing.T) {
 			newUnitData := reflect.New(reflect.TypeOf(unitData).Elem()).Interface().(types.UnitData)
-			unitDataBytes, err := types.Cbor.Marshal(unitData)
+			unitDataBytes, err := cbor.Marshal(unitData)
 			require.NoError(t, err)
-			require.NoError(t, types.Cbor.Unmarshal(unitDataBytes, newUnitData))
+			require.NoError(t, cbor.Unmarshal(unitDataBytes, newUnitData))
 			require.Equal(t, unitData, newUnitData)
 		})
 	}
