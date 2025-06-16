@@ -22,8 +22,9 @@ func Test_CreateShardTree(t *testing.T) {
 		require.Empty(t, tree)
 
 		// non-empty scheme
-		id0, id1 := ShardID{}.Split()
-		scheme = ShardingScheme{id0, id1}
+		scheme = ShardingScheme{}
+		_, _, err = scheme.Split(ShardID{})
+		require.NoError(t, err)
 		tree, err = CreateShardTree(scheme, []ShardTreeInput{}, crypto.SHA256)
 		require.EqualError(t, err, `missing input for shard "0"`)
 		require.Empty(t, tree)
@@ -51,8 +52,9 @@ func Test_CreateShardTree(t *testing.T) {
 		require.Empty(t, tree)
 
 		// scheme{0, 1} but input for "0" only
-		id0, id1 = ShardID{}.Split()
-		scheme = ShardingScheme{id0, id1}
+		scheme = ShardingScheme{}
+		_, _, err = scheme.Split(ShardID{})
+		require.NoError(t, err)
 		in = []ShardTreeInput{{Shard: id0, IR: &InputRecord{}}}
 		tree, err = CreateShardTree(scheme, in, crypto.SHA256)
 		require.EqualError(t, err, `missing input for shard "1"`)
@@ -70,11 +72,13 @@ func Test_CreateShardTree(t *testing.T) {
 	})
 
 	t.Run("invalid scheme", func(t *testing.T) {
-		id0, id1 := ShardID{}.Split()
-		in := generateSTInput(ShardingScheme{id0, id1})
-		scheme := ShardingScheme{id0}
+		scheme := ShardingScheme{}
+		id0, _, err := scheme.Split(ShardID{})
+		require.NoError(t, err)
+		in := generateSTInput(scheme)
+		scheme = buildShardingScheme([]ShardID{id0})
 		tree, err := CreateShardTree(scheme, in, crypto.SHA256)
-		require.EqualError(t, err, `invalid sharding scheme: scheme can't contain single shard, got "0"`)
+		require.EqualError(t, err, `invalid sharding scheme: shard ID "0" has no sibling`)
 		require.Empty(t, tree)
 	})
 
@@ -87,8 +91,9 @@ func Test_CreateShardTree(t *testing.T) {
 		require.Len(t, tree, 1)
 
 		//shards "0" and "1"
-		id0, id1 := ShardID{}.Split()
-		scheme = ShardingScheme{id0, id1}
+		scheme = ShardingScheme{}
+		_, _, err = scheme.Split(ShardID{})
+		require.NoError(t, err)
 		in = generateSTInput(scheme)
 		tree, err = CreateShardTree(scheme, in, crypto.SHA256)
 		require.NoError(t, err)
@@ -111,7 +116,8 @@ func Test_ShardTree_SiblingHashes(t *testing.T) {
 		id0, id1 := ShardID{}.Split() // "0", "1"
 		id00, id01 := id0.Split()     // "00", "01"
 		id10, id11 := id1.Split()     // "10", "11"
-		scheme := ShardingScheme{id00, id01, id10, id11}
+		scheme, err := NewShardingScheme([]ShardID{id00, id01, id10, id11})
+		require.NoError(t, err)
 		// what we expect sibling IDs of the given shard to be
 		siblingID := map[string][]ShardID{
 			id0.Key():  {id1},       // 0 -> 1
@@ -166,11 +172,10 @@ func Test_ShardTreeCertificate_ComputeCertificate(t *testing.T) {
 	t.Run("multi shard scheme", func(t *testing.T) {
 		// build scheme
 		id0, id1 := ShardID{}.Split() // "0", "1"
-		scheme := ShardingScheme{id1}
-		id0, id1 = id0.Split() // "00", "01"
-		scheme = append(scheme, id0)
-		id0, id1 = id1.Split() // "010", "011"
-		scheme = append(scheme, id0, id1)
+		id00, id01 := id0.Split()     // "00", "01"
+		id010, id011 := id01.Split()  // "010", "011"
+		scheme, err := NewShardingScheme([]ShardID{id010, id011, id00, id1})
+		require.NoError(t, err)
 
 		in := generateSTInput(scheme)
 		tree, err := CreateShardTree(scheme, in, crypto.SHA256)
@@ -202,7 +207,7 @@ func Test_ShardTreeCertificate_Certificate(t *testing.T) {
 		require.Empty(t, cert)
 
 		// non-empty scheme
-		scheme = ShardingScheme{id0, id1}
+		scheme = buildShardingScheme([]ShardID{id0, id1})
 		in = generateSTInput(scheme)
 		tree, err = CreateShardTree(scheme, in, crypto.SHA256)
 		require.NoError(t, err)

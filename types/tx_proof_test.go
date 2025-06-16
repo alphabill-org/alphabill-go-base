@@ -109,7 +109,7 @@ func TestVerifyTxProof(t *testing.T) {
 		require.NoError(t, err)
 		tb := NewTrustBase(t, verifier)
 
-		require.NoError(t, VerifyTxInclusion(proof, tb, crypto.SHA256))
+		require.NoError(t, VerifyTxProof(proof, tb, crypto.SHA256))
 	})
 
 	t.Run("Test tx has failed", func(t *testing.T) {
