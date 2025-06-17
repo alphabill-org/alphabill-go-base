@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/tree/mt"
-	"github.com/stretchr/testify/require"
 )
 
 func TestBlock_GetBlockFees(t *testing.T) {
@@ -475,14 +477,15 @@ func TestBlock_InputRecord(t *testing.T) {
 func TestBlock_CBOR(t *testing.T) {
 	t.Run("empty block", func(t *testing.T) {
 		b := Block{}
-		blockBytes, err := Cbor.Marshal(b)
+		blockBytes, err := cbor.Marshal(b)
 		require.NoError(t, err)
 		require.NotNil(t, blockBytes)
 		b2 := Block{}
-		err = Cbor.Unmarshal(blockBytes, &b2)
+		err = cbor.Unmarshal(blockBytes, &b2)
 		require.NoError(t, err)
 		require.EqualValues(t, b, b2)
 	})
+
 	h := Header{
 		Version:           1,
 		PartitionID:       2,
@@ -490,30 +493,33 @@ func TestBlock_CBOR(t *testing.T) {
 		ProposerID:        "test",
 		PreviousBlockHash: []byte{2, 2, 2},
 	}
+
 	t.Run("block with header", func(t *testing.T) {
 		b := Block{Header: &h}
-		blockBytes, err := Cbor.Marshal(b)
+		blockBytes, err := cbor.Marshal(b)
 		require.NoError(t, err)
 		require.NotNil(t, blockBytes)
 		b2 := Block{}
-		err = Cbor.Unmarshal(blockBytes, &b2)
+		err = cbor.Unmarshal(blockBytes, &b2)
 		require.NoError(t, err)
 		require.EqualValues(t, b, b2)
 	})
+
 	t.Run("block with transactions", func(t *testing.T) {
 		txr := createTransactionRecord(t, createTransactionOrder(t), 1)
 		b := Block{
 			Header:       &h,
 			Transactions: []*TransactionRecord{txr},
 		}
-		blockBytes, err := Cbor.Marshal(b)
+		blockBytes, err := cbor.Marshal(b)
 		require.NoError(t, err)
 		require.NotNil(t, blockBytes)
 		b2 := Block{}
-		err = Cbor.Unmarshal(blockBytes, &b2)
+		err = cbor.Unmarshal(blockBytes, &b2)
 		require.NoError(t, err)
 		require.EqualValues(t, b, b2)
 	})
+
 	t.Run("block with unicity certificate", func(t *testing.T) {
 		uc := &UnicityCertificate{
 			InputRecord: &InputRecord{
@@ -527,27 +533,28 @@ func TestBlock_CBOR(t *testing.T) {
 			Header:             &h,
 			UnicityCertificate: ucBytes,
 		}
-		blockBytes, err := Cbor.Marshal(b)
+		blockBytes, err := cbor.Marshal(b)
 		require.NoError(t, err)
 		require.NotNil(t, blockBytes)
 		b2 := Block{}
-		err = Cbor.Unmarshal(blockBytes, &b2)
+		err = cbor.Unmarshal(blockBytes, &b2)
 		require.NoError(t, err)
 		require.EqualValues(t, b, b2)
 
 		uc2 := &UnicityCertificate{}
-		err = Cbor.Unmarshal(b2.UnicityCertificate, uc2)
+		err = cbor.Unmarshal(b2.UnicityCertificate, uc2)
 		require.NoError(t, err)
 		require.EqualValues(t, uc, uc2)
 	})
+
 	t.Run("invalid version", func(t *testing.T) {
 		h.Version = 2
 		b := Block{Header: &h}
-		blockBytes, err := Cbor.Marshal(b)
+		blockBytes, err := cbor.Marshal(b)
 		require.NoError(t, err)
 		require.NotNil(t, blockBytes)
 		b2 := Block{}
-		err = Cbor.Unmarshal(blockBytes, &b2)
+		err = cbor.Unmarshal(blockBytes, &b2)
 		require.ErrorContains(t, err, "invalid version (type *types.Header), expected 1, got 2")
 	})
 }

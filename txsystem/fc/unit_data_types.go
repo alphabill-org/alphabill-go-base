@@ -3,6 +3,7 @@ package fc
 import (
 	"bytes"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
@@ -70,12 +71,12 @@ func (b *FeeCreditRecord) MarshalCBOR() ([]byte, error) {
 	if b.Version == 0 {
 		b.Version = b.GetVersion()
 	}
-	return types.Cbor.Marshal((*alias)(b))
+	return cbor.Marshal((*alias)(b))
 }
 
 func (b *FeeCreditRecord) UnmarshalCBOR(data []byte) error {
 	type alias FeeCreditRecord
-	if err := types.Cbor.Unmarshal(data, (*alias)(b)); err != nil {
+	if err := cbor.Unmarshal(data, (*alias)(b)); err != nil {
 		return err
 	}
 	return types.EnsureVersion(b, b.Version, 1)

@@ -5,9 +5,11 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNodeInfo_IsValid(t *testing.T) {
@@ -233,11 +235,11 @@ func Test_RootTrustBaseV1_CBOR(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("Marshal - ok", func(t *testing.T) {
-		data, err := Cbor.Marshal(tb)
+		data, err := cbor.Marshal(tb)
 		require.NoError(t, err)
 
 		tb2 := &RootTrustBaseV1{}
-		err = Cbor.Unmarshal(data, tb2)
+		err = cbor.Unmarshal(data, tb2)
 		require.NoError(t, err)
 
 		// call SigVerifier() on all nodes so that caches are equal
@@ -256,11 +258,11 @@ func Test_RootTrustBaseV1_CBOR(t *testing.T) {
 
 	t.Run("Unmarshal - invalid version", func(t *testing.T) {
 		tb.Version = 2
-		data, err := Cbor.Marshal(tb)
+		data, err := cbor.Marshal(tb)
 		require.NoError(t, err)
 
 		tb2 := &RootTrustBaseV1{}
-		err = Cbor.Unmarshal(data, tb2)
+		err = cbor.Unmarshal(data, tb2)
 		require.ErrorContains(t, err, "invalid version (type *types.RootTrustBaseV1), expected 1, got 2")
 	})
 }

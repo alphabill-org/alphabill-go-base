@@ -9,6 +9,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 )
 
 func Test_ShardID_Split(t *testing.T) {
@@ -215,25 +217,25 @@ func Test_ShardID_MarshalText(t *testing.T) {
 func Test_ShardID_MarshalCBOR(t *testing.T) {
 	t.Run("empty id", func(t *testing.T) {
 		id := ShardID{}
-		b, err := Cbor.Marshal(id)
+		b, err := cbor.Marshal(id)
 		require.NoError(t, err)
 		// empty shard id is encoded as one byte end marker 0b1000_0000
 		require.EqualValues(t, []byte{0x41, 0x80}, b)
 
 		var id2 ShardID
-		require.NoError(t, Cbor.Unmarshal(b, &id2))
+		require.NoError(t, cbor.Unmarshal(b, &id2))
 		require.Equal(t, id, id2)
 		require.True(t, id.Equal(id2))
 	})
 
 	t.Run("example from YP", func(t *testing.T) {
 		id := ShardID{bits: []byte{0b0101_1010, 0b1111_0000}, length: 12}
-		b, err := Cbor.Marshal(id)
+		b, err := cbor.Marshal(id)
 		require.NoError(t, err)
 		require.EqualValues(t, []byte{0x42, 0x5a, 0xf8}, b)
 
 		var id2 ShardID
-		require.NoError(t, Cbor.Unmarshal(b, &id2))
+		require.NoError(t, cbor.Unmarshal(b, &id2))
 		require.Equal(t, id, id2)
 		require.True(t, id.Equal(id2))
 	})
@@ -247,11 +249,11 @@ func Test_ShardID_MarshalCBOR(t *testing.T) {
 
 		id := ShardID{bits: []byte{0b0101_1010, 0b1111_0000}, length: 16}
 		v := foo{ID: id, V: 10000}
-		b, err := Cbor.Marshal(v)
+		b, err := cbor.Marshal(v)
 		require.NoError(t, err)
 
 		v2 := foo{}
-		require.NoError(t, Cbor.Unmarshal(b, &v2))
+		require.NoError(t, cbor.Unmarshal(b, &v2))
 		require.Equal(t, v, v2)
 		require.True(t, id.Equal(v2.ID))
 	})

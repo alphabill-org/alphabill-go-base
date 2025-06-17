@@ -4,6 +4,8 @@ import (
 	"crypto"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
+	"github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
 
@@ -11,7 +13,7 @@ import (
 type billHashData struct {
 	_              struct{} `cbor:",toarray"`
 	UnitID         types.UnitID
-	Attributes     types.RawCBOR
+	Attributes     cbor.RawCBOR
 	ClientMetadata *types.ClientMetadata
 	SplitIndex     uint32
 }
@@ -28,9 +30,12 @@ func PrndSh(txo *types.TransactionOrder) func(buf []byte) error {
 		ClientMetadata: txo.ClientMetadata,
 		SplitIndex:     0,
 	}
+	hasher := hash.New(crypto.SHA256.New())
 
 	return func(buf []byte) error {
-		h, err := types.HashCBOR(hashData, crypto.SHA256)
+		hasher.Reset()
+		hasher.Write(hashData)
+		h, err := hasher.Sum()
 		if err != nil {
 			return fmt.Errorf("hashing txo data: %w", err)
 		}

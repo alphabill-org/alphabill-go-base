@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	"github.com/alphabill-org/alphabill-go-base/predicates"
 	"github.com/alphabill-org/alphabill-go-base/types"
 )
@@ -58,23 +59,23 @@ func NewP2pkh256FromKeyHash(pubKeyHash []byte) predicates.Predicate {
 }
 
 func NewP2pkh256BytesFromKey(pubKey []byte) types.PredicateBytes {
-	pb, _ := types.Cbor.Marshal(NewP2pkh256FromKey(pubKey))
+	pb, _ := cbor.Marshal(NewP2pkh256FromKey(pubKey))
 	return pb
 }
 
 func NewP2pkh256BytesFromKeyHash(pubKeyHash []byte) types.PredicateBytes {
-	pb, _ := types.Cbor.Marshal(NewP2pkh256FromKeyHash(pubKeyHash))
+	pb, _ := cbor.Marshal(NewP2pkh256FromKeyHash(pubKeyHash))
 	return pb
 }
 
 func NewP2pkh256SignatureBytes(sig, pubKey []byte) []byte {
-	sb, _ := types.Cbor.Marshal(P2pkh256Signature{Sig: sig, PubKey: pubKey})
+	sb, _ := cbor.Marshal(P2pkh256Signature{Sig: sig, PubKey: pubKey})
 	return sb
 }
 
 func ExtractPubKeyHashFromP2pkhPredicate(pb []byte) ([]byte, error) {
 	predicate := &predicates.Predicate{}
-	if err := types.Cbor.Unmarshal(pb, predicate); err != nil {
+	if err := cbor.Unmarshal(pb, predicate); err != nil {
 		return nil, fmt.Errorf("extracting predicate: %w", err)
 	}
 	if err := VerifyP2pkhPredicate(predicate); err != nil {

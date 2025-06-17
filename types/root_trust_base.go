@@ -8,6 +8,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abcrypto "github.com/alphabill-org/alphabill-go-base/crypto"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
@@ -244,12 +245,12 @@ func (r *RootTrustBaseV1) MarshalCBOR() ([]byte, error) {
 	if r.Version == 0 {
 		r.Version = r.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(RootTrustBaseTag, (*alias)(r))
+	return cbor.MarshalTaggedValue(RootTrustBaseTag, (*alias)(r))
 }
 
 func (r *RootTrustBaseV1) UnmarshalCBOR(data []byte) error {
 	type alias RootTrustBaseV1
-	if err := Cbor.UnmarshalTaggedValue(RootTrustBaseTag, data, (*alias)(r)); err != nil {
+	if err := cbor.UnmarshalTaggedValue(RootTrustBaseTag, data, (*alias)(r)); err != nil {
 		return fmt.Errorf("failed to unmarshal root trust base: %w", err)
 	}
 	return EnsureVersion(r, r.Version, 1)

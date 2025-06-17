@@ -1,4 +1,4 @@
-package types
+package cbor
 
 import (
 	"bytes"
@@ -42,7 +42,7 @@ func TestCborHandler_Marshal(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := Cbor.Marshal(tc.input)
+			got, err := Marshal(tc.input)
 			if tc.wantErr != "" {
 				require.ErrorContains(t, err, tc.wantErr)
 			}
@@ -60,43 +60,43 @@ func TestCborHandler_Unmarshal(t *testing.T) {
 
 	t.Run("Unmarshal valid input", func(t *testing.T) {
 		var got CustomData
-		err := Cbor.Unmarshal(validCbor, &got)
+		err := Unmarshal(validCbor, &got)
 		require.NoError(t, err)
 		require.Equal(t, validInput, got)
 	})
 
 	t.Run("Unmarshal nil and empty input", func(t *testing.T) {
 		var got CustomData
-		err := Cbor.Unmarshal(nil, &got)
+		err := Unmarshal(nil, &got)
 		require.ErrorContains(t, err, "EOF")
 		require.Equal(t, CustomData{}, got)
 
-		err = Cbor.Unmarshal([]byte{}, &got)
+		err = Unmarshal([]byte{}, &got)
 		require.ErrorContains(t, err, "EOF")
 		require.Equal(t, CustomData{}, got)
 	})
 
 	t.Run("Unmarshal invalid input data", func(t *testing.T) {
 		var got CustomData
-		err := Cbor.Unmarshal([]byte{5}, &got)
-		require.ErrorContains(t, err, "cbor: cannot unmarshal positive integer into Go value of type types.CustomData")
+		err := Unmarshal([]byte{5}, &got)
+		require.ErrorContains(t, err, "cbor: cannot unmarshal positive integer into Go value of type cbor.CustomData")
 		require.Equal(t, CustomData{}, got)
 
-		err = Cbor.Unmarshal(invalidCbor, &got)
+		err = Unmarshal(invalidCbor, &got)
 		require.ErrorContains(t, err, "unexpected EOF")
 		require.Equal(t, CustomData{}, got)
 	})
 
 	t.Run("Unmarshal non-pointer", func(t *testing.T) {
 		var got CustomData
-		err := Cbor.Unmarshal(validCbor, got)
-		require.ErrorContains(t, err, "cbor: Unmarshal(non-pointer types.CustomData)")
+		err := Unmarshal(validCbor, got)
+		require.ErrorContains(t, err, "cbor: Unmarshal(non-pointer cbor.CustomData)")
 		require.Equal(t, CustomData{}, got)
 	})
 
 	t.Run("Unmarshal wrong type", func(t *testing.T) {
 		var got hex.Bytes
-		err := Cbor.Unmarshal(validCbor, &got)
+		err := Unmarshal(validCbor, &got)
 		require.ErrorContains(t, err, "cbor: cannot unmarshal map into Go value of type hex.Bytes")
 		require.Nil(t, got)
 	})
@@ -140,7 +140,7 @@ func TestCborHandler_Encoding(t *testing.T) {
 	for _, tc := range cases {
 		t.Run("Cbor.Encode: "+tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
-			err := Cbor.Encode(buf, tc.input)
+			err := Encode(buf, tc.input)
 			if tc.wantErr != "" {
 				require.ErrorContains(t, err, tc.wantErr)
 			}
@@ -149,7 +149,7 @@ func TestCborHandler_Encoding(t *testing.T) {
 
 		t.Run("Cbor.GetEncoder: "+tc.name, func(t *testing.T) {
 			buf := new(bytes.Buffer)
-			enc, err := Cbor.GetEncoder(buf)
+			enc, err := GetEncoder(buf)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
@@ -202,14 +202,14 @@ func TestCborHandler_Decoding(t *testing.T) {
 			name:     "Invalid decoding",
 			input:    []byte{5},
 			expected: CustomData{},
-			wantErr:  "cbor: cannot unmarshal positive integer into Go value of type types.CustomData",
+			wantErr:  "cbor: cannot unmarshal positive integer into Go value of type cbor.CustomData",
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run("Cbor.GetDecoder: "+tc.name, func(t *testing.T) {
 			buf := bytes.NewReader(tc.input)
-			dec := Cbor.GetDecoder(buf)
+			dec := GetDecoder(buf)
 			var got CustomData
 			err := dec.Decode(&got)
 			if tc.wantErr != "" {
@@ -223,7 +223,7 @@ func TestCborHandler_Decoding(t *testing.T) {
 		t.Run("Cbor.Decode: "+tc.name, func(t *testing.T) {
 			buf := bytes.NewReader(tc.input)
 			var got CustomData
-			err := Cbor.Decode(buf, &got)
+			err := Decode(buf, &got)
 			if tc.wantErr != "" {
 				require.ErrorContains(t, err, tc.wantErr)
 			} else {

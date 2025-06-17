@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
@@ -144,12 +145,12 @@ func (n *NonFungibleTokenTypeData) MarshalCBOR() ([]byte, error) {
 	if n.Version == 0 {
 		n.Version = n.GetVersion()
 	}
-	return types.Cbor.Marshal((*alias)(n))
+	return cbor.Marshal((*alias)(n))
 }
 
 func (n *NonFungibleTokenTypeData) UnmarshalCBOR(data []byte) error {
 	type alias NonFungibleTokenTypeData
-	if err := types.Cbor.Unmarshal(data, (*alias)(n)); err != nil {
+	if err := cbor.Unmarshal(data, (*alias)(n)); err != nil {
 		return err
 	}
 	return types.EnsureVersion(n, n.Version, 1)
@@ -194,12 +195,12 @@ func (n *NonFungibleTokenData) MarshalCBOR() ([]byte, error) {
 	if n.Version == 0 {
 		n.Version = n.GetVersion()
 	}
-	return types.Cbor.Marshal((*alias)(n))
+	return cbor.Marshal((*alias)(n))
 }
 
 func (n *NonFungibleTokenData) UnmarshalCBOR(data []byte) error {
 	type alias NonFungibleTokenData
-	if err := types.Cbor.Unmarshal(data, (*alias)(n)); err != nil {
+	if err := cbor.Unmarshal(data, (*alias)(n)); err != nil {
 		return err
 	}
 	return types.EnsureVersion(n, n.Version, 1)
@@ -253,12 +254,12 @@ func (b *FungibleTokenTypeData) MarshalCBOR() ([]byte, error) {
 	if b.Version == 0 {
 		b.Version = b.GetVersion()
 	}
-	return types.Cbor.Marshal((*alias)(b))
+	return cbor.Marshal((*alias)(b))
 }
 
 func (b *FungibleTokenTypeData) UnmarshalCBOR(data []byte) error {
 	type alias FungibleTokenTypeData
-	if err := types.Cbor.Unmarshal(data, (*alias)(b)); err != nil {
+	if err := cbor.Unmarshal(data, (*alias)(b)); err != nil {
 		return err
 	}
 	return types.EnsureVersion(b, b.Version, 1)
@@ -305,12 +306,12 @@ func (f *FungibleTokenData) MarshalCBOR() ([]byte, error) {
 	if f.Version == 0 {
 		f.Version = f.GetVersion()
 	}
-	return types.Cbor.Marshal((*alias)(f))
+	return cbor.Marshal((*alias)(f))
 }
 
 func (f *FungibleTokenData) UnmarshalCBOR(data []byte) error {
 	type alias FungibleTokenData
-	if err := types.Cbor.Unmarshal(data, (*alias)(f)); err != nil {
+	if err := cbor.Unmarshal(data, (*alias)(f)); err != nil {
 		return err
 	}
 	return types.EnsureVersion(f, f.Version, 1)

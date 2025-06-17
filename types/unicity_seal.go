@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	"github.com/alphabill-org/alphabill-go-base/crypto"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
@@ -133,7 +134,7 @@ func (x *UnicitySeal) MarshalCBOR() ([]byte, error) {
 	if x.Version == 0 {
 		x.Version = x.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(UnicitySealTag, (*alias)(x))
+	return cbor.MarshalTaggedValue(UnicitySealTag, (*alias)(x))
 }
 
 func (x *UnicitySeal) UnmarshalCBOR(b []byte) (err error) {

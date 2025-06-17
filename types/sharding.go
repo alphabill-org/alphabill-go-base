@@ -7,6 +7,7 @@ import (
 	"math/bits"
 	"slices"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
 
@@ -121,12 +122,12 @@ func (id *ShardID) UnmarshalText(src []byte) error {
 }
 
 func (id ShardID) MarshalCBOR() ([]byte, error) {
-	return Cbor.Marshal(id.Bytes())
+	return cbor.Marshal(id.Bytes())
 }
 
 func (id *ShardID) UnmarshalCBOR(data []byte) (err error) {
 	var b []byte
-	if err := Cbor.Unmarshal(data, &b); err != nil {
+	if err := cbor.Unmarshal(data, &b); err != nil {
 		return fmt.Errorf("decoding bitstring bytes from CBOR: %w", err)
 	}
 	if id.bits, id.length, err = decodeBitstring(b); err != nil {
@@ -381,12 +382,12 @@ func (ss ShardingScheme) isValid(bit byte, bitCount uint) error {
 func (ss ShardingScheme) MarshalCBOR() ([]byte, error) {
 	ids := slices.Collect(ss.All())
 	slices.SortFunc(ids, CompareShardIDs)
-	return Cbor.Marshal(ids)
+	return cbor.Marshal(ids)
 }
 
 func (ss *ShardingScheme) UnmarshalCBOR(data []byte) (err error) {
 	ids := []ShardID{}
-	if err := Cbor.Unmarshal(data, &ids); err != nil {
+	if err := cbor.Unmarshal(data, &ids); err != nil {
 		return fmt.Errorf("decoding shard ID list: %w", err)
 	}
 	scheme := buildShardingScheme(ids)

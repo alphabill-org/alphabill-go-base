@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 )
 
@@ -23,7 +24,7 @@ const (
 )
 
 type (
-	TransactionOrderCBOR = TaggedCBOR
+	TransactionOrderCBOR = cbor.TaggedCBOR
 	TxStatus             uint64
 
 	// TransactionRecord is a transaction order with "server-side" metadata added to it. TransactionRecord is a structure
@@ -40,7 +41,7 @@ type (
 		ActualFee         uint64
 		TargetUnits       []UnitID
 		SuccessIndicator  TxStatus
-		ProcessingDetails RawCBOR
+		ProcessingDetails cbor.RawCBOR
 		errDetail         error
 	}
 
@@ -58,7 +59,7 @@ func (t *TransactionRecord) Hash(algorithm crypto.Hash) ([]byte, error) {
 }
 
 func (t *TransactionRecord) Bytes() ([]byte, error) {
-	return Cbor.Marshal(t)
+	return cbor.Marshal(t)
 }
 
 func (t *TransactionRecord) UnmarshalProcessingDetails(v any) error {
@@ -135,12 +136,12 @@ func (t *TransactionRecord) MarshalCBOR() ([]byte, error) {
 	if t.Version == 0 {
 		t.Version = t.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(TransactionRecordTag, (*alias)(t))
+	return cbor.MarshalTaggedValue(TransactionRecordTag, (*alias)(t))
 }
 
 func (t *TransactionRecord) UnmarshalCBOR(data []byte) error {
 	type alias TransactionRecord
-	if err := Cbor.UnmarshalTaggedValue(TransactionRecordTag, data, (*alias)(t)); err != nil {
+	if err := cbor.UnmarshalTaggedValue(TransactionRecordTag, data, (*alias)(t)); err != nil {
 		return err
 	}
 	return EnsureVersion(t, t.Version, 1)
@@ -164,7 +165,7 @@ func (sm *ServerMetadata) UnmarshalDetails(v any) error {
 	if sm == nil {
 		return errors.New("server metadata is nil")
 	}
-	return Cbor.Unmarshal(sm.ProcessingDetails, v)
+	return cbor.Unmarshal(sm.ProcessingDetails, v)
 }
 
 func (sm *ServerMetadata) SetError(e error) {

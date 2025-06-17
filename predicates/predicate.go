@@ -1,6 +1,9 @@
 package predicates
 
-import "github.com/alphabill-org/alphabill-go-base/types"
+import (
+	"github.com/alphabill-org/alphabill-go-base/cbor"
+	"github.com/alphabill-org/alphabill-go-base/types"
+)
 
 type Predicate struct {
 	_      struct{} `cbor:",toarray"`
@@ -10,7 +13,7 @@ type Predicate struct {
 }
 
 func (p Predicate) AsBytes() (types.PredicateBytes, error) {
-	buf, err := types.Cbor.Marshal(p)
+	buf, err := cbor.Marshal(p)
 	if err != nil {
 		return nil, err
 	}

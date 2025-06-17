@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	test "github.com/alphabill-org/alphabill-go-base/testutils"
 	testsig "github.com/alphabill-org/alphabill-go-base/testutils/sig"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
@@ -865,7 +866,7 @@ func Test_UnicityCertificate_Cbor(t *testing.T) {
 		require.NoError(t, uc1.UnmarshalCBOR(ucData))
 
 		uc2 := UnicityCertificate{}
-		require.NoError(t, Cbor.Unmarshal(ucData, &uc2))
+		require.NoError(t, cbor.Unmarshal(ucData, &uc2))
 
 		require.Equal(t, uc1, &uc2)
 	})

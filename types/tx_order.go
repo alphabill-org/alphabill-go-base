@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/alphabill-org/alphabill-go-base/cbor"
 	abhash "github.com/alphabill-org/alphabill-go-base/hash"
 	"github.com/alphabill-org/alphabill-go-base/types/hex"
 )
@@ -24,9 +25,9 @@ type (
 	TransactionOrder struct {
 		_           struct{} `cbor:",toarray"`
 		Version     ABVersion
-		Payload             // the embedded Payload field is "flattened" in CBOR array
-		StateUnlock []byte  // two CBOR data items: [0|1]+[<state lock/rollback predicate input>]
-		AuthProof   RawCBOR // transaction type specific signatures/authorisation proofs
+		Payload                  // the embedded Payload field is "flattened" in CBOR array
+		StateUnlock []byte       // two CBOR data items: [0|1]+[<state lock/rollback predicate input>]
+		AuthProof   cbor.RawCBOR // transaction type specific signatures/authorisation proofs
 		FeeProof    []byte
 	}
 
@@ -38,8 +39,8 @@ type (
 		NetworkID      NetworkID
 		PartitionID    PartitionID
 		UnitID         UnitID
-		Type           uint16  // transaction type, ie mint, transfer,...
-		Attributes     RawCBOR // transaction type specific attributes
+		Type           uint16       // transaction type, ie mint, transfer,...
+		Attributes     cbor.RawCBOR // transaction type specific attributes
 		StateLock      *StateLock
 		ClientMetadata *ClientMetadata // metadata about the transaction added by the client
 	}
@@ -78,7 +79,7 @@ type (
 		Version ABVersion
 		Payload
 		StateUnlock []byte
-		AuthProof   RawCBOR
+		AuthProof   cbor.RawCBOR
 	}
 
 	StateUnlockProofKind byte
@@ -89,7 +90,7 @@ func (t *TransactionOrder) StateLockProofSigBytes() ([]byte, error) {
 		return nil, ErrTransactionOrderIsNil
 	}
 	stateLockProof := StateLockProofSigData{Version: t.Version, Payload: t.Payload}
-	stateLockProofCBOR, err := Cbor.Marshal(stateLockProof)
+	stateLockProofCBOR, err := cbor.Marshal(stateLockProof)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal state lock sig bytes: %w", err)
 	}
@@ -101,7 +102,7 @@ func (t *TransactionOrder) AuthProofSigBytes() ([]byte, error) {
 		return nil, ErrTransactionOrderIsNil
 	}
 	authProof := AuthProofSigData{Version: t.Version, Payload: t.Payload, StateUnlock: t.StateUnlock}
-	authProofCBOR, err := Cbor.Marshal(authProof)
+	authProofCBOR, err := cbor.Marshal(authProof)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal auth proof sig bytes: %w", err)
 	}
@@ -113,7 +114,7 @@ func (t *TransactionOrder) FeeProofSigBytes() ([]byte, error) {
 		return nil, ErrTransactionOrderIsNil
 	}
 	feeProof := FeeProofSigData{Version: t.Version, Payload: t.Payload, StateUnlock: t.StateUnlock, AuthProof: t.AuthProof}
-	feeProofCBOR, err := Cbor.Marshal(feeProof)
+	feeProofCBOR, err := cbor.Marshal(feeProof)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal fee proof sig bytes: %w", err)
 	}
@@ -124,7 +125,7 @@ func (t *TransactionOrder) UnmarshalAuthProof(v any) error {
 	if t == nil {
 		return ErrTransactionOrderIsNil
 	}
-	return Cbor.Unmarshal(t.AuthProof, v)
+	return cbor.Unmarshal(t.AuthProof, v)
 }
 
 func (t *TransactionOrder) Hash(algorithm crypto.Hash) ([]byte, error) {
@@ -138,7 +139,7 @@ func (t *TransactionOrder) SetAuthProof(authProof any) error {
 	if t == nil {
 		return ErrTransactionOrderIsNil
 	}
-	authProofCBOR, err := Cbor.Marshal(authProof)
+	authProofCBOR, err := cbor.Marshal(authProof)
 	if err != nil {
 		return fmt.Errorf("marshaling auth proof: %w", err)
 	}
@@ -156,7 +157,7 @@ func (t *TransactionOrder) SetAttributes(attr any) error {
 	if t == nil {
 		return ErrTransactionOrderIsNil
 	}
-	attrCBOR, err := Cbor.Marshal(attr)
+	attrCBOR, err := cbor.Marshal(attr)
 	if err != nil {
 		return fmt.Errorf("marshaling %T as tx attributes: %w", attr, err)
 	}
@@ -168,7 +169,7 @@ func (t *TransactionOrder) UnmarshalAttributes(v any) error {
 	if t == nil {
 		return ErrTransactionOrderIsNil
 	}
-	return Cbor.Unmarshal(t.Attributes, v)
+	return cbor.Unmarshal(t.Attributes, v)
 }
 
 func (t *TransactionOrder) HasStateLock() bool {
@@ -236,12 +237,12 @@ func (t *TransactionOrder) MarshalCBOR() ([]byte, error) {
 	if t.Version == 0 {
 		t.Version = t.GetVersion()
 	}
-	return Cbor.MarshalTaggedValue(TransactionOrderTag, (*alias)(t))
+	return cbor.MarshalTaggedValue(TransactionOrderTag, (*alias)(t))
 }
 
 func (t *TransactionOrder) UnmarshalCBOR(data []byte) error {
 	type alias TransactionOrder
-	if err := Cbor.UnmarshalTaggedValue(TransactionOrderTag, data, (*alias)(t)); err != nil {
+	if err := cbor.UnmarshalTaggedValue(TransactionOrderTag, data, (*alias)(t)); err != nil {
 		return err
 	}
 	return EnsureVersion(t, t.Version, 1)
