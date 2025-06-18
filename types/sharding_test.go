@@ -326,7 +326,7 @@ func Test_ShardingScheme_All(t *testing.T) {
 	t.Run("invalid", func(t *testing.T) {
 		// invalid tree with only "0" child ("1" is missing)
 		scheme := buildShardingScheme([]ShardID{{bits: []byte{0}, length: 1}})
-		require.Panics(t, func() { slices.Collect(scheme.All()) })
+		require.Panics(t, func() { _ = slices.Collect(scheme.All()) })
 	})
 
 	t.Run("expected shards", func(t *testing.T) {
