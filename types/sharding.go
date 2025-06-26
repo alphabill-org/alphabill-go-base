@@ -34,7 +34,7 @@ func (id ShardID) Key() string {
 
 func (id ShardID) String() (s string) {
 	byteCnt := id.length / 8
-	for i := uint(0); i < byteCnt; i++ {
+	for i := range byteCnt {
 		s += fmt.Sprintf("%08b", id.bits[i])
 	}
 	if b := id.length % 8; b > 0 {
@@ -58,11 +58,11 @@ func (id ShardID) Split() (ShardID, ShardID) {
 	bitCnt := id.length + 1
 	if id.length%8 == 0 {
 		return ShardID{bits: append(slices.Clone(id.bits), 0), length: bitCnt},
-			ShardID{bits: append(slices.Clone(id.bits), 128), length: bitCnt}
+			ShardID{bits: append(slices.Clone(id.bits), 0x80), length: bitCnt}
 	}
 
 	b1 := slices.Clone(id.bits)
-	b1[len(b1)-1] |= 1 << (7 - id.length%8)
+	b1[len(b1)-1] |= 0x80 >> (id.length % 8)
 	return ShardID{bits: slices.Clone(id.bits), length: bitCnt},
 		ShardID{bits: b1, length: bitCnt}
 }

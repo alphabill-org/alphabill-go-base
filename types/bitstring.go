@@ -24,7 +24,7 @@ func encodeBitstring(bits []byte, length uint) []byte {
 		// clear trailing bits
 		v := bits[byteCnt] &^ (0xFF >> bitCnt)
 		// add end marker
-		bs[byteCnt] = v | (1 << (7 - bitCnt))
+		bs[byteCnt] = v | (0b_1000_0000 >> bitCnt)
 	}
 	return bs
 }
